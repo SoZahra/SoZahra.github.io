@@ -25,6 +25,7 @@
   }
 
   const ctx = canvas.getContext("2d");
+  const mouvementReduit = matchMedia("(prefers-reduced-motion: reduce)");
   const nbPortes = Math.max(1, (CONFIG.portes && CONFIG.portes.liste.length) || 1);
 
   // Palette du plus sombre au plus clair, convertie en [r, g, b]
@@ -49,6 +50,19 @@
   // couloir : texture du couloir derrière les portes, révélée par la lampe
   // dans la salle sombre (-1 = pas dans une ouverture)
   let L, H, texture, couloir, fixe, image, lumiere, portes;
+
+  /* ---------- Deux salles ----------
+   * "entree" : une seule grande porte, le nom gravé au-dessus (dialogues) ;
+   * "trois"  : la salle aux trois portes, derrière la première.
+   * Chacune a ses portes, sa texture et son éclairage ; activerSalle()
+   * les recopie dans les variables ci-dessus, utilisées par le dessin. */
+  const salles = {};
+  function activerSalle(nom) {
+    ({ portes, texture, couloir, fixe, lumiere } = salles[nom]);
+  }
+  function memoriserSalle(nom) {
+    salles[nom] = { portes, texture, couloir, fixe, lumiere };
+  }
 
   /* ---------- Stèles : le nom de chaque porte gravé au-dessus ----------
    * Gravé en pixels dans le décor avec js/police-pixel.js ; le libellé HTML
@@ -76,6 +90,178 @@
       l: largeurTexte + MARGE_X * 2,
       h: nbLignes * bloc + (nbLignes - 1) * INTERLIGNE + MARGE_Y * 2,
     };
+  }
+
+  /* ---------- Enseigne au-dessus de la porte d'entrée ----------
+   * Le nom (police "titre") et un sous-titre en lettres dorées lumineuses,
+   * au-dessus de la porte d'entrée, visibles pendant les dialogues. Lettres
+   * doublées (2×2 pixels) si le nom tient ainsi sur deux lignes au plus.
+   * Comme une vieille enseigne de magasin, chaque lettre est une ampoule
+   * qui fonctionne mal : quelques lettres défaillantes grésillent et tombent
+   * parfois en panne, et de temps en temps tout vacille. Les lettres
+   * allumées éclairent le mur autour d'elles (lueur chaude). */
+  const INSCRIPTION = CONFIG.inscription;
+  const NB_DEFAILLANTES = 4; // lettres du nom qui grésillent et tombent en panne
+  // { lettres: [{ x0, y0, x1, y1, allumee, defaillante, panne, gresille }],
+  //   pixels: Map(index → [type, n° de lettre]) }
+  let inscription = null;
+
+  function preparerInscription(p) {
+    if (!INSCRIPTION || !window.POLICE_PIXEL) return null;
+    const titre = window.POLICE_PIXEL.police("titre");
+    const largeurVue = Math.floor(L * 0.88);
+    const enGrand = titre.decouper(INSCRIPTION.titre, largeurVue / 2);
+    const e = enGrand.length <= 2 ? 2 : 1; // taille des pixels des lettres
+    const sous = window.POLICE_PIXEL.police(e === 2 ? "grande" : "petite");
+
+    // Lignes : le titre (découpé si besoin), puis le sous-titre aux lettres espacées
+    const lignes = [];
+    let y = 0;
+    for (const t of e === 2 ? enGrand : titre.decouper(INSCRIPTION.titre, largeurVue)) {
+      lignes.push({ t, police: titre, y, e });
+      y += titre.HAUTEUR * e + 3;
+    }
+    if (INSCRIPTION.sousTitre) {
+      const espace = Array.from(INSCRIPTION.sousTitre).join(" ");
+      y += 1 + e;
+      lignes.push({ t: espace, police: sous, y, e: 1 });
+      y += sous.HAUTEUR;
+    } else {
+      y -= 3;
+    }
+
+    // Au-dessus des pierres de l'arche, avec un peu d'espace.
+    // Chaque lettre est gravée à part, pour pouvoir s'allumer seule.
+    const haut = p.bas - p.hauteur - 5 - 8 - y;
+    const proprietaire = new Map(); // pixel → n° de lettre
+    const lettres = [];
+    let nbTitre = 0;
+    for (const l of lignes) {
+      const x0 = Math.round(p.cx - (l.police.largeur(l.t) * l.e) / 2);
+      const cars = Array.from(l.t);
+      cars.forEach((car, k) => {
+        if (car.trim() === "") return;
+        const decalage = k ? l.police.largeur(cars.slice(0, k).join("")) + 1 : 0;
+        const n = lettres.length;
+        const lettre = { x0: L, y0: H, x1: 0, y1: 0, allumee: true, defaillante: false, panne: 0, gresille: 0 };
+        l.police.graver(car, (gx, gy) => {
+          for (let j = 0; j < l.e; j++) {
+            for (let i = 0; i < l.e; i++) {
+              const x = x0 + (decalage + gx) * l.e + i, yy = haut + l.y + gy * l.e + j;
+              proprietaire.set(yy * L + x, n);
+              lettre.x0 = Math.min(lettre.x0, x); lettre.x1 = Math.max(lettre.x1, x);
+              lettre.y0 = Math.min(lettre.y0, yy); lettre.y1 = Math.max(lettre.y1, yy);
+            }
+          }
+        });
+        lettres.push(lettre);
+        if (l.police === titre) nbTitre++;
+      });
+    }
+
+    // Lettres du nom défaillantes, toujours les mêmes (choix déterministe),
+    // jamais côte à côte pour que les pannes restent lisibles.
+    // Les deux premières sont celles d'origine (le M et le dernier I du nom)
+    const voulues = Math.min(NB_DEFAILLANTES, Math.floor(nbTitre / 2));
+    const a = Math.floor(hasard(nbTitre, 3) * nbTitre);
+    const candidates = [a, (a + 2 + Math.floor(hasard(nbTitre, 7) * (nbTitre - 3))) % nbTitre];
+    for (let essai = 0; essai < 50; essai++) candidates.push(Math.floor(hasard(nbTitre + essai, 3) * nbTitre));
+    let choisies = 0;
+    for (const k of candidates) {
+      if (choisies >= voulues) break;
+      if (!lettres[k] || [k - 1, k, k + 1].some((v) => v >= 0 && v < nbTitre && lettres[v].defaillante)) continue;
+      lettres[k].defaillante = true;
+      choisies++;
+    }
+
+    // Haut du trait éclairé, bas plus foncé (effet de métal), ombre portée en bas à droite
+    const pixels = new Map();
+    for (const [i, n] of proprietaire) {
+      const type = !proprietaire.has(i - L) ? "arete" : !proprietaire.has(i + L) ? "bas" : "lettre";
+      pixels.set(i, [type, n]);
+    }
+    for (const [i, n] of proprietaire) {
+      for (const v of [i + L, i + L + 1]) {
+        if (v < L * H && !pixels.has(v)) pixels.set(v, ["ombre", n]);
+      }
+    }
+    return { lettres, pixels };
+  }
+
+  // Une image d'enseigne : coupures de courant générales et lettres défaillantes
+  const courant = { gresille: 0, coupe: false };
+
+  function animerEnseigne() {
+    if (courant.gresille > 0) {
+      courant.gresille--;
+      courant.coupe = courant.gresille > 0 && Math.random() < 0.5;
+    } else {
+      courant.coupe = false;
+      if (Math.random() < 0.008) courant.gresille = 3 + Math.floor(Math.random() * 5);
+    }
+    let changements = 0;
+    for (const l of inscription.lettres) {
+      const avant = l.allumee;
+      if (l.defaillante) {
+        if (l.panne > 0) {
+          l.panne--;                              // en panne : éteinte un moment
+          l.allumee = false;
+        } else if (l.gresille > 0) {
+          l.gresille--;                           // grésille : allumée une image sur deux environ
+          l.allumee = Math.random() < 0.5;
+        } else {
+          l.allumee = true;
+          const r = Math.random();
+          if (r < 0.006) l.panne = 15 + Math.floor(Math.random() * 35);
+          else if (r < 0.04) l.gresille = 3 + Math.floor(Math.random() * 8);
+        }
+      } else {
+        l.allumee = true;
+      }
+      if (courant.coupe) l.allumee = false;
+      if (l.allumee !== avant) changements++;
+    }
+    // Son (js/son-neon.js) : bourdonnement selon les lettres allumées,
+    // crépitement quand des lettres changent d'état
+    if (window.SON_NEON) {
+      const allumees = inscription.lettres.filter((l) => l.allumee).length;
+      window.SON_NEON.regler(allumees / inscription.lettres.length);
+      if (changements) window.SON_NEON.crepiter(Math.min(1, changements / 4));
+    }
+  }
+
+  const COULEURS_ENSEIGNE = {
+    allumee: { lettre: [255, 204, 92], arete: [255, 242, 190], bas: [222, 156, 52], ombre: [14, 12, 22] },
+    eteinte: { lettre: [96, 76, 44], arete: [124, 100, 60], bas: [72, 56, 32], ombre: [14, 12, 22] },
+  };
+
+  // Lueur des lettres allumées sur le mur : forte contre la lettre,
+  // nulle à RAYON_LUEUR pixels ; recalculée à chaque image
+  const RAYON_LUEUR = 16;
+  let lueur = null;
+
+  function calculerLueur() {
+    if (!inscription) return false;
+    if (!lueur || lueur.length !== L * H) lueur = new Float32Array(L * H);
+    lueur.fill(0);
+    let uneAllumee = false;
+    for (const l of inscription.lettres) {
+      if (!l.allumee) continue;
+      uneAllumee = true;
+      const ax = Math.max(0, l.x0 - RAYON_LUEUR), bx = Math.min(L - 1, l.x1 + RAYON_LUEUR);
+      const ay = Math.max(0, l.y0 - RAYON_LUEUR), by = Math.min(H - 1, l.y1 + RAYON_LUEUR);
+      for (let y = ay; y <= by; y++) {
+        const dy = Math.max(0, l.y0 - y, y - l.y1);
+        for (let x = ax; x <= bx; x++) {
+          const dx = Math.max(0, l.x0 - x, x - l.x1);
+          const f = 1 - Math.hypot(dx, dy) / RAYON_LUEUR;
+          if (f <= 0) continue;
+          const i = y * L + x;
+          lueur[i] = 1 - (1 - lueur[i]) * (1 - f * f * 0.45);
+        }
+      }
+    }
+    return uneAllumee;
   }
 
   /* ---------- Mise en page : taille du canevas + position des portes ---------- */
@@ -120,11 +306,18 @@
     }
 
     lumiere = { x: L / 2, y: bas - hauteur * 0.7, rayon: Math.max(H * 0.62, L * 0.55) };
+    calculerTexture();
+    memoriserSalle("trois");
 
-    // Zoom de départ : assez fort pour que seule la porte du milieu soit visible
-    const p = portes[Math.floor((nbPortes - 1) / 2)];
-    const ecartVoisine = nbPortes > 1 ? espacement - demiLargeur : L / 2;
-    const zoom = Math.min(3, Math.max(1.6, (L / 2) / ecartVoisine * 1.08));
+    // Salle d'entrée : une seule porte, plus grande, au centre
+    const dl = Math.round(Math.min(30, L * 0.14));
+    const hEntree = Math.round(dl * 2.85);
+    const p = { cx: Math.round(L / 2), bas, demiLargeur: dl, hauteur: hEntree, centreArc: bas - hEntree + dl, plaque: null };
+    portes = [p];
+    lumiere = { x: L / 2, y: bas - hEntree * 0.7, rayon: Math.max(H * 0.62, L * 0.55) };
+    calculerTexture();
+    memoriserSalle("entree");
+    inscription = preparerInscription(p);
 
     // Variables CSS (en % de l'écran) lues par css/style.css
     const pct = (v, total) => `${(v / total) * 100}%`;
@@ -134,21 +327,22 @@
     def("--porte-haut", pct(bas - hauteur + 1, H));
     def("--porte-espacement", pct(espacement, L));
     def("--porte-centre", pct(premiere + ((nbPortes - 1) / 2) * espacement, L));
-    def("--zoom", zoom.toFixed(3));
-    def("--zoom-x", pct(nbPortes % 2 ? p.cx : L / 2, L));
-    def("--zoom-y", pct(bas - hauteur / 2, H));
+    // Pas de zoom dans la salle d'entrée ; on entre dans sa porte (centre de l'ouverture)
+    def("--zoom", "1");
+    def("--zoom-x", pct(p.cx, L));
+    def("--zoom-y", pct(bas - hEntree / 2, H));
     def("--pixel", `${pixel}px`);
     // Stèle, contour compris, en % du bouton de la porte (qui commence en
     // cx - demiLargeur, bas - hauteur + 1) : le libellé HTML invisible, et
     // donc les flèches ▷ ◁, sont posés exactement sur la pierre dessinée
-    const p0 = portes[0];
+    const p0 = salles.trois.portes[0];
     def("--plaque-gauche", pct(p0.plaque.x - 1 - (p0.cx - demiLargeur), demiLargeur * 2));
     def("--plaque-haut", pct(plaqueY - 1 - (hautArche + 1), hauteur));
     def("--plaque-hauteur", pct(steles.h + 2, hauteur));
     def("--plaque-largeur", pct(steles.l + 2, demiLargeur * 2));
     decor.classList.add("avec-linteaux");
 
-    calculerTexture();
+    activerSalle(scene === "portes" ? "trois" : "entree");
   }
 
   // < 0 : dans une ouverture ; proche de 0 : sur un contour
@@ -214,7 +408,7 @@
     }
 
     fixe = new Int8Array(L * H).fill(-1);
-    for (const { plaque } of portes) graverStele(plaque);
+    for (const { plaque } of portes) if (plaque) graverStele(plaque);
   }
 
   /* Stèle façon pierre tombale pixel art : pierre grise mouchetée,
@@ -365,12 +559,12 @@
     lampe.origineX = Math.round(L * 0.84);
     lampe.origineY = H + 4; // la main est sous le bord de l'écran
     lampe.rayon = Math.round(Math.min(L, H) * 0.24);
-    viserPorte(Math.floor((portes.length - 1) / 2));
+    viserPorte(Math.floor((salles.trois.portes.length - 1) / 2));
   }
 
   // Vise le milieu de l'ouverture d'une porte
   function viserPorte(k) {
-    const p = portes[k];
+    const p = salles.trois.portes[k];
     if (!p) return;
     lampe.x = p.cx;
     lampe.y = p.bas - p.hauteur / 2;
@@ -398,6 +592,7 @@
     const n = palette.length - 1;
     const avecFumee = calculerDensite();
     const sombre = scene === "portes";
+    const avecLueur = !sombre && calculerLueur();
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < L; x++) {
         const i = y * L + x;
@@ -421,10 +616,20 @@
             v = v * (1 - a) + (0.6 + 0.3 * eclairage) * a;
           }
 
+          // Lueur de l'enseigne : le mur s'éclaire près des lettres allumées
+          const lu = avecLueur ? lueur[i] : 0;
+          if (lu > 0) v = Math.min(1, v + texture[i] * lu * 0.7);
+
           // Entre deux couleurs de la palette, le seuil de Bayer décide
           const f = v * n;
           c = Math.floor(f);
           if (f - c > BAYER[(y % 4) * 4 + (x % 4)]) c++;
+          const [r, g, b] = palette[Math.min(c, n)];
+          const j = i * 4;
+          // ... et prend sa couleur chaude
+          px[j] = Math.min(255, r + lu * 90); px[j + 1] = Math.min(255, g + lu * 52);
+          px[j + 2] = b * (1 - lu * 0.3); px[j + 3] = 255;
+          continue;
         }
         const [r, g, b] = palette[Math.min(c, n)];
         const j = i * 4;
@@ -442,6 +647,14 @@
       const j = (y * L + x) * 4;
       px[j] = r; px[j + 1] = g; px[j + 2] = b;
     };
+    // Enseigne du nom, dans la salle d'entrée seulement
+    if (inscription && scene !== "portes") {
+      for (const [i, [type, n]] of inscription.pixels) {
+        const couleurs = inscription.lettres[n].allumee ? COULEURS_ENSEIGNE.allumee : COULEURS_ENSEIGNE.eteinte;
+        const x = i % L;
+        poser(x, (i - x) / L, couleurs[type]);
+      }
+    }
     if (scene === "yeux" && PERSO) {
       // Les yeux brillent, à mi-hauteur de l'arche du milieu
       const p = portes[Math.floor((portes.length - 1) / 2)];
@@ -495,7 +708,6 @@
     attente = setTimeout(redessinerTout, 150);
   });
 
-  const mouvementReduit = matchMedia("(prefers-reduced-motion: reduce)");
 
   // La lampe suit la souris (ou le doigt) ; un seul dessin par image d'écran
   let dessinPrevu = false;
@@ -532,6 +744,9 @@
 
   decor.addEventListener("scene", (e) => {
     scene = e.detail.etat;
+    activerSalle(scene === "portes" ? "trois" : "entree");
+    // Le néon ne bourdonne que dans la salle d'entrée, sous l'enseigne
+    if (window.SON_NEON) window.SON_NEON.regler(scene === "yeux" && inscription ? 1 : 0);
     if (scene === "portes") placerLampe(); // la lampe vise d'abord la porte du milieu
     yeux.ouverts = true;
     dessiner(rayon);
@@ -549,6 +764,10 @@
     let changement = false;
     if (fumee.porte >= 0 || fumee.bouffees.length) {
       avancerFumee();
+      changement = true;
+    }
+    if (inscription && scene === "yeux") {
+      animerEnseigne();
       changement = true;
     }
     if (scene === "yeux" && --yeux.attente <= 0) {

@@ -158,8 +158,8 @@ body {
 }
 
 /* --- Décor : fond + portes, zoomés ensemble comme une caméra ---
-   Pendant les dialogues, la caméra est rapprochée de la porte du milieu ;
-   avec .entree-porte elle plonge dans l'arche jusqu'au noir, puis avec
+   Pendant les dialogues, on voit la salle d'entrée en entier ;
+   avec .entree-porte la caméra plonge dans sa porte jusqu'au noir, puis avec
    .vue-portes on arrive dans la salle aux trois portes. Le zoom et la
    position des portes viennent de js/fond-pixel.js (valeurs par défaut
    si on utilise une image de fond). */

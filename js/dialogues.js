@@ -362,9 +362,21 @@ window.INTRO_CONFIG = {
 
   /* ---------- Encadré en haut à gauche (façon jeu) ----------
    * Une ligne par entrée ; liste vide = pas d'encadré. Masqué sur petit écran. */
-  hud: ["Niveau : 1", "Café : 42%"],
+  hud: ["Fatima Zayani ─ Portfolio"],
 
-  /* ---------- Son (pas encore branché) ---------- */
+  /* ---------- Enseigne au-dessus de la porte d'entrée ----------
+   * Lettres dorées lumineuses qui éclairent le mur, comme une vieille
+   * enseigne dont certaines ampoules fonctionnent mal (js/fond-pixel.js).
+   * Visible pendant les dialogues. Supprime ce bloc pour une porte sans nom. */
+  inscription: {
+    titre: "Fatima Zayani",
+    sousTitre: "Portfolio",
+  },
+
+  /* ---------- Son ----------
+   * Bourdonnement et crépitements de l'enseigne au néon (js/son-neon.js),
+   * avec le bouton son de l'intro. Les navigateurs bloquent le son avant
+   * un clic du visiteur : laisse actifParDefaut à false. */
   son: {
     actifParDefaut: false,
     // Emplacements prévus pour plus tard :

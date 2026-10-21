@@ -565,7 +565,7 @@
     return parseFloat(getComputedStyle(racine).getPropertyValue(nom)) || 0;
   }
 
-  // 1. la caméra plonge dans l'arche du milieu jusqu'au noir (les yeux disparaissent),
+  // 1. la caméra plonge dans la porte d'entrée jusqu'au noir (les yeux disparaissent),
   // 2. on arrive dans la salle aux trois portes, sombre, avec une lampe de poche,
   // 3. les portes deviennent cliquables et la consigne s'affiche
   function entrerDansPorte() {
@@ -707,7 +707,7 @@
   }
 
   /* ============================================================
-     Son (emplacement prévu, pas encore branché)
+     Son : bouton qui active le bourdonnement du néon (js/son-neon.js)
      ============================================================ */
 
   function majBoutonSon() {
@@ -721,7 +721,14 @@
     e.stopPropagation();
     etat.son = !etat.son;
     majBoutonSon();
-    // TODO son : démarrer / couper la musique ici
+    appliquerSon();
+  }
+
+  // Bourdonnement de l'enseigne au néon (js/son-neon.js), selon le bouton son
+  function appliquerSon() {
+    if (!window.SON_NEON) return;
+    if (etat.son && racine.classList.contains("intro-active")) window.SON_NEON.activer();
+    else window.SON_NEON.couper();
   }
 
   /* ============================================================
@@ -740,12 +747,13 @@
     el.texte.textContent = "";
     el.live.textContent = "";
     el.choix.hidden = true;
-    // Caméra de nouveau zoomée sur la porte du milieu, portes cachées,
-    // et seuls ses yeux brillent dans l'arche
+    // Retour dans la salle d'entrée : portes cachées, seuls des yeux
+    // brillent dans l'arche
     racine.classList.remove("vue-portes", "entree-porte");
     el.portes.hidden = true;
     fumer(-1);
     changerScene("yeux");
+    appliquerSon();
     regard.x = regard.y = regard.cibleX = regard.cibleY = 0;
     el.pupilles.style.transform = "";
 
@@ -757,7 +765,7 @@
     el.personnage.classList.add("est-visible");
     if (!reduit) el.personnage.classList.add("apparait");
 
-    setTimeout(() => {
+    etat.minuterie = setTimeout(() => {
       el.bulle.classList.add("est-visible");
       if (!reduit) el.bulle.classList.add("apparait");
       afficherBulle(0);
@@ -772,6 +780,7 @@
     clearTimeout(regard.timerAleatoire);
     etat.regardActif = false;
     marquerVue();
+    if (window.SON_NEON) window.SON_NEON.couper(); // le portfolio est silencieux
 
     el.portfolio.inert = false;
     const section = cible ? document.querySelector(cible) : null;
