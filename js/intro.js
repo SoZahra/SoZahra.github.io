@@ -548,7 +548,7 @@
   }
 
   // Fumée dessinée par js/fond-pixel.js devant une porte (-1 = aucune) ;
-  // viser = la lampe de poche se tourne vers la porte (clavier : la souris,
+  // viser = la lampe à pétrole se place devant la porte (clavier : la souris,
   // elle, guide déjà la lampe)
   function fumer(porte, viser = false) {
     el.decor.dispatchEvent(new CustomEvent("fumee", { detail: { porte, viser } }));
@@ -566,7 +566,7 @@
   }
 
   // 1. la caméra plonge dans la porte d'entrée jusqu'au noir (les yeux disparaissent),
-  // 2. on arrive dans la salle aux trois portes, sombre, avec une lampe de poche,
+  // 2. on arrive dans la salle aux trois portes, sombre, avec une lampe à pétrole,
   // 3. les portes deviennent cliquables et la consigne s'affiche
   function entrerDansPorte() {
     etat.phase = "entree";

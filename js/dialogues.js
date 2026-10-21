@@ -78,7 +78,7 @@ window.INTRO_CONFIG = {
    * cible = id de la section. Supprime ce bloc pour revenir directement
    * au portfolio après la dernière bulle (ou mets des "choix" sur une bulle). */
   portes: {
-    consigne: "Pointe ta lampe vers une porte.",
+    consigne: "Approche ta lampe d'une porte.",
     liste: [
       { libelle: "Projets",       cible: "#projets" },
       { libelle: "whoami",        cible: "#about" },
@@ -367,14 +367,14 @@ window.INTRO_CONFIG = {
   /* ---------- Nom au-dessus de la porte d'entrée ----------
    * Lettres dorées, visibles pendant les dialogues (js/fond-pixel.js).
    * Supprime ce bloc pour une porte sans nom.
-   *   style : "bougies" (bougies sur quelques lettres, cire qui coule,
-   *           flammes qui éclairent les lettres et le mur) ou
+   *   style : "lustre" (lustre qui se balance au vent et torches murales,
+   *           dont les feux éclairent les lettres et le mur) ou
    *           "neon" (enseigne de magasin aux ampoules défaillantes,
    *           avec bourdonnement si le son est activé) */
   inscription: {
     titre: "Fatima Zayani",
     sousTitre: "Portfolio",
-    style: "bougies",
+    style: "lustre",
   },
 
   /* ---------- Son ----------
