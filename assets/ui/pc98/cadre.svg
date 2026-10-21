@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 9 9" shape-rendering="crispEdges">
+  <!-- Cadre PC-98 : 1 px de noir, trait clair de 1 px, intérieur noir presque opaque -->
+  <rect width="9" height="9" fill="#000" fill-opacity="0.88"/>
+  <path d="M1 1h7v7H1z M2 2v5h5V2z" fill="#d8d6e4" fill-rule="evenodd"/>
+</svg>

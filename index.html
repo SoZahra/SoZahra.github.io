@@ -2,128 +2,126 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Coming soon</title>
-  <style>
-    @font-face {
-      font-family: "Cinzel";
-      src: url("fonts/Cinzel-VariableFont_wght.ttf") format("truetype");
-      font-weight: 400 900;
-      font-display: swap;
-    }
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Fatima Zayani — Designer UI/UX & développeuse</title>
+  <meta name="description" content="Portfolio de Fatima Zayani, designer UI/UX et développeuse.">
+  <link rel="stylesheet" href="css/style.css">
 
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-
-    body {
-      background: #000;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #fireflies {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-
-    .title {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.5rem;
-    }
-
-    .ornament {
-      display: block;
-      width: 100%;
-      filter: invert(1);
-    }
-
-    h1 {
-      font-family: "Cinzel", serif;
-      font-size: clamp(2rem, 9vw, 5.5rem);
-      font-weight: normal;
-      text-align: center;
-      margin: 0;
-    }
-  </style>
-</head>
-<body>
-  <canvas id="fireflies"></canvas>
-  <div class="title">
-    <img class="ornament" src="images/ornament-top.svg" alt="">
-    <h1>Coming soon</h1>
-    <img class="ornament" src="images/ornament-bottom.svg" alt="">
-  </div>
-
+  <!-- Configuration (textes + chemins des assets) -->
+  <script src="js/dialogues.js"></script>
   <script>
-    (() => {
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-      const canvas = document.getElementById("fireflies");
-      const ctx = canvas.getContext("2d");
-      const COUNT = 40;
-      let w, h, flies;
-
-      function resize() {
-        const dpr = window.devicePixelRatio || 1;
-        w = innerWidth;
-        h = innerHeight;
-        canvas.width = w * dpr;
-        canvas.height = h * dpr;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Décide AVANT l'affichage si l'intro doit se jouer, pour éviter
+    // un flash du portfolio. On joue l'intro seulement si :
+    //  - aucune ancre dans l'URL (lien direct type /#projets → portfolio),
+    //  - et l'intro n'a jamais été vue (localStorage, peut être bloqué).
+    (function () {
+      var dejaVue = false;
+      try {
+        dejaVue = localStorage.getItem(window.INTRO_CONFIG.cleStockage) === "1";
+      } catch (e) { /* stockage indisponible : on considère "pas vue" */ }
+      if (!location.hash && !dejaVue) {
+        document.documentElement.classList.add("intro-active");
       }
-
-      function spawn() {
-        return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          r: 1 + Math.random() * 1.5,
-          angle: Math.random() * Math.PI * 2,
-          speed: 0.15 + Math.random() * 0.35,
-          phase: Math.random() * Math.PI * 2,
-          blink: 0.01 + Math.random() * 0.02,
-        };
-      }
-
-      function tick() {
-        ctx.clearRect(0, 0, w, h);
-        for (const f of flies) {
-          f.angle += (Math.random() - 0.5) * 0.2;
-          f.x += Math.cos(f.angle) * f.speed;
-          f.y += Math.sin(f.angle) * f.speed;
-          if (f.x < -10) f.x = w + 10;
-          if (f.x > w + 10) f.x = -10;
-          if (f.y < -10) f.y = h + 10;
-          if (f.y > h + 10) f.y = -10;
-
-          f.phase += f.blink;
-          const alpha = 0.2 + 0.8 * Math.max(0, Math.sin(f.phase));
-
-          const glow = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r * 8);
-          glow.addColorStop(0, `rgba(255, 230, 140, ${alpha})`);
-          glow.addColorStop(1, "rgba(255, 230, 140, 0)");
-          ctx.fillStyle = glow;
-          ctx.beginPath();
-          ctx.arc(f.x, f.y, f.r * 8, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        requestAnimationFrame(tick);
-      }
-
-      resize();
-      flies = Array.from({ length: COUNT }, spawn);
-      addEventListener("resize", resize);
-      tick();
+      // Thème actif posé tout de suite : la police et les effets d'écran
+      // du thème s'appliquent aussi au portfolio, sans flash
+      document.documentElement.dataset.themeUi = window.INTRO_CONFIG.themeActif;
     })();
   </script>
+  <script src="js/police-pixel.js" defer></script>
+  <script src="js/personnage-pixel.js" defer></script>
+  <script src="js/fond-pixel.js" defer></script>
+  <script src="js/intro.js" defer></script>
+</head>
+<body>
+  <!-- ===================== INTRO ===================== -->
+  <section id="intro" class="intro" aria-label="Introduction" aria-describedby="intro-aide" tabindex="-1">
+    <p id="intro-aide" class="sr-only"></p>
+
+    <!-- Décor : fond pixel art + portes. La « caméra » est zoomée sur la porte
+         du milieu pendant les dialogues, puis entre dans la porte et arrive
+         dans la salle aux trois portes -->
+    <div class="decor" id="decor">
+      <!-- Fond généré (js/fond-pixel.js), caché si une image est fournie -->
+      <canvas class="fond-pixel" id="fond-pixel" aria-hidden="true"></canvas>
+      <!-- Noir de l'entrée dans la porte -->
+      <div class="voile" aria-hidden="true"></div>
+      <!-- Une porte cliquable par destination (créées par js/intro.js) -->
+      <nav class="portes" id="portes" aria-label="Choisis une porte" hidden></nav>
+    </div>
+
+    <!-- Encadré décoratif en haut à gauche (lignes dans js/dialogues.js) -->
+    <div class="hud" id="hud" aria-hidden="true" hidden></div>
+
+    <!-- Boutons toujours visibles en haut à droite -->
+    <div class="intro-controles">
+      <button type="button" class="btn-cadre" id="btn-son" aria-pressed="false">
+        <svg class="icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/>
+          <path class="icone-son-off" d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path class="icone-son-on" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="sr-only" id="btn-son-libelle"></span>
+      </button>
+      <button type="button" class="btn-cadre" id="btn-passer">
+        <span id="btn-passer-libelle"></span> <kbd aria-hidden="true">Échap</kbd>
+      </button>
+    </div>
+
+    <div class="scene">
+      <!-- Personnage : 3 calques empilés (corps / yeux / pupilles).
+           Caché tant qu'aucune image n'est définie dans js/dialogues.js -->
+      <div class="personnage" id="personnage" aria-hidden="true" hidden>
+        <img class="calque calque-corps" id="calque-corps" alt="">
+        <img class="calque calque-yeux" id="calque-yeux" alt="">
+        <img class="calque calque-pupilles" id="calque-pupilles" alt="">
+      </div>
+
+      <!-- Bulle de dialogue -->
+      <div class="bulle" id="bulle">
+        <div class="bulle-nom" id="bulle-nom"></div>
+        <!-- Texte visible, tapé lettre par lettre (masqué aux lecteurs d'écran) -->
+        <p class="bulle-texte" id="bulle-texte" aria-hidden="true"></p>
+        <!-- Texte complet annoncé d'un coup aux lecteurs d'écran -->
+        <p class="sr-only" id="bulle-live" aria-live="polite"></p>
+        <ul class="choix" id="choix" aria-label="Choix" hidden></ul>
+        <span class="bulle-fleche" id="bulle-fleche" aria-hidden="true"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PORTFOLIO (provisoire) ===================== -->
+  <div id="portfolio" class="portfolio">
+    <header class="site-entete">
+      <a class="site-nom" href="#haut" id="haut">Fatima Zayani</a>
+      <nav aria-label="Navigation principale">
+        <ul>
+          <li><a href="#projets">Projets</a></li>
+          <li><a href="#about">Qui suis-je ?</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section id="projets" class="section" aria-labelledby="titre-projets">
+        <h2 id="titre-projets" tabindex="-1">Mes projets</h2>
+        <p>Section provisoire — les études de cas arriveront ici.</p>
+      </section>
+
+      <section id="about" class="section" aria-labelledby="titre-about">
+        <h2 id="titre-about" tabindex="-1">Qui suis-je ?</h2>
+        <p>Section provisoire — présentation, parcours, outils.</p>
+      </section>
+
+      <section id="contact" class="section" aria-labelledby="titre-contact">
+        <h2 id="titre-contact" tabindex="-1">Me contacter</h2>
+        <p>Section provisoire — liens et formulaire de contact.</p>
+      </section>
+    </main>
+
+    <footer class="site-pied">
+      <button type="button" class="lien-bouton" id="btn-rejouer">Revoir l'intro</button>
+    </footer>
+  </div>
 </body>
 </html>

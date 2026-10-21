@@ -1,0 +1,989 @@
+/* ============================================================
+   Styles du portfolio + de l'intro façon jeu à dialogues
+   Les images des cadres (9-slice) et leurs marges sont injectées
+   par js/intro.js sous forme de variables CSS, depuis js/dialogues.js.
+   ============================================================ */
+
+@font-face {
+  font-family: "Cinzel";
+  src: url("../fonts/Cinzel-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+/* Police bitmap du thème pc98 (OFL, réduite aux caractères latins) */
+@font-face {
+  font-family: "DotGothic16";
+  src: url("../fonts/DotGothic16-latin.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  /* Palette alignée sur le pack d'UI (ardoise sombre, accent bleu) */
+  --fond: #000;
+  --texte: #e8eef8;
+  --texte-doux: #a9b4c6;
+  --accent: #4c9aff;
+  --focus: #ffd166;
+
+  --police: "Cinzel", Georgia, serif;
+  --police-texte: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Échelle entière des cadres (écrasée par la config) */
+  --s: 1;
+  --duree-fondu: 600ms;
+  /* Entrée dans la porte, puis arrivée dans la salle aux trois portes
+     (lues aussi par js/intro.js) */
+  --duree-entree: 1200ms;
+  --duree-arrivee: 700ms;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: var(--police-texte);
+  line-height: 1.5;
+}
+
+/* Masqué visuellement mais lu par les lecteurs d'écran */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible partout (clavier) */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* Focus programmatique sur des éléments non interactifs : pas d'anneau */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
+/* ============================================================
+   États globaux (classes posées sur <html>)
+   - intro-active : l'intro est affichée, le portfolio est caché
+   - intro-sortie : fondu entre l'intro et le portfolio
+   ============================================================ */
+
+.intro {
+  display: none;
+}
+
+.intro-active {
+  overflow: hidden;
+}
+
+.intro-active .intro {
+  display: block;
+}
+
+.intro-active .portfolio {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.intro-active.intro-sortie .intro {
+  opacity: 0;
+  transition: opacity var(--duree-fondu) ease;
+  pointer-events: none;
+}
+
+.intro-active.intro-sortie .portfolio {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity var(--duree-fondu) ease calc(var(--duree-fondu) / 3);
+}
+
+/* ============================================================
+   Composants 9-slice : un cadre étiré via border-image.
+   border-width reste à 0, c'est border-image-width qui dessine
+   les bords ; le padding place le contenu à l'intérieur.
+   ============================================================ */
+
+.bulle,
+.bulle-nom,
+.btn-cadre {
+  border-style: solid;
+  border-width: 0;
+  /* "repeat" pour du pixel art (bords texturés), "stretch" pour du vectoriel */
+  border-image-repeat: var(--repetition, stretch);
+}
+
+/* Mode pixel art (pixelArt dans le thème) : pas de lissage */
+.ui-pixel .bulle,
+.ui-pixel .bulle-nom,
+.ui-pixel .btn-cadre,
+.ui-pixel .bulle-fleche,
+.ui-pixel .calque {
+  image-rendering: pixelated;
+}
+
+/* ============================================================
+   INTRO
+   ============================================================ */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden; /* le décor zoomé déborde de l'écran */
+  font-family: var(--police-texte);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Fond noir ; l'image de fond (config "fond") vient se poser par-dessus */
+  background: var(--fond-image, none) center / cover no-repeat var(--fond);
+}
+
+/* --- Décor : fond + portes, zoomés ensemble comme une caméra ---
+   Pendant les dialogues, la caméra est rapprochée de la porte du milieu ;
+   avec .entree-porte elle plonge dans l'arche jusqu'au noir, puis avec
+   .vue-portes on arrive dans la salle aux trois portes. Le zoom et la
+   position des portes viennent de js/fond-pixel.js (valeurs par défaut
+   si on utilise une image de fond). */
+.decor {
+  --zoom: 1;
+  --zoom-x: 50%;
+  --zoom-y: 60%;
+  --porte-largeur: 16%;
+  --porte-hauteur: 37%;
+  --porte-haut: 41%;
+  --porte-espacement: 28%;
+  --porte-centre: 50%;
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--zoom));
+  transform-origin: var(--zoom-x) var(--zoom-y);
+}
+
+/* On avance dans l'arche, de plus en plus vite (le noir remplit l'écran) */
+.entree-porte .decor {
+  transform: scale(calc(var(--zoom) * 8));
+  transition: transform var(--duree-entree) cubic-bezier(0.55, 0, 0.9, 0.45);
+}
+
+/* De l'autre côté : nouvelle salle, la caméra finit d'avancer en douceur */
+.vue-portes .decor {
+  transform: none;
+  animation: arrivee var(--duree-arrivee) ease-out;
+}
+
+@keyframes arrivee {
+  from { transform: scale(1.12); }
+  to { transform: none; }
+}
+
+/* Noir pendant la traversée de la porte */
+.voile {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.entree-porte .voile {
+  opacity: 1;
+  transition: opacity calc(var(--duree-entree) / 2) ease-in calc(var(--duree-entree) / 2);
+}
+
+.vue-portes .voile {
+  transition: opacity var(--duree-arrivee) ease-out;
+}
+
+/* Fond pixel art généré : même proportions que l'écran, agrandi sans lissage */
+.fond-pixel {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.fond-pixel[hidden] {
+  display: none;
+}
+
+/* --- Portes : un bouton posé sur chaque arche --- */
+.portes {
+  position: absolute;
+  inset: 0;
+  animation: portes-entree 300ms steps(3, end) both;
+}
+
+.portes[hidden] {
+  display: none;
+}
+
+.porte {
+  position: absolute;
+  /* --i : -1, 0, 1… position de la porte par rapport au centre */
+  left: calc(var(--porte-centre) + var(--i) * var(--porte-espacement) - var(--porte-largeur) / 2);
+  top: var(--porte-haut);
+  width: var(--porte-largeur);
+  height: var(--porte-hauteur);
+  padding: 0;
+  border: 0;
+  border-radius: 999px 999px 0 0; /* haut en demi-cercle, comme l'arche */
+  background: none;
+  color: var(--bouton-texte, var(--texte));
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Porte active, avec une image de fond à la place du décor généré :
+   l'ouverture s'éclaire en tramage. (Avec le décor généré, c'est la fumée
+   dessinée par js/fond-pixel.js qui montre la porte survolée.) */
+.decor:not(.avec-linteaux) .porte.est-actif {
+  background:
+    repeating-conic-gradient(rgba(216, 214, 228, 0.35) 0 25%, transparent 0 50%)
+    0 0 / calc(var(--pixel, 4px) * 2) calc(var(--pixel, 4px) * 2);
+}
+
+/* Le tramage + la plaque suffisent à montrer le focus
+   (outline transparent = anneau visible en mode contraste élevé) */
+.porte:focus-visible {
+  outline: 2px solid transparent;
+}
+
+/* Plaque au-dessus de la porte, dans le cadre des boutons du thème */
+.porte-plaque {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  height: max(36px, var(--btn-hauteur, 36px));
+  padding: var(--btn-pad);
+  border-style: solid;
+  border-width: 0;
+  border-image-source: var(--btn-normal);
+  border-image-slice: var(--btn-slice) fill;
+  border-image-width: var(--btn-bord);
+  border-image-repeat: var(--repetition, stretch);
+  white-space: nowrap;
+  font-size: 1rem;
+}
+
+.porte.est-actif .porte-plaque {
+  border-image-source: var(--btn-survol);
+  color: var(--bulle-choix-actif, #fff);
+}
+
+.ui-pixel .porte-plaque {
+  image-rendering: pixelated;
+}
+
+/* Fond généré : le nom est gravé en pixels sur la stèle dessinée par
+   js/fond-pixel.js. Le libellé HTML est posé exactement dessus (variables
+   en % de la porte), invisible : il sert au clic et aux lecteurs d'écran. */
+.avec-linteaux .porte-plaque {
+  top: var(--plaque-haut);
+  bottom: auto;
+  left: var(--plaque-gauche);
+  transform: none;
+  width: var(--plaque-largeur);
+  height: var(--plaque-hauteur);
+  padding: 0;
+  border-image: none;
+  color: transparent;
+  overflow: visible;
+}
+
+/* Porte active : la stèle s'entoure de curseurs */
+.avec-linteaux .porte.est-actif .porte-plaque {
+  border-image: none;
+  color: transparent;
+}
+
+/* Flèches pixel art (triangle 4×7 agrandi ×2) plutôt qu'un caractère :
+   un glyphe n'est pas centré dans sa police, ce dessin l'est au pixel près */
+.avec-linteaux .porte.est-actif .porte-plaque::before,
+.avec-linteaux .porte.est-actif .porte-plaque::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 14px;
+  margin-top: -7px;
+  background: var(--bulle-choix-actif, #fff);
+  -webkit-mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 7' shape-rendering='crispEdges'><path d='M0 0h1v1h1v1h1v1h1v1h-1v1h-1v1h-1v1h-1z'/></svg>") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 7' shape-rendering='crispEdges'><path d='M0 0h1v1h1v1h1v1h1v1h-1v1h-1v1h-1v1h-1z'/></svg>") center / 100% 100% no-repeat;
+}
+
+/* À gauche, pointe vers la stèle */
+.avec-linteaux .porte.est-actif .porte-plaque::before {
+  right: calc(100% + 8px);
+}
+
+/* À droite, le même triangle retourné */
+.avec-linteaux .porte.est-actif .porte-plaque::after {
+  left: calc(100% + 8px);
+  transform: scaleX(-1);
+}
+
+@keyframes portes-entree {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* --- Encadré façon jeu en haut à gauche (même cadre que la bulle) --- */
+.hud {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  z-index: 2;
+  padding: var(--dlg-pad, 12px);
+  border-style: solid;
+  border-width: 0;
+  border-image-source: var(--dlg-image);
+  border-image-slice: var(--dlg-slice) fill;
+  border-image-width: var(--dlg-bord);
+  color: var(--bulle-texte, var(--texte));
+  font-size: 1rem;
+  line-height: 1.25;
+  white-space: pre-line;
+  pointer-events: none;
+}
+
+.hud[hidden] {
+  display: none;
+}
+
+/* --- Boutons du haut (son + passer) --- */
+.intro-controles {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-cadre {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-width: 44px;
+  height: max(44px, var(--btn-hauteur, 44px));
+  padding: var(--btn-pad);
+  border-image-source: var(--btn-normal);
+  border-image-slice: var(--btn-slice) fill;
+  border-image-width: var(--btn-bord);
+  background: none;
+  color: var(--bouton-texte, var(--texte));
+  font: 500 0.9rem/1 var(--police-texte);
+  cursor: pointer;
+}
+
+.btn-cadre:hover {
+  border-image-source: var(--btn-survol);
+}
+
+.btn-cadre:active {
+  border-image-source: var(--btn-presse);
+}
+
+.btn-cadre kbd {
+  font: 0.75rem/1 var(--police-texte);
+  color: inherit;
+  opacity: 0.75;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+.icone {
+  width: 22px;
+  height: 22px;
+}
+
+/* Icône du son selon l'état du bouton */
+#btn-son[aria-pressed="false"] .icone-son-on,
+#btn-son[aria-pressed="true"] .icone-son-off {
+  display: none;
+}
+
+/* --- Scène : personnage + bulle --- */
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end; /* bulle en bas de l'écran, comme dans un jeu */
+  gap: 1.5rem;
+  padding: 88px 16px max(40px, env(safe-area-inset-bottom));
+  overflow-y: auto; /* filet de sécurité sur les très petits écrans */
+  /* La scène couvre l'écran : les clics passent au travers jusqu'aux portes */
+  pointer-events: none;
+}
+
+.scene > * {
+  pointer-events: auto;
+}
+
+/* --- Personnage : calques empilés, même canevas --- */
+.personnage {
+  position: relative;
+  flex: none;
+  height: clamp(150px, 34vh, 300px);
+  aspect-ratio: var(--ratio-perso, 200 / 240);
+  visibility: hidden;
+}
+
+.personnage[hidden] {
+  display: none;
+}
+
+.personnage.est-visible {
+  visibility: visible;
+}
+
+.personnage.apparait {
+  animation: pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: 50% 90%;
+}
+
+/* Petit sautillement quand l'expression change */
+.personnage.sautille {
+  animation: sautille 260ms ease-out;
+  transform-origin: 50% 100%;
+}
+
+.calque {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.calque[hidden] {
+  display: none;
+}
+
+.calque-pupilles {
+  will-change: transform;
+}
+
+/* --- Bulle de dialogue --- */
+.bulle {
+  position: relative;
+  width: min(540px, 100%);
+  transform-origin: 50% 100%;
+  /* espace intérieur du thème : le texte reste dans la zone utile du cadre */
+  padding: var(--dlg-pad, 24px);
+  color: var(--bulle-texte, var(--texte));
+  border-image-source: var(--dlg-image);
+  border-image-slice: var(--dlg-slice) fill;
+  border-image-width: var(--dlg-bord);
+  opacity: 0;
+}
+
+.bulle.est-visible {
+  opacity: 1;
+}
+
+.bulle.apparait {
+  animation: bulle-entree 380ms ease-out both;
+}
+
+.bulle-nom {
+  position: absolute;
+  left: var(--nom-gauche, 24px);
+  /* l'étiquette recouvre légèrement le haut de la bulle */
+  bottom: calc(100% - var(--nom-chevauchement, 2px));
+  min-width: var(--nom-min, 0);
+  height: var(--nom-hauteur, 40px);
+  padding: var(--nom-pad);
+  padding-top: 0;
+  padding-bottom: 0;
+  border-image-source: var(--nom-image);
+  border-image-slice: var(--nom-slice) fill;
+  border-image-width: var(--nom-bord);
+  /* La typo d'affichage est réservée aux noms */
+  font-family: var(--police);
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: var(--nom-hauteur, 40px);
+  text-align: center;
+  color: var(--bulle-nom, var(--texte));
+  /* Inclinaison facultative (à la Animal Crossing), réglée par thème */
+  transform: rotate(var(--nom-inclinaison, 0deg));
+  transform-origin: 0 100%;
+}
+
+.bulle-texte {
+  margin: 0;
+  min-height: 3em; /* deux lignes : la bulle ne change pas de taille */
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+/* Avec des choix, pas besoin de réserver 2 lignes de texte */
+.bulle:has(.choix:not([hidden])) .bulle-texte {
+  min-height: 0;
+}
+
+/* Partie du texte pas encore "tapée" : réserve sa place pour éviter les sauts */
+.bulle-texte .reste {
+  visibility: hidden;
+}
+
+/* Flèche "suite" : une bande d'images (1 image = flèche fixe) */
+.bulle-fleche {
+  position: absolute;
+  right: var(--fleche-droite, 16px);
+  bottom: var(--fleche-bas, 8px);
+  width: var(--fleche-largeur, 32px);
+  height: var(--fleche-hauteur, 32px);
+  background: var(--fleche-image) 0 0 / var(--fleche-bande, 32px) 100% no-repeat;
+  visibility: hidden;
+}
+
+.bulle.attend-suite .bulle-fleche {
+  visibility: visible;
+  animation: clignote 1s steps(1, end) infinite;
+}
+
+/* Flèche en caractère (thème sans image de flèche) */
+.fleche-texte .bulle-fleche {
+  width: auto;
+  height: auto;
+  background: none;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--bulle-texte, var(--texte));
+}
+
+/* Bande animée : on fait défiler les images par paliers */
+.fleche-animee .bulle.attend-suite .bulle-fleche {
+  animation: fleche-bande var(--fleche-duree, 0.66s) steps(var(--fleche-images, 4)) infinite;
+}
+
+/* --- Choix : liste de texte, curseur › devant le choix actif --- */
+.choix {
+  margin: 6px 0 0;
+  padding: 0 0 0 1.2em;
+  list-style: none;
+}
+
+.choix[hidden] {
+  display: none;
+}
+
+.choix-btn {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 8px;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  color: var(--bulle-choix, var(--texte-doux));
+  font: 500 1rem / 1.3 var(--police-texte);
+  text-align: left;
+  cursor: pointer;
+}
+
+.choix-btn.est-actif {
+  color: var(--bulle-choix-actif, #fff);
+}
+
+/* Focus clavier : curseur ›, texte blanc et léger surlignage
+   (outline transparent = anneau visible en mode contraste élevé) */
+.choix-btn:focus-visible {
+  outline: 2px solid transparent;
+  background: var(--bulle-surlignage, rgba(255, 255, 255, 0.07));
+}
+
+.choix-btn::before {
+  content: "›";
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  margin-top: -0.55em;
+  font-size: 1.6em;
+  line-height: 1;
+  color: var(--bulle-choix-actif, #fff);
+  opacity: 0;
+}
+
+.choix-btn.est-actif::before {
+  opacity: 1;
+  animation: curseur 600ms ease-in-out infinite alternate;
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes pop {
+  0% { transform: scale(0.2); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes sautille {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  40% { transform: translateY(-6px) scale(0.98, 1.02); }
+}
+
+@keyframes bulle-entree {
+  0% { opacity: 0; transform: scale(0.6, 0.4); }
+  60% { opacity: 1; transform: scale(1.03, 1.05); }
+  80% { transform: scale(0.99, 0.98); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes fleche-bande {
+  to { background-position: calc(-1 * var(--fleche-bande, 32px)) 0; }
+}
+
+@keyframes clignote {
+  50% { opacity: 0; }
+}
+
+@keyframes curseur {
+  from { transform: translateX(-3px); }
+  to { transform: translateX(1px); }
+}
+
+/* Réduction des animations : ni pop, ni clignotement, ni fondu */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duree-fondu: 0ms;
+    --duree-entree: 0ms;
+    --duree-arrivee: 0ms;
+  }
+
+  .portes,
+  .vue-portes .decor {
+    animation: none;
+  }
+
+  .personnage.apparait,
+  .personnage.sautille,
+  .bulle.apparait,
+  .bulle.attend-suite .bulle-fleche,
+  .fleche-animee .bulle.attend-suite .bulle-fleche,
+  .choix-btn.est-actif::before {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Mobile : bulle en bas, personnage au-dessus
+   ============================================================ */
+
+@media (max-width: 640px) {
+  .scene {
+    gap: 1.25rem;
+    padding: 80px 16px max(16px, env(safe-area-inset-bottom));
+  }
+
+  .personnage {
+    height: clamp(130px, 30vh, 230px);
+  }
+
+  .btn-cadre kbd {
+    display: none;
+  }
+
+  .choix {
+    padding-left: 1.1em;
+  }
+
+  .choix-btn {
+    min-height: 44px; /* zone de tap confortable au doigt */
+  }
+}
+
+/* Écrans très bas (téléphone en paysage) */
+@media (max-height: 520px) {
+  .scene {
+    padding-top: 72px;
+    gap: 0.75rem;
+  }
+
+  .personnage {
+    height: clamp(90px, 26vh, 160px);
+  }
+
+  .bulle-texte {
+    min-height: 0;
+  }
+}
+
+/* ============================================================
+   PORTFOLIO (provisoire)
+   ============================================================ */
+
+.portfolio {
+  position: relative;
+}
+
+.site-entete {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 12px 16px;
+  background: rgba(7, 9, 13, 0.85);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid #232b38;
+}
+
+.site-nom {
+  font: 700 1.25rem/1 var(--police);
+  color: var(--texte);
+  text-decoration: none;
+}
+
+.site-entete ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-entete a:not(.site-nom) {
+  display: inline-block;
+  padding: 10px 2px;
+  color: var(--texte);
+  text-decoration: none;
+}
+
+.site-entete a:not(.site-nom):hover {
+  color: var(--accent);
+}
+
+.section {
+  max-width: 960px;
+  min-height: 80vh;
+  margin: 0 auto;
+  padding: 64px 16px;
+  scroll-margin-top: 64px;
+}
+
+.section h2 {
+  margin: 0 0 16px;
+  font: 700 clamp(1.6rem, 1.3rem + 1.5vw, 2.4rem) / 1.2 var(--police-texte);
+}
+
+.section p {
+  color: var(--texte-doux);
+}
+
+.site-pied {
+  padding: 32px 16px 48px;
+  text-align: center;
+}
+
+.lien-bouton {
+  padding: 12px 16px;
+  background: none;
+  border: 1px solid #52627c;
+  border-radius: 8px;
+  color: var(--texte-doux);
+  font: 1rem var(--police-texte);
+  cursor: pointer;
+}
+
+.lien-bouton:hover {
+  color: var(--texte);
+  border-color: var(--accent);
+}
+
+/* ============================================================
+   Thème pc98 : police bitmap, cadres nets, lignes d'écran CRT
+   (attribut data-theme-ui posé dans le <head> de index.html)
+   ============================================================ */
+
+:root[data-theme-ui="pc98"] {
+  --fond: #000;
+  --texte: #e4e2ee;
+  --texte-doux: #a9a5c2;
+  --accent: #ffffff;
+  --trait: #d8d6e4;
+  --police: "DotGothic16", ui-monospace, monospace;
+  --police-texte: "DotGothic16", ui-monospace, monospace;
+}
+
+/* Police bitmap : tailles multiples de 16 px pour garder des pixels nets */
+[data-theme-ui="pc98"] .bulle-nom,
+[data-theme-ui="pc98"] .btn-cadre,
+[data-theme-ui="pc98"] .choix-btn,
+[data-theme-ui="pc98"] .bulle-texte {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+[data-theme-ui="pc98"] .btn-cadre kbd {
+  font-size: 16px;
+  border-radius: 0;
+}
+
+/* Bulle large et basse, comme une boîte de dialogue de jeu PC-98 */
+[data-theme-ui="pc98"] .bulle {
+  width: min(720px, 100%);
+}
+
+[data-theme-ui="pc98"] .bulle-texte {
+  line-height: 1.75;
+}
+
+[data-theme-ui="pc98"] .choix-btn {
+  border-radius: 0;
+}
+
+/* Apparition en paliers (pas de rebond, plus « ordinateur ») */
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme-ui="pc98"] .bulle.apparait {
+    animation: cadre-pixel 240ms steps(4, end) both;
+  }
+}
+
+@keyframes cadre-pixel {
+  from { opacity: 0; transform: scaleY(0.1); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Lignes d'écran CRT + vignette, par-dessus tout le site (sans bloquer les clics) */
+[data-theme-ui="pc98"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* L'encadré du haut prend trop de place sur un téléphone */
+@media (max-width: 480px) {
+  [data-theme-ui="pc98"] .hud {
+    display: none;
+  }
+}
+
+/* --- Portfolio en style pc98 --- */
+[data-theme-ui="pc98"] .site-entete {
+  background: #000;
+  backdrop-filter: none;
+  border-bottom: 2px solid var(--trait);
+}
+
+[data-theme-ui="pc98"] .site-nom {
+  font: 400 16px/1 var(--police);
+}
+
+/* Menu : le lien survolé passe en vidéo inverse, avec un curseur ▷ */
+[data-theme-ui="pc98"] .site-entete a:not(.site-nom) {
+  padding: 10px 6px;
+}
+
+[data-theme-ui="pc98"] .site-entete a:not(.site-nom):hover,
+[data-theme-ui="pc98"] .site-entete a:not(.site-nom):focus-visible {
+  background: var(--trait);
+  color: #000;
+}
+
+[data-theme-ui="pc98"] .site-entete a:not(.site-nom)::before {
+  content: "▷ ";
+  visibility: hidden;
+}
+
+[data-theme-ui="pc98"] .site-entete a:not(.site-nom):hover::before,
+[data-theme-ui="pc98"] .site-entete a:not(.site-nom):focus-visible::before {
+  visibility: visible;
+}
+
+/* Sections : un panneau encadré par section */
+[data-theme-ui="pc98"] .section {
+  min-height: 0;
+  max-width: 920px;
+  margin: 48px auto;
+  padding: 28px 32px;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+}
+
+[data-theme-ui="pc98"] .section h2 {
+  font: 400 32px/1.25 var(--police-texte);
+}
+
+[data-theme-ui="pc98"] .section p {
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+[data-theme-ui="pc98"] .lien-bouton {
+  padding: 12px 18px;
+  border-style: solid;
+  border-width: 0;
+  border-radius: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  color: var(--texte);
+  font-size: 16px;
+}
+
+[data-theme-ui="pc98"] .lien-bouton:hover {
+  border-image-source: url("../assets/ui/pc98/cadre-survol.svg");
+}
+
+@media (max-width: 640px) {
+  [data-theme-ui="pc98"] .section {
+    margin: 24px 16px;
+    padding: 20px 18px;
+  }
+
+  [data-theme-ui="pc98"] .section h2 {
+    font-size: 24px;
+  }
+}
+
+/* Petits écrans : les linteaux sont proches, pas de curseurs autour du nom */
+@media (max-width: 480px) {
+  .avec-linteaux .porte.est-actif .porte-plaque::before,
+  .avec-linteaux .porte.est-actif .porte-plaque::after {
+    content: none;
+  }
+}
