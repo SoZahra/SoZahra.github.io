@@ -364,13 +364,17 @@ window.INTRO_CONFIG = {
    * Une ligne par entrée ; liste vide = pas d'encadré. Masqué sur petit écran. */
   hud: ["Fatima Zayani ─ Portfolio"],
 
-  /* ---------- Enseigne au-dessus de la porte d'entrée ----------
-   * Lettres dorées lumineuses qui éclairent le mur, comme une vieille
-   * enseigne dont certaines ampoules fonctionnent mal (js/fond-pixel.js).
-   * Visible pendant les dialogues. Supprime ce bloc pour une porte sans nom. */
+  /* ---------- Nom au-dessus de la porte d'entrée ----------
+   * Lettres dorées, visibles pendant les dialogues (js/fond-pixel.js).
+   * Supprime ce bloc pour une porte sans nom.
+   *   style : "bougies" (bougies sur quelques lettres, cire qui coule,
+   *           flammes qui éclairent les lettres et le mur) ou
+   *           "neon" (enseigne de magasin aux ampoules défaillantes,
+   *           avec bourdonnement si le son est activé) */
   inscription: {
     titre: "Fatima Zayani",
     sousTitre: "Portfolio",
+    style: "bougies",
   },
 
   /* ---------- Son ----------

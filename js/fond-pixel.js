@@ -93,17 +93,22 @@
   }
 
   /* ---------- Enseigne au-dessus de la porte d'entrée ----------
-   * Le nom (police "titre") et un sous-titre en lettres dorées lumineuses,
-   * au-dessus de la porte d'entrée, visibles pendant les dialogues. Lettres
-   * doublées (2×2 pixels) si le nom tient ainsi sur deux lignes au plus.
-   * Comme une vieille enseigne de magasin, chaque lettre est une ampoule
-   * qui fonctionne mal : quelques lettres défaillantes grésillent et tombent
-   * parfois en panne, et de temps en temps tout vacille. Les lettres
-   * allumées éclairent le mur autour d'elles (lueur chaude). */
+   * Le nom (police "titre") et un sous-titre en lettres dorées, au-dessus
+   * de la porte d'entrée, visibles pendant les dialogues. Lettres doublées
+   * (2×2 pixels) si le nom tient ainsi sur deux lignes au plus.
+   * Deux styles (clé "style" de l'inscription) :
+   *   "bougies" : des bougies posées sur quelques lettres à haut plat
+   *               (T, F, Z…), dont la cire coule sur les lettres ; leurs
+   *               flammes vacillent et éclairent les lettres et le mur ;
+   *   "neon"    : chaque lettre est une ampoule d'enseigne de magasin qui
+   *               fonctionne mal (lettres défaillantes, coupures), avec un
+   *               bourdonnement (js/son-neon.js) ; les lettres allumées
+   *               éclairent le mur. */
   const INSCRIPTION = CONFIG.inscription;
+  const STYLE = (INSCRIPTION && INSCRIPTION.style) || "bougies";
   const NB_DEFAILLANTES = 4; // lettres du nom qui grésillent et tombent en panne
-  // { lettres: [{ x0, y0, x1, y1, allumee, defaillante, panne, gresille }],
-  //   pixels: Map(index → [type, n° de lettre]) }
+  // { lettres: [{ x0, y0, x1, y1, plat, allumee, defaillante, panne, gresille }],
+  //   pixels: Map(index → [type, n° de lettre]), bougies: [...] }
   let inscription = null;
 
   function preparerInscription(p) {
@@ -136,14 +141,14 @@
     const proprietaire = new Map(); // pixel → n° de lettre
     const lettres = [];
     let nbTitre = 0;
-    for (const l of lignes) {
+    lignes.forEach((l, numLigne) => {
       const x0 = Math.round(p.cx - (l.police.largeur(l.t) * l.e) / 2);
       const cars = Array.from(l.t);
       cars.forEach((car, k) => {
         if (car.trim() === "") return;
         const decalage = k ? l.police.largeur(cars.slice(0, k).join("")) + 1 : 0;
         const n = lettres.length;
-        const lettre = { x0: L, y0: H, x1: 0, y1: 0, allumee: true, defaillante: false, panne: 0, gresille: 0 };
+        const lettre = { x0: L, y0: H, x1: 0, y1: 0, ligne: numLigne, allumee: true, defaillante: false, panne: 0, gresille: 0 };
         l.police.graver(car, (gx, gy) => {
           for (let j = 0; j < l.e; j++) {
             for (let i = 0; i < l.e; i++) {
@@ -154,10 +159,25 @@
             }
           }
         });
+        lettre.titre = l.police === titre;
+        lettre.mot = cars.slice(0, k).filter((c) => c === " ").length; // n° du mot dans la ligne
+        // Haut plat : le plus long trait horizontal de la première ligne
+        {
+          let debut = -1, meilleur = null;
+          for (let x = lettre.x0; x <= lettre.x1 + 1; x++) {
+            const plein = proprietaire.get(lettre.y0 * L + x) === n;
+            if (plein && debut < 0) debut = x;
+            if (!plein && debut >= 0) {
+              if (!meilleur || x - debut > meilleur.l) meilleur = { x: debut, l: x - debut };
+              debut = -1;
+            }
+          }
+          lettre.plat = meilleur && meilleur.l >= 3 * l.e ? meilleur : null;
+        }
         lettres.push(lettre);
         if (l.police === titre) nbTitre++;
       });
-    }
+    });
 
     // Lettres du nom défaillantes, toujours les mêmes (choix déterministe),
     // jamais côte à côte pour que les pannes restent lisibles.
@@ -185,7 +205,151 @@
         if (v < L * H && !pixels.has(v)) pixels.set(v, ["ombre", n]);
       }
     }
-    return { lettres, pixels };
+    return { lettres, pixels, bougies: STYLE === "bougies" ? poserBougies(lettres, nbTitre, e) : [] };
+  }
+
+  /* ---------- Bougies ----------
+   * Deux bougies posées sur des lettres à haut plat : une grande sur le
+   * premier mot du nom et une petite sur le sous-titre, chacune sur la
+   * lettre la plus proche du centre de son mot (la plus large en cas
+   * d'égalité). Chaque bougie : un corps de cire, une mèche, une flamme qui
+   * vacille, et des coulures de cire qui descendent sur la lettre puis
+   * lâchent une goutte. */
+  function poserBougies(lettres, nbTitre, e) {
+    const auCentre = (groupe) => {
+      const avecPlat = groupe.filter((l) => l.plat);
+      if (!avecPlat.length) return null;
+      const centre = (Math.min(...groupe.map((l) => l.x0)) + Math.max(...groupe.map((l) => l.x1))) / 2;
+      const ecart = (l) => Math.abs((l.x0 + l.x1) / 2 - centre);
+      return avecPlat.sort((a, b) => ecart(a) - ecart(b) || b.plat.l - a.plat.l)[0];
+    };
+    const premierMot = lettres.filter((l) => l.titre && l.ligne === 0 && l.mot === 0);
+    const sousTitre = lettres.filter((l) => !l.titre);
+    return [
+      [auCentre(premierMot), false],
+      [auCentre(sousTitre), true],
+    ].filter(([lettre]) => lettre).map(([lettre, petite], n) => {
+      const plat = lettre.plat;
+      const l = petite ? 2 : e === 2 ? 4 : 3;
+      const x = plat.x + Math.floor((plat.l - l) / 2);
+      const h = petite ? 4 : (e === 2 ? 8 : 6);
+      const bas = lettre.y0 - 1;
+      // Coulures sur la lettre, sous la bougie et un peu à côté
+      const positions = petite ? [x + l] : [x - 1, x + 1, x + l];
+      const coulures = positions.map((cx, j) => {
+        const max = (petite ? 2 : 2 + Math.floor(hasard(n * 3 + j, 11) * 4)) * (petite ? 1 : e);
+        return { x: cx, long: Math.max(1, max * hasard(n + j, 5)), max, vitesse: 0.03 + hasard(j, n) * 0.05 };
+      }).filter((c) => c.x >= plat.x && c.x < plat.x + plat.l);
+      return { x, l, h, bas, haut: bas - h + 1, mecheX: x + Math.floor(l / 2), coulures, gouttes: [], intensite: 1, penche: 0, courte: false, rayon: petite ? 18 : RAYON_BOUGIE };
+    });
+  }
+
+  /* ---------- Torches murales ----------
+   * De chaque côté de la porte d'entrée, un peu en hauteur : un support en
+   * fer, un manche en bois et un grand feu animé, qui éclairent les lettres,
+   * l'arche et le mur. Seulement avec le style "bougies". */
+  const RAYON_TORCHE = 60;
+  let torches = [];
+
+  function placerTorches(p) {
+    if (STYLE !== "bougies") return [];
+    const y = p.bas - p.hauteur + 12; // haut de la coupelle, sous le sommet de l'arche
+    return [-1, 1].map((cote) => ({
+      x: p.cx + cote * (p.demiLargeur + 12), y, image: 0, intensite: 1,
+    }));
+  }
+
+  // Feu (du haut vers la coupelle) : b = bord, m = milieu, c = cœur ; trois images
+  const FEU = [
+    ["..b..", ".bmb.", ".bmb.", "bmcmb", "bmcmb", ".mcm.", "..c.."],
+    [".b...", "..bb.", ".bmb.", "bmcmb", "bmccb", ".mcm.", "..c.."],
+    ["...b.", ".bb..", ".bmb.", "bmcmb", "bccmb", ".mcm.", "..c.."],
+  ];
+  // Torche sous le feu : coupelle en fer, bague, manche en bois
+  const TORCHE = ["fffff", ".fff.", "..w..", ".fwf.", "..w..", "..w..", "..w..", ".fff."];
+  const COULEURS_TORCHE = { f: [58, 50, 72], w: [96, 62, 36] };
+
+  function animerTorches() {
+    for (const t of torches) {
+      t.intensite += (0.85 + Math.random() * 0.3 - t.intensite) * 0.5;
+      if (Math.random() < 0.5) t.image = Math.floor(Math.random() * FEU.length);
+    }
+  }
+
+  function dessinerTorches(poser) {
+    const C = COULEURS_BOUGIE;
+    for (const t of torches) {
+      const gauche = t.x - 2;
+      TORCHE.forEach((ligne, j) => {
+        for (let i = 0; i < 5; i++) if (ligne[i] !== ".") poser(gauche + i, t.y + j, COULEURS_TORCHE[ligne[i]]);
+      });
+      FEU[t.image].forEach((ligne, j) => {
+        for (let i = 0; i < 5; i++) {
+          const c = ligne[i];
+          if (c !== ".") poser(gauche + i, t.y - FEU[0].length + j, c === "c" ? C.coeur : c === "m" ? C.milieu : C.bord);
+        }
+      });
+    }
+  }
+
+  function animerBougies() {
+    for (const b of inscription.bougies) {
+      // Flamme : intensité qui vacille, parfois penchée ou plus petite
+      b.intensite += (0.85 + Math.random() * 0.3 - b.intensite) * 0.5;
+      if (Math.random() < 0.15) b.penche = Math.random() < 0.5 ? 0 : Math.random() < 0.5 ? -1 : 1;
+      b.courte = Math.random() < 0.08;
+      // Cire : les coulures s'allongent, puis lâchent une goutte
+      for (const c of b.coulures) {
+        c.long += c.vitesse;
+        if (c.long >= c.max) {
+          b.gouttes.push({ x: c.x, y: b.bas + 1 + c.max, vy: 0 });
+          c.long = c.max * 0.4;
+        }
+      }
+      for (const g of b.gouttes) {
+        g.vy += 0.12;
+        g.y += g.vy;
+      }
+      b.gouttes = b.gouttes.filter((g) => g.y < salles.entree.portes[0].bas); // jusqu'au sol
+    }
+  }
+
+  const COULEURS_BOUGIE = {
+    cire: [232, 220, 192], ombre: [176, 158, 128], reflet: [255, 248, 228], meche: [30, 24, 20],
+    coeur: [255, 250, 220], milieu: [255, 200, 90], bord: [230, 120, 40],
+  };
+  // Flamme (du haut vers la mèche) : b = bord, m = milieu, c = cœur
+  const FLAMME = [".b.", ".m.", "bmb", "bcb", ".c."];
+
+  function dessinerBougies(poser) {
+    const C = COULEURS_BOUGIE;
+    for (const b of inscription.bougies) {
+      // Coulures et gouttes (sous la bougie, par-dessus la lettre)
+      for (const c of b.coulures) {
+        const fin = b.bas + Math.round(c.long);
+        for (let y = b.bas + 1; y <= fin; y++) poser(c.x, y, C.cire);
+        poser(c.x + 1, fin, C.ombre); // petit renflement au bout
+      }
+      for (const g of b.gouttes) poser(g.x, Math.round(g.y), C.cire);
+      // Corps : reflet à gauche, ombre à droite, haut un peu fondu
+      for (let y = b.haut; y <= b.bas; y++) {
+        for (let x = b.x; x < b.x + b.l; x++) {
+          if (y === b.haut && x === b.x + b.l - 1) continue; // bord fondu
+          poser(x, y, x === b.x ? C.reflet : x === b.x + b.l - 1 ? C.ombre : C.cire);
+        }
+      }
+      // Mèche et flamme
+      poser(b.mecheX, b.haut - 1, C.meche);
+      const lignes = b.courte ? FLAMME.slice(2) : FLAMME;
+      lignes.forEach((ligne, j) => {
+        const y = b.haut - 1 - (lignes.length - j);
+        const decale = j < 2 ? b.penche : 0; // le haut de la flamme penche
+        for (let i = 0; i < 3; i++) {
+          const t = ligne[i];
+          if (t !== ".") poser(b.mecheX - 1 + i + decale, y, t === "c" ? C.coeur : t === "m" ? C.milieu : C.bord);
+        }
+      });
+    }
   }
 
   // Une image d'enseigne : coupures de courant générales et lettres défaillantes
@@ -240,10 +404,13 @@
   const RAYON_LUEUR = 16;
   let lueur = null;
 
+  const RAYON_BOUGIE = 36;
+
   function calculerLueur() {
     if (!inscription) return false;
     if (!lueur || lueur.length !== L * H) lueur = new Float32Array(L * H);
     lueur.fill(0);
+    if (STYLE === "bougies") return calculerLueurBougies();
     let uneAllumee = false;
     for (const l of inscription.lettres) {
       if (!l.allumee) continue;
@@ -262,6 +429,27 @@
       }
     }
     return uneAllumee;
+  }
+
+  // Bougies et torches : lumière ronde autour de chaque flamme, qui vacille avec elle
+  function calculerLueurBougies() {
+    const sources = [
+      ...inscription.bougies.map((b) => ({ x: b.mecheX, y: b.haut + 1, rayon: b.rayon, force: 0.85 * b.intensite })),
+      ...torches.map((t) => ({ x: t.x, y: t.y - 3, rayon: RAYON_TORCHE, force: 0.8 * t.intensite })),
+    ];
+    for (const s of sources) {
+      const ax = Math.max(0, s.x - s.rayon), bx = Math.min(L - 1, s.x + s.rayon);
+      const ay = Math.max(0, s.y - s.rayon), by = Math.min(H - 1, s.y + s.rayon);
+      for (let y = ay; y <= by; y++) {
+        for (let x = ax; x <= bx; x++) {
+          const f = 1 - Math.hypot(x - s.x, y - s.y) / s.rayon;
+          if (f <= 0) continue;
+          const i = y * L + x;
+          lueur[i] = 1 - (1 - lueur[i]) * (1 - Math.min(1, f ** 1.5 * s.force));
+        }
+      }
+    }
+    return sources.length > 0;
   }
 
   /* ---------- Mise en page : taille du canevas + position des portes ---------- */
@@ -310,7 +498,7 @@
     memoriserSalle("trois");
 
     // Salle d'entrée : une seule porte, plus grande, au centre
-    const dl = Math.round(Math.min(30, L * 0.14));
+    const dl = Math.round(Math.min(26, L * 0.13));
     const hEntree = Math.round(dl * 2.85);
     const p = { cx: Math.round(L / 2), bas, demiLargeur: dl, hauteur: hEntree, centreArc: bas - hEntree + dl, plaque: null };
     portes = [p];
@@ -318,6 +506,7 @@
     calculerTexture();
     memoriserSalle("entree");
     inscription = preparerInscription(p);
+    torches = placerTorches(p);
 
     // Variables CSS (en % de l'écran) lues par css/style.css
     const pct = (v, total) => `${(v / total) * 100}%`;
@@ -618,7 +807,7 @@
 
           // Lueur de l'enseigne : le mur s'éclaire près des lettres allumées
           const lu = avecLueur ? lueur[i] : 0;
-          if (lu > 0) v = Math.min(1, v + texture[i] * lu * 0.7);
+          if (lu > 0) v = Math.min(1, v + texture[i] * lu * 0.5);
 
           // Entre deux couleurs de la palette, le seuil de Bayer décide
           const f = v * n;
@@ -627,8 +816,8 @@
           const [r, g, b] = palette[Math.min(c, n)];
           const j = i * 4;
           // ... et prend sa couleur chaude
-          px[j] = Math.min(255, r + lu * 90); px[j + 1] = Math.min(255, g + lu * 52);
-          px[j + 2] = b * (1 - lu * 0.3); px[j + 3] = 255;
+          px[j] = Math.min(255, r + lu * 120); px[j + 1] = Math.min(255, g + lu * 60);
+          px[j + 2] = b * (1 - lu * 0.5); px[j + 3] = 255;
           continue;
         }
         const [r, g, b] = palette[Math.min(c, n)];
@@ -649,10 +838,22 @@
     };
     // Enseigne du nom, dans la salle d'entrée seulement
     if (inscription && scene !== "portes") {
+      const A = COULEURS_ENSEIGNE.allumee, E = COULEURS_ENSEIGNE.eteinte;
       for (const [i, [type, n]] of inscription.pixels) {
-        const couleurs = inscription.lettres[n].allumee ? COULEURS_ENSEIGNE.allumee : COULEURS_ENSEIGNE.eteinte;
         const x = i % L;
-        poser(x, (i - x) / L, couleurs[type]);
+        let couleur;
+        if (STYLE === "bougies") {
+          // L'or brille près des flammes et reste sombre loin d'elles
+          const t = Math.min(1, (lueur ? lueur[i] : 0) * 2.2 + 0.08);
+          couleur = E[type].map((c, k) => c + (A[type][k] - c) * t);
+        } else {
+          couleur = inscription.lettres[n].allumee ? A[type] : E[type];
+        }
+        poser(x, (i - x) / L, couleur);
+      }
+      if (STYLE === "bougies") {
+        dessinerBougies(poser);
+        dessinerTorches(poser);
       }
     }
     if (scene === "yeux" && PERSO) {
@@ -746,7 +947,7 @@
     scene = e.detail.etat;
     activerSalle(scene === "portes" ? "trois" : "entree");
     // Le néon ne bourdonne que dans la salle d'entrée, sous l'enseigne
-    if (window.SON_NEON) window.SON_NEON.regler(scene === "yeux" && inscription ? 1 : 0);
+    if (window.SON_NEON) window.SON_NEON.regler(scene === "yeux" && inscription && STYLE === "neon" ? 1 : 0);
     if (scene === "portes") placerLampe(); // la lampe vise d'abord la porte du milieu
     yeux.ouverts = true;
     dessiner(rayon);
@@ -767,7 +968,11 @@
       changement = true;
     }
     if (inscription && scene === "yeux") {
-      animerEnseigne();
+      if (STYLE === "bougies") {
+        animerBougies();
+        animerTorches();
+      }
+      else animerEnseigne();
       changement = true;
     }
     if (scene === "yeux" && --yeux.attente <= 0) {
