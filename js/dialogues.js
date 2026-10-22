@@ -75,12 +75,13 @@ window.INTRO_CONFIG = {
   /* ---------- Portes (après la dernière bulle) ----------
    * On entre dans la porte et on arrive devant une porte par destination ; un clic sur
    * une porte ouvre la section correspondante du portfolio.
-   * cible = id de la section. Supprime ce bloc pour revenir directement
+   * cible = id de la section ; piece = pièce explorable ouverte à la place
+   * (window.PIECES, ex. js/piece-projets.js), avec retour possible aux portes. Supprime ce bloc pour revenir directement
    * au portfolio après la dernière bulle (ou mets des "choix" sur une bulle). */
   portes: {
     consigne: "Approche ta lampe d'une porte.",
     liste: [
-      { libelle: "Projets",       cible: "#projets" },
+      { libelle: "Projets",       cible: "#projets", piece: "projets" },
       { libelle: "whoami",        cible: "#about" },
       { libelle: "Contact",       cible: "#contact" },
     ],
@@ -362,7 +363,7 @@ window.INTRO_CONFIG = {
 
   /* ---------- Encadré en haut à gauche (façon jeu) ----------
    * Une ligne par entrée ; liste vide = pas d'encadré. Masqué sur petit écran. */
-  hud: ["Fatima Zayani ─ Portfolio"],
+  hud: [],
 
   /* ---------- Nom au-dessus de la porte d'entrée ----------
    * Lettres dorées, visibles pendant les dialogues (js/fond-pixel.js).

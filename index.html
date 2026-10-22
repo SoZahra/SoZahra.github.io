@@ -31,6 +31,8 @@
   <script src="js/personnage-pixel.js" defer></script>
   <script src="js/son-neon.js" defer></script>
   <script src="js/fond-pixel.js" defer></script>
+  <script src="js/projets.js" defer></script>
+  <script src="js/piece-projets.js" defer></script>
   <script src="js/intro.js" defer></script>
 </head>
 <body>
@@ -52,6 +54,31 @@
       <div class="voile" aria-hidden="true"></div>
       <!-- Une porte cliquable par destination (créées par js/intro.js) -->
       <nav class="portes" id="portes" aria-label="Choisis une porte" hidden></nav>
+    </div>
+
+    <!-- Pièce « Projets » (js/piece-projets.js) : un vieux bureau ; cliquer
+         dessus ouvre l'inventaire des projets (données : js/projets.js) -->
+    <div class="piece" id="piece-projets" role="region" aria-label="Le bureau des projets" tabindex="-1" hidden>
+      <div class="piece-scene" id="piece-scene">
+        <canvas class="piece-fond" id="piece-fond" aria-hidden="true"></canvas>
+        <button type="button" class="piece-objet" id="piece-bureau">
+          <span class="piece-etiquette" aria-hidden="true">Le bureau</span>
+        </button>
+      </div>
+      <p class="piece-consigne" id="piece-consigne"></p>
+      <button type="button" class="btn-cadre piece-retour" id="piece-retour">◁ Portes</button>
+
+      <div class="inventaire" id="inventaire" role="dialog" aria-modal="true" aria-labelledby="inventaire-titre" hidden>
+        <div class="inventaire-livre">
+          <section class="inventaire-page inventaire-sac">
+            <h2 class="inventaire-titre" id="inventaire-titre"></h2>
+            <ul class="inventaire-grille" id="inventaire-grille" aria-label="Documents"></ul>
+            <p class="inventaire-aide" aria-hidden="true">← ↑ → ↓ choisir · Échap fermer</p>
+          </section>
+          <section class="inventaire-page inventaire-detail" id="inventaire-detail" aria-live="polite"></section>
+        </div>
+        <button type="button" class="btn-cadre inventaire-fermer" id="inventaire-fermer">✕ Fermer</button>
+      </div>
     </div>
 
     <!-- Encadré décoratif en haut à gauche (lignes dans js/dialogues.js) -->

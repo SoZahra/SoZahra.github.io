@@ -410,50 +410,64 @@
     g: [128, 120, 138], G: [170, 160, 178], o: [200, 156, 170], k: [10, 8, 16],
     n: [220, 168, 180], t: [100, 92, 110], f: [176, 140, 152],
   };
-  let souris = null;
+  let souris = null;      // salle d'entrée
+  let sourisTrois = null; // salle aux trois portes : elle fuit la lumière de la lampe
 
-  function placerSouris(p) {
+  function placerSouris(liste) {
     return {
-      x: Math.round(L * 0.25), sol: p.bas + 4, sens: 1, cible: null, attente: 20, image: 0,
-      cachee: 0, porteX: p.cx, porteL: p.demiLargeur,
+      x: Math.round(L * 0.25), sol: liste[0].bas + 4, sens: 1, cible: null, attente: 20, image: 0,
+      cachee: 0, vitesse: 1.6, portes: liste.map((p) => ({ x: p.cx, l: p.demiLargeur })),
     };
   }
 
-  function animerSouris() {
-    const s = souris;
+  const porteAuHasard = (s) => s.portes[Math.floor(Math.random() * s.portes.length)].x;
+
+  // Salle sombre : la lampe se pose près d'elle → elle détale vers la porte
+  // la plus proche du côté opposé à la lumière (ou vers le bord de la salle)
+  function fuirLampe(s) {
+    if (s.cachee > 0 || s.vitesse > 2) return;
+    if (Math.hypot(s.x - lampe.spotX, s.sol - lampe.spotY) > lampe.rayon * 0.45) return;
+    const sens = s.x >= lampe.spotX ? 1 : -1;
+    const devant = s.portes.filter((p) => (p.x - s.x) * sens > 0).sort((a, b) => Math.abs(a.x - s.x) - Math.abs(b.x - s.x));
+    s.cible = devant.length ? devant[0].x : sens > 0 ? L - 6 : 6;
+    s.vitesse = 3.2;
+  }
+
+  function animerSouris(s) {
     s.image++;
     if (s.cachee > 0) { // dans le noir de la porte
-      if (--s.cachee === 0) s.cible = 12 + Math.random() * (L - 24);
+      if (--s.cachee === 0) {
+        s.cible = 12 + Math.random() * (L - 24);
+        s.vitesse = 1.6;
+      }
       return;
     }
     if (s.cible === null) {
       if (--s.attente > 0) return;
       // Nouvelle destination : un coin de la salle, ou la porte (une fois sur quatre)
-      s.cible = Math.random() < 0.25 ? s.porteX : 12 + Math.random() * (L - 24);
+      s.cible = Math.random() < 0.25 ? porteAuHasard(s) : 12 + Math.random() * (L - 24);
       return;
     }
     const ecart = s.cible - s.x;
-    if (Math.abs(ecart) <= 1.6) {
+    if (Math.abs(ecart) <= s.vitesse) {
       s.x = s.cible;
       s.cible = null;
       s.attente = 10 + Math.floor(Math.random() * 40);
-      // Arrivée devant la porte : elle s'y faufile
-      if (Math.abs(s.x - s.porteX) < s.porteL) s.cachee = 40 + Math.floor(Math.random() * 60);
+      // Arrivée devant une porte : elle s'y faufile
+      if (s.portes.some((p) => Math.abs(s.x - p.x) < p.l)) s.cachee = 40 + Math.floor(Math.random() * 60);
+      s.vitesse = 1.6;
       return;
     }
     s.sens = Math.sign(ecart);
-    s.x += s.sens * 1.6;
+    s.x += s.sens * s.vitesse;
   }
 
-  function dessinerSouris(poser) {
-    const s = souris;
+  // f : éclairage (0 = noir), calculé par la salle où elle se trouve
+  function dessinerSouris(poser, s, f) {
     if (s.cachee > 0) return;
     const images = s.cible === null ? SOURIS.arret : SOURIS.course;
     const lignes = images[Math.floor(s.image / (s.cible === null ? 6 : 2)) % 2];
     const gauche = Math.round(s.x) - 5, haut = s.sol - lignes.length + 1;
-    // Éclairée par les feux autour d'elle
-    const i = Math.min(H - 1, s.sol) * L + Math.max(0, Math.min(L - 1, Math.round(s.x)));
-    const f = 0.75 + 0.25 * Math.min(1, (lueur ? lueur[i] : 0) * 1.5);
     lignes.forEach((ligne, j) => {
       for (let k = 0; k < ligne.length; k++) {
         const c = ligne[s.sens < 0 ? ligne.length - 1 - k : k];
@@ -527,7 +541,10 @@
 
     lumiere = { x: L / 2, y: bas - hauteur * 0.7, rayon: Math.max(H * 0.62, L * 0.55) };
     calculerTexture();
+    ajouterDetails();
+    champis = placerChampis();
     memoriserSalle("trois");
+    sourisTrois = placerSouris(portes);
 
     // Salle d'entrée : une seule porte, plus grande, au centre
     const dl = Math.round(Math.min(26, L * 0.13));
@@ -540,7 +557,7 @@
     inscription = preparerInscription(p);
     torches = placerTorches(p);
     lustre = placerLustre(p);
-    souris = placerSouris(p);
+    souris = placerSouris([p]);
 
     // Variables CSS (en % de l'écran) lues par css/style.css
     const pct = (v, total) => `${(v / total) * 100}%`;
@@ -690,6 +707,317 @@
     }
   }
 
+  /* ---------- Détails de la salle aux trois portes ----------
+   * Un vieux mur : briques cassées ou ébréchées (gravats au pied du mur),
+   * fissures, traînées d'humidité, toiles d'araignée dans les coins hauts,
+   * un renfoncement où brûle une bougie, et le nom gravé en haut du mur,
+   * qu'on ne lit qu'en y portant la lampe. Tout est déterministe (même
+   * mur à chaque visite) et ne touche ni les portes, ni les stèles. */
+  let gravure = null; // par pixel : 0 = mur, 1 = creux d'une lettre, 2 = lèvre sous le creux, 3 = joint comblé
+  let niche = null;   // { cx, haut, bas, demi } : intérieur du renfoncement
+  let bougie = null;  // { x, y (flamme), intensite, image }
+  const RAYON_BOUGIE = 30;
+
+  // Dans le renfoncement (marge > 0 : son encadrement compris)
+  function dansNiche(x, y, marge = 0) {
+    if (!niche || y > niche.bas + marge || y < niche.haut - marge) return false;
+    const dx = Math.abs(x - niche.cx), r = niche.demi + marge;
+    const centre = niche.haut + niche.demi;
+    return y >= centre ? dx <= r : Math.hypot(dx, y - centre) <= r;
+  }
+
+  function ajouterDetails() {
+    const p0 = portes[0], bas = p0.bas;
+    const reserve = []; // zones à laisser intactes : { x0, y0, x1, y1 }
+    for (const { plaque } of portes) {
+      if (plaque) reserve.push({ x0: plaque.x - 3, y0: plaque.y - 3, x1: plaque.x + plaque.l + 3, y1: plaque.y + plaque.h + 3 });
+    }
+    const libre = (x, y, marge = 3) =>
+      x >= 0 && y >= 0 && x < L && y <= bas &&
+      distancePorte(x, y) >= 5 + marge && !dansNiche(x, y, 2 + marge) &&
+      !reserve.some((z) => x >= z.x0 && x <= z.x1 && y >= z.y0 && y <= z.y1);
+
+    // 1. Renfoncement : entre les deux premières portes s'il y a la place,
+    //    sinon au-dessus de la stèle du milieu (écran en portrait)
+    const NL = 6, NH = 18; // demi-largeur et hauteur intérieures
+    niche = null;
+    const ecart = portes.length > 1 ? portes[1].cx - p0.cx - 2 * p0.demiLargeur - 10 : 0;
+    if (ecart >= 2 * NL + 8) {
+      const b = bas - Math.round(p0.hauteur * 0.32);
+      niche = { cx: Math.round((p0.cx + portes[1].cx) / 2), haut: b - NH, bas: b, demi: NL };
+    } else {
+      const m = portes[Math.floor((portes.length - 1) / 2)];
+      const b = (m.plaque ? m.plaque.y : m.bas - m.hauteur) - 10;
+      if (b - NH > 40) niche = { cx: m.cx, haut: b - NH, bas: b, demi: NL };
+    }
+    if (niche) reserve.push({ x0: niche.cx - NL - 4, y0: niche.haut - 4, x1: niche.cx + NL + 4, y1: niche.bas + 4 });
+
+    // 2. Nom gravé, centré dans la bande libre en haut du mur
+    gravure = new Int8Array(L * H);
+    const limite = Math.min(...reserve.map((z) => z.y0), bas - p0.hauteur - 5) - 6;
+    if (INSCRIPTION && window.POLICE_PIXEL && limite > 16) {
+      const titre = window.POLICE_PIXEL.police("titre");
+      const e = titre.largeur(INSCRIPTION.titre) * 2 <= L * 0.8 && limite > 40 ? 2 : 1;
+      const sous = window.POLICE_PIXEL.police(e === 2 ? "grande" : "petite");
+      const lignes = titre.decouper(INSCRIPTION.titre, Math.floor((L * 0.85) / e)).map((t) => ({ t, police: titre, e }));
+      if (INSCRIPTION.sousTitre) lignes.push({ t: Array.from(INSCRIPTION.sousTitre).join(" "), police: sous, e: 1 });
+      const hauteurTexte = lignes.reduce((h, l) => h + l.police.HAUTEUR * l.e + 4, -4);
+      let y = Math.max(4, Math.round((limite - hauteurTexte) / 2));
+      const demiTexte = Math.max(...lignes.map((l) => l.police.largeur(l.t) * l.e)) / 2;
+      reserve.push({ x0: L / 2 - demiTexte - 4, y0: y - 3, x1: L / 2 + demiTexte + 4, y1: y + hauteurTexte + 3 });
+      for (const l of lignes) {
+        const x0 = Math.round(L / 2 - (l.police.largeur(l.t) * l.e) / 2);
+        l.police.graver(l.t, (gx, gy) => {
+          for (let j = 0; j < l.e; j++) {
+            for (let i = 0; i < l.e; i++) gravure[(y + gy * l.e + j) * L + x0 + gx * l.e + i] = 1;
+          }
+        });
+        y += l.police.HAUTEUR * l.e + 4;
+      }
+      for (let i = 0; i < L * (H - 1); i++) if (gravure[i] === 1 && gravure[i + L] === 0) gravure[i + L] = 2;
+      // Autour des lettres, les joints des briques sont comblés (pierre lissée
+      // par le graveur) : ils ne coupent plus les traits
+      for (let i = L; i < L * (H - 1); i++) {
+        if (gravure[i] || texture[i] > 0.2) continue;
+        if (gravure[i - 1] || gravure[i + 1] || gravure[i - L] || gravure[i + L]) gravure[i] = 3;
+      }
+    }
+
+    // 3. Briques cassées (trou sombre, rebord éclairé) ou ébréchées,
+    //    avec quelques gravats au pied du mur
+    const gravats = [];
+    let cassees = 0;
+    for (let rangee = 0; rangee * BRIQUE_H < bas - BRIQUE_H && cassees < 7; rangee++) {
+      const decalage = (rangee % 2) * (BRIQUE_L / 2);
+      for (let bx = 0; bx * BRIQUE_L < L + BRIQUE_L && cassees < 7; bx++) {
+        if (hasard(bx * 7.3, rangee * 13.1) < 0.94) continue;
+        const x0 = bx * BRIQUE_L - decalage, y0 = rangee * BRIQUE_H;
+        const x1 = x0 + BRIQUE_L - 2, y1 = y0 + BRIQUE_H - 2;
+        if (![[x0, y0], [x1, y0], [x0, y1], [x1, y1]].every(([x, y]) => libre(x, y))) continue;
+        const entiere = hasard(bx, rangee * 3.7) < 0.45;
+        for (let y = y0; y <= y1; y++) {
+          for (let x = x0; x <= x1; x++) {
+            // Ébréchée : seul un coin manque, au bord irrégulier
+            if (!entiere && (x1 - x) + (y - y0) * 1.6 + hasard(x, y) * 3 > 9) continue;
+            const i = y * L + x;
+            texture[i] = y === y0 || x === x0 ? 0.03            // ombre en haut / à gauche du trou
+              : y === y1 ? 0.3                                   // rebord du bas, éclairé
+              : 0.07 + hasard(x * 5, y) * 0.05;                  // fond du trou
+          }
+        }
+        gravats.push(entiere ? x0 + 4 : x1 - 3);
+        cassees++;
+      }
+    }
+    for (const gx of gravats) {
+      for (let k = 0; k < 5; k++) {
+        const x = Math.round(gx + (hasard(gx, k) - 0.5) * 12), y = bas + 1 + Math.floor(hasard(k, gx) * 3);
+        if (x < 0 || x >= L) continue;
+        texture[y * L + x] = 0.5;
+        if (hasard(x, k) > 0.5 && x + 1 < L) texture[y * L + x + 1] = 0.38;
+      }
+    }
+
+    // 4. Fissures : elles descendent en zigzag, bord droit un peu éclairé
+    for (let k = 0; k < 5; k++) {
+      let x = Math.floor(hasard(k * 3.1, 9.7) * L), y = Math.floor(hasard(5.3, k * 2.3) * (bas - 30)) + 4;
+      const longueur = 12 + Math.floor(hasard(k, 4.4) * 18);
+      for (let t = 0; t < longueur; t++) {
+        if (libre(x, y, 1) && libre(x + 1, y, 1)) {
+          texture[y * L + x] = 0.04;
+          texture[y * L + x + 1] = Math.min(1, texture[y * L + x + 1] + 0.12);
+        }
+        y++;
+        const r = hasard(x * 1.7, y * 2.9);
+        if (r < 0.3) x--; else if (r > 0.7) x++;
+      }
+    }
+
+    // 5. Traînées d'humidité qui coulent depuis un joint
+    for (let k = 0; k < 6; k++) {
+      const x0 = Math.floor(hasard(k * 11.3, 1.9) * L);
+      const y0 = Math.floor(hasard(2.1, k * 7.7) * (bas * 0.6) / BRIQUE_H) * BRIQUE_H + BRIQUE_H - 1;
+      const longueur = 14 + Math.floor(hasard(k, 8.1) * 26);
+      for (let t = 0; t < longueur; t++) {
+        for (let dx = 0; dx < 3; dx++) {
+          const x = x0 + dx, y = y0 + t;
+          if (!libre(x, y, 0) || (dx === 2 && hasard(x, y) > 0.5)) continue;
+          texture[y * L + x] *= 0.62 + 0.38 * (t / longueur);
+        }
+      }
+    }
+
+    // 6. Toiles d'araignée dans les deux coins hauts : fils rayonnants
+    //    et fils tendus entre eux, qui pendent un peu
+    const R = Math.min(22, Math.round(L * 0.08));
+    for (const [ox, sx] of [[0, 1], [L - 1, -1]]) {
+      for (let y = 0; y <= R; y++) {
+        for (let d = 0; d <= R; d++) {
+          const x = ox + sx * d, r = Math.hypot(d, y);
+          if (r > R || r < 1 || !libre(x, y, 0)) continue;
+          const a = Math.atan2(y, d) / (Math.PI / 2) * 4; // 5 fils rayonnants : a = 0..4
+          const surFil = Math.abs(a - Math.round(a)) * r * (Math.PI / 8) < 0.5;
+          const creux = Math.sin((a - Math.floor(a)) * Math.PI) * 0.18; // le fil pend entre deux rayons
+          const surArc = [6, 11, 16, 21].some((rk) => rk <= R && Math.abs(r - rk * (1 + creux)) < 0.45);
+          if (surFil || surArc) texture[y * L + x] = 0.95;
+        }
+      }
+    }
+
+    // 7. Le renfoncement : encadrement de pierres claires, fond sombre,
+    //    tablette en bas où repose la bougie
+    if (niche) {
+      for (let y = niche.haut - 3; y <= niche.bas + 3; y++) {
+        for (let x = niche.cx - NL - 3; x <= niche.cx + NL + 3; x++) {
+          if (x < 0 || x >= L) continue;
+          const i = y * L + x;
+          if (dansNiche(x, y)) {
+            const profondeur = (y - niche.haut) / NH;
+            texture[i] = y >= niche.bas - 1 ? 0.62                                   // tablette
+              : x === niche.cx - NL || y === niche.haut ? 0.08                       // ombre du rebord
+              : 0.2 + 0.12 * profondeur + hasard(x * 3, y) * 0.04;                   // fond
+          } else if (dansNiche(x, y, 3)) {
+            const bloc = Math.floor(x / 4) + Math.floor(y / 4) * 17;
+            texture[i] = dansNiche(x, y, 1) || !dansNiche(x, y, 2) ? 0.2 : 0.72 + hasard(bloc, 3) * 0.12;
+          }
+        }
+      }
+      bougie = { x: niche.cx, y: niche.bas - 9, intensite: 1, image: 0 };
+    } else {
+      bougie = null;
+    }
+  }
+
+  /* ---------- Champignons phosphorescents ----------
+   * Une touffe au pied du mur, entre la 2e et la 3e porte, qui pousse dans
+   * une tache d'humidité. Dans le noir, elle luit d'un bleu-vert froid qui
+   * « respire » et lâche des spores lumineuses ; sous la lampe, la lueur
+   * s'efface et on ne voit plus que des champignons pâles. */
+  let champis = null; // { x, y (bas de la touffe), phase, eclat, spores }
+  const RAYON_CHAMPIS = 42;
+  // C = chapeau, c = bord du chapeau, o = taches, s = pied
+  const CHAMPIS = [
+    ".......cccc.........",
+    ".....ccCoCCcc.......",
+    "....cCCCCCoCCc......",
+    "...cCoCCCCCCCCc.....",
+    "....cccccccccc...ccc.",
+    ".......ss.......cCoCc",
+    ".......ss......cCCCCCc",
+    ".cc....ss......ccccccc",
+    "cCoc...ss.........s...",
+    "cccc..ss.....cc...s...",
+    ".s....ss....cCoc..ss..",
+    ".s....ss....cccc...s..",
+    ".ss..sss.....s....ss..",
+    "..s.ssss....sss.sss...",
+  ];
+  // Petits champignons qui poussent dans les joints du mur, au-dessus
+  const CHAMPI_MUR = [".cc.", "cCoc", ".s..", ".s.."];
+  const POUSSES_MUR = [[8, -17], [-9, -12], [4, -27]]; // décalages depuis le pied de la touffe
+  const COULEURS_CHAMPIS = {
+    // lueur dans le noir / teinte sous la lampe
+    lueur: { C: [130, 246, 222], c: [70, 178, 176], o: [214, 255, 244], s: [90, 170, 162] },
+    lampe: { C: [196, 178, 160], c: [150, 130, 118], o: [226, 214, 196], s: [214, 204, 186] },
+  };
+
+  function placerChampis() {
+    if (portes.length < 3) return null;
+    const a = portes[1], b = portes[2], bas = a.bas;
+    const x = Math.round((a.cx + b.cx) / 2);
+    // Tache d'humidité sur le mur, au-dessus de la touffe
+    for (let y = bas - 34; y <= bas; y++) {
+      for (let dx = -13; dx <= 13; dx++) {
+        const i = y * L + x + dx;
+        const f = Math.hypot(dx / 13, (y - bas) / 34);
+        if (f < 1 && distancePorte(x + dx, y) >= 5) texture[i] *= 0.7 + 0.3 * f + hasard(x + dx, y) * 0.05;
+      }
+    }
+    return { x, y: bas + 2, phase: 0, eclat: 0, spores: [] };
+  }
+
+  // Lueur visible de la touffe : elle respire, et s'efface sous la lampe
+  function preparerChampis() {
+    if (!champis) return;
+    const respire = 0.8 + 0.2 * Math.sin(champis.phase);
+    champis.lampe = Math.min(1, lumiereLampe(champis.x, champis.y - 8) * 1.3);
+    champis.eclat = respire * (1 - champis.lampe);
+  }
+
+  function lumiereChampis(x, y) {
+    if (!champis || champis.eclat <= 0) return 0;
+    const dx = x - champis.x, dy = y - (champis.y - 8);
+    if (dx > RAYON_CHAMPIS || dx < -RAYON_CHAMPIS || dy > RAYON_CHAMPIS || dy < -RAYON_CHAMPIS) return 0;
+    const f = 1 - Math.hypot(dx, dy * 1.2) / RAYON_CHAMPIS;
+    return f > 0 ? f ** 1.4 * champis.eclat : 0;
+  }
+
+  function animerChampis() {
+    champis.phase += 0.09;
+    // Une spore s'échappe de temps en temps et monte en zigzag
+    if (champis.spores.length < 7 && Math.random() < 0.12) {
+      champis.spores.push({ x: champis.x + (Math.random() - 0.5) * 18, y: champis.y - 12, vie: 0 });
+    }
+    for (const s of champis.spores) {
+      s.vie++;
+      s.y -= 0.35;
+      s.x += Math.sin(s.vie * 0.3 + s.y) * 0.3;
+    }
+    champis.spores = champis.spores.filter((s) => s.vie < 60);
+  }
+
+  function dessinerChampis(poser) {
+    const t = champis.eclat;
+    const clair = 0.25 + 0.75 * champis.lampe; // sous la lampe, éclairés comme le reste
+    const sprite = (lignes, gauche, haut) => lignes.forEach((ligne, j) => {
+      for (let i = 0; i < ligne.length; i++) {
+        const c = ligne[i];
+        if (c === ".") continue;
+        const a = COULEURS_CHAMPIS.lueur[c], b = COULEURS_CHAMPIS.lampe[c];
+        poser(gauche + i, haut + j, a.map((v, k) => b[k] * clair * (1 - t) + v * t));
+      }
+    });
+    sprite(CHAMPIS, champis.x - 10, champis.y - CHAMPIS.length + 1);
+    for (const [dx, dy] of POUSSES_MUR) sprite(CHAMPI_MUR, champis.x + dx, champis.y + dy);
+    // Spores : points lumineux qui s'éteignent en montant
+    for (const s of champis.spores) {
+      const f = (1 - s.vie / 60) * Math.max(0.3, t);
+      poser(Math.round(s.x), Math.round(s.y), [150 * f + 20, 255 * f + 10, 230 * f + 20]);
+    }
+  }
+
+  // Lumière de la bougie en (x, y)
+  function lumiereBougie(x, y) {
+    if (!bougie) return 0;
+    const dx = x - bougie.x, dy = y - bougie.y;
+    if (dx > RAYON_BOUGIE || dx < -RAYON_BOUGIE || dy > RAYON_BOUGIE || dy < -RAYON_BOUGIE) return 0;
+    const f = 1 - Math.hypot(dx, dy) / (RAYON_BOUGIE * bougie.intensite);
+    return f > 0 ? f ** 1.4 * 0.95 : 0;
+  }
+
+  // Bougie : cire, mèche, coulure sur la tablette ; flamme qui change de forme
+  const BOUGIE = ["..k..", ".WWW.", ".WwW.", ".WwW.", ".wWw.", "wwWww"];
+  const FLAMMES_BOUGIE = [
+    ["..b..", ".bmb.", "..c.."],
+    ["...b.", ".bm..", "..c.."],
+    [".b...", "..mb.", "..c.."],
+  ];
+  const COULEURS_BOUGIE = { W: [226, 214, 196], w: [184, 166, 150], k: [40, 30, 34] };
+
+  function dessinerBougie(poser) {
+    const flamme = FLAMMES_BOUGIE[bougie.image];
+    const gauche = bougie.x - 2, haut = bougie.y - 1;
+    flamme.forEach((ligne, j) => {
+      for (let i = 0; i < ligne.length; i++) if (ligne[i] !== ".") poser(gauche + i, haut + j, couleurFeu(ligne[i]));
+    });
+    BOUGIE.forEach((ligne, j) => {
+      for (let i = 0; i < ligne.length; i++) {
+        const c = ligne[i];
+        if (c !== ".") poser(gauche + i, haut + 3 + j, COULEURS_BOUGIE[c]);
+      }
+    });
+  }
+
   /* ---------- Fumée qui sort de la porte survolée ----------
    * Des volutes montent dans l'arche et débordent par le haut, une nappe
    * rampe au ras du sol vers les côtés. Chaque bouffée est un disque flou
@@ -779,8 +1107,9 @@
    * l'endroit visé, balance, « respire », et sa flamme vacille. La torche du
    * fond ne donne plus qu'une faible lueur. */
   const TORCHE_DANS_LE_NOIR = 0.5; // part de la torche gardée dans la salle sombre
-  const E_LAMPE = 2;               // la lampe est dessinée en pixels doubles (premier plan)
-  const ANSE = 5 * E_LAMPE;        // de la main au chapeau de la lampe
+  const E_LAMPE = 3;               // la lampe est dessinée en pixels triples (premier plan)
+  const E_MAIN = 2;                // la main et la manche, en pixels doubles
+  const ANSE = 5 * E_MAIN;         // de la main au chapeau de la lampe
   const lampe = {
     spotX: 0, spotY: 0, cibleX: 0, cibleY: 0, // tache de lumière et sa cible (pointeur)
     baseX: 0, baseY: 0, x: 0, y: 0,          // main : position de repos et position actuelle
@@ -792,22 +1121,41 @@
   function placerLampe() {
     lampe.rayon = Math.round(Math.min(L, H) * 0.3);
     lampe.rayonPropre = Math.round(Math.min(L, H) * 0.2);
-    // Main au repos : en bas à droite ; plus haut si la bulle de texte passe dessous
+    placerRepos();
+    viserPorte(Math.floor((salles.trois.portes.length - 1) / 2));
+    lampe.spotX = lampe.cibleX;
+    lampe.spotY = lampe.cibleY;
+    lampe.angle = lampe.vitesse = 0;
+    placerMain();
+  }
+
+  // Main au repos : en bas à droite ; plus haut si la bulle de texte passe dessous
+  function placerRepos() {
     lampe.baseX = Math.round(L * 0.82);
     let bas = H - 2;
     const bulle = document.getElementById("bulle");
     const r = canvas.getBoundingClientRect();
     if (bulle && r.width) {
       const b = bulle.getBoundingClientRect();
-      const gaucheLampe = ((lampe.baseX - 12) / L) * r.width + r.left;
-      if (b.right > gaucheLampe) bas = Math.min(bas, Math.floor(((b.top - r.top) / r.height) * H) - 2);
+      // Haut de la bulle mesuré depuis son bas : son animation d'apparition
+      // (qui la grandit depuis le bas) ne fausse pas la mesure
+      const haut = b.bottom - bulle.offsetHeight;
+      // la lampe peut se décaler vers la gauche quand on vise à gauche
+      const gaucheLampe = ((lampe.baseX - 4 * E_LAMPE - 10) / L) * r.width + r.left;
+      if (b.right > gaucheLampe) bas = Math.min(bas, Math.floor(((haut - r.top) / r.height) * H) - 2);
     }
-    lampe.baseY = bas - LAMPE.length * E_LAMPE - ANSE;
-    viserPorte(Math.floor((salles.trois.portes.length - 1) / 2));
-    lampe.spotX = lampe.cibleX;
-    lampe.spotY = lampe.cibleY;
-    lampe.angle = lampe.vitesse = 0;
-    placerMain();
+    // (marge pour la respiration et le penchement de la main, qui la font descendre)
+    lampe.baseY = bas - LAMPE.length * E_LAMPE - ANSE - 4;
+  }
+
+  // La bulle change de taille (nouvelle consigne, écran tourné…) : la lampe se replace
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => {
+      if (scene !== "portes") return;
+      placerRepos();
+      placerMain();
+      dessiner(rayon);
+    }).observe(document.getElementById("bulle"));
   }
 
   // La lumière se porte sur le milieu de l'ouverture d'une porte
@@ -860,11 +1208,39 @@
     requestAnimationFrame(image);
   }
 
-  // Lumière en (x, y) : tache au point visé + lueur autour de la lampe, qui vacillent
+  /* Faisceau : un cône de lumière part de la flamme et s'élargit jusqu'à la
+   * tache visée, pour qu'on voie bien que la lumière vient de la lampe.
+   * Ses paramètres sont calculés une fois par image (preparerFaisceau). */
+  const faisceau = { dx: 0, dy: 0, long2: 1, long: 1, depart: 3, arrivee: 30 };
+
+  function preparerFaisceau() {
+    faisceau.dx = lampe.spotX - lampe.fx;
+    faisceau.dy = lampe.spotY - lampe.fy;
+    faisceau.long2 = Math.max(1, faisceau.dx * faisceau.dx + faisceau.dy * faisceau.dy);
+    faisceau.long = Math.sqrt(faisceau.long2);
+    faisceau.depart = 2 * E_LAMPE;                         // largeur à la sortie du verre
+    faisceau.arrivee = lampe.rayon * 0.9 * lampe.intensite;  // rejoint le bord de la tache
+  }
+
+  // Force du faisceau en (x, y) : forte sur son axe, s'estompe vers ses bords
+  function lumiereFaisceau(x, y) {
+    const px = x - lampe.fx, py = y - lampe.fy;
+    // t = avancée le long du faisceau (0 à la lampe, 1 à la tache)
+    const t = (px * faisceau.dx + py * faisceau.dy) / faisceau.long2;
+    if (t <= 0 || t >= 1.05) return 0;
+    const ecart = Math.abs(px * faisceau.dy - py * faisceau.dx) / faisceau.long;
+    const demiLargeur = faisceau.depart + (faisceau.arrivee - faisceau.depart) * t;
+    const bord = Math.max(0, 1 - ecart / demiLargeur);
+    // Le faisceau faiblit un peu en s'éloignant, avant de retrouver la tache
+    return bord ** 0.5 * (0.95 - 0.15 * t);
+  }
+
+  // Lumière en (x, y) : tache au point visé, faisceau depuis la lampe
+  // et lueur autour d'elle, qui vacillent ensemble
   function lumiereLampe(x, y) {
     const tache = Math.max(0, 1 - Math.hypot(x - lampe.spotX, y - lampe.spotY) / (lampe.rayon * lampe.intensite));
     const autour = Math.max(0, 1 - Math.hypot(x - lampe.fx, y - lampe.fy) / (lampe.rayonPropre * lampe.intensite));
-    return Math.min(1.25, Math.max(tache ** 0.8 * 1.25, autour ** 1.2 * 0.9));
+    return Math.min(1.25, Math.max(tache ** 0.8 * 1.25, autour ** 1.2 * 0.9, lumiereFaisceau(x, y)));
   }
 
   /* ---------- Éclairage + tramage ---------- */
@@ -873,6 +1249,10 @@
     const n = palette.length - 1;
     const avecFumee = calculerDensite();
     const sombre = scene === "portes";
+    if (sombre) {
+      preparerFaisceau();
+      preparerChampis();
+    }
     const avecLueur = !sombre && calculerLueur();
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < L; x++) {
@@ -886,9 +1266,20 @@
           let eclairage = Math.max(0, 1 - d / rayon) ** 1.3;
           // Salle sombre : faible lueur de la torche, la lampe fait le reste
           const ll = sombre ? lumiereLampe(x, y) : 0;
-          if (sombre) eclairage = Math.max(eclairage * TORCHE_DANS_LE_NOIR, ll);
+          // La bougie du renfoncement éclaire un peu autour d'elle
+          const lb = sombre ? lumiereBougie(x, y) : 0;
+          // ... et les champignons, d'une lueur froide
+          const lc = sombre ? lumiereChampis(x, y) : 0;
+          if (sombre) eclairage = Math.max(eclairage * TORCHE_DANS_LE_NOIR, ll, lb, lc * 0.9);
           // Dans une ouverture, la lampe révèle le couloir qui est derrière
-          const tex = sombre && couloir[i] >= 0 ? Math.max(texture[i], couloir[i] * 3 * ll) : texture[i];
+          let tex = sombre && couloir[i] >= 0 ? Math.max(texture[i], couloir[i] * 3 * ll) : texture[i];
+          // Nom gravé : le creux et sa lèvre ne ressortent que sous la lampe
+          if (sombre && gravure[i]) {
+            const vu = Math.min(1, ll * 1.6);
+            tex = gravure[i] === 1 ? tex * (1 - vu) + 0.02 * vu       // creux : noir sous la lampe
+              : gravure[i] === 2 ? tex * (1 - vu) + 0.8 * vu                // lèvre éclairée
+              : Math.max(tex, 0.5 * vu);                                // pierre lissée autour
+          }
           let v = Math.min(1, tex * eclairage + 0.015);
 
           // Fumée par-dessus le mur (pas sur les stèles : les noms restent lisibles),
@@ -908,10 +1299,13 @@
           if (f - c > BAYER[(y % 4) * 4 + (x % 4)]) c++;
           const [r, g, b] = palette[Math.min(c, n)];
           const j = i * 4;
-          // ... et prend la couleur chaude des feux (ou de la lampe à pétrole)
-          const chaud = sombre ? Math.min(1, ll) * 0.55 : lu;
-          px[j] = Math.min(255, r + chaud * 120); px[j + 1] = Math.min(255, g + chaud * 60);
-          px[j + 2] = b * (1 - chaud * 0.5); px[j + 3] = 255;
+          // ... et prend la couleur chaude des feux (ou de la lampe à pétrole),
+          // ou bleu-vert près des champignons
+          const chaud = sombre ? Math.max(Math.min(1, ll) * 0.55, lb * 0.75) : lu;
+          const froid = Math.min(1, lc * 1.5);
+          px[j] = Math.min(255, r + chaud * 120) * (1 - froid * 0.5);
+          px[j + 1] = Math.min(255, g + chaud * 60 + froid * 80);
+          px[j + 2] = Math.min(255, b * (1 - chaud * 0.5) + froid * 60); px[j + 3] = 255;
           continue;
         }
         const [r, g, b] = palette[Math.min(c, n)];
@@ -956,8 +1350,16 @@
       PERSO.dessinerYeux(p.cx, Math.round(p.bas - p.hauteur * 0.45) + PERSO.HAUTEUR - 9, yeux.ouverts, poser);
     }
     if (scene !== "portes" && souris) {
-      dessinerSouris(poser);
+      // Éclairée par les feux autour d'elle
+      const i = Math.min(H - 1, souris.sol) * L + Math.max(0, Math.min(L - 1, Math.round(souris.x)));
+      dessinerSouris(poser, souris, 0.75 + 0.25 * Math.min(1, (lueur ? lueur[i] : 0) * 1.5));
     } else if (scene === "portes") {
+      if (bougie) dessinerBougie(poser);
+      if (champis) dessinerChampis(poser);
+      // Dans le noir, on la devine à peine ; la lampe ou la bougie la révèlent
+      const s = sourisTrois;
+      const f = 0.12 + 0.88 * Math.min(1, lumiereLampe(s.x, s.sol - 2) + lumiereBougie(s.x, s.sol - 2));
+      dessinerSouris(poser, s, f);
       dessinerLampe(poser);
     }
   }
@@ -981,28 +1383,42 @@
     [".v.b...v.", ".v..bm.v.", ".v.mcm.v.", ".v..c..v."],
     [".v...b.v.", ".v.mb..v.", ".v.mcm.v.", ".v..c..v."],
   ];
-  // Poing qui serre l'anse, vu de côté : pouce en haut, doigts repliés
-  // en bandes (k = contour, S = peau, s = pli entre deux doigts)
+  // Poing qui serre l'anse, vu de profil (tourné vers la gauche), dessiné en
+  // pixels doubles comme la lampe : le pouce avec son ongle (n) passe en
+  // travers, les doigts repliés sont empilés dessous, séparés par leurs
+  // plis (d) et éclairés par la flamme sur leur face du bas (L) ; le dos de la
+  // main et le poignet, dans l'ombre (s), descendent vers la droite.
+  // k = contour, S = peau, H = reflet sur le haut du poing.
   const MAIN = [
-    ".kkk...",
-    "kSSSkk.",
-    "kSSSSSk",
-    "ksssssk",
-    "kSSSSSk",
-    "ksssssk",
-    ".kSSSSk",
-    "..kkkk.",
+    "...kkkkkk.....",
+    ".kkSHSSSSkk...",
+    "kSHSkkkkkkSk..",
+    "kSSknnSSSSkSk.",
+    "ksSkkLLLsskSk.",
+    ".kddkkkkkkkSsk",
+    "kSSSSSSSsSSssk",
+    "kLLLLLSsSSsssk",
+    ".kdddddkSssssk",
+    ".kLLLSSksssk..",
+    "..kkkkkksssk..",
+    "........kssk..",
   ];
+  const ATTACHE_MAIN = { x: 10, y: 8 }; // milieu du poignet : la manche part de là, sous la main
+  const PRISE_MAIN = { x: 5, y: 10 };   // pixel du sprite où l'anse sort du poing
   const COULEURS_LAMPE = {
     f: [52, 46, 64], F: [96, 88, 116], v: [150, 156, 190], o: [150, 110, 50], O: [204, 164, 84],
-    k: [96, 64, 62], S: [204, 166, 146], s: [158, 118, 108], manche: [46, 36, 58], mancheClair: [72, 58, 88],
+    k: [54, 36, 46], S: [196, 170, 162], H: [214, 192, 184], L: [232, 186, 142], s: [150, 120, 122],
+    d: [120, 84, 84], n: [238, 206, 196],
+    // Manche en tissu prune : contour, ombre, tissu, pli éclairé, poignet
+    mancheBord: [24, 16, 30], mancheOmbre: [40, 26, 46], manche: [62, 40, 68],
+    mancheLumiere: [104, 66, 82], poignet: [118, 92, 112],
   };
 
   function dessinerLampe(poser) {
-    const e = E_LAMPE;
-    // Un pixel du sprite = un carré e×e du décor
-    const poserGros = (x, y, c) => {
-      for (let j = 0; j < e; j++) for (let i = 0; i < e; i++) poser(x + i, y + j, c);
+    const e = E_LAMPE, m = E_MAIN;
+    // Un pixel du sprite = un carré t×t du décor
+    const poserGros = (x, y, c, t) => {
+      for (let j = 0; j < t; j++) for (let i = 0; i < t; i++) poser(x + i, y + j, c);
     };
     const C = COULEURS_LAMPE;
     const flamme = FLAMMES_LAMPE[lampe.image];
@@ -1010,12 +1426,29 @@
     const gauche = Math.round(lampe.fx) - 4 * e, haut = Math.round(lampe.y) + ANSE;
     const mx = Math.round(lampe.x), my = Math.round(lampe.y);
 
-    // Bras : un manche qui sort du bord droit de l'écran jusqu'à la main
-    const finX = L + 8, finY = my + 26;
-    const pas = Math.max(Math.abs(finX - mx), Math.abs(finY - my));
-    for (let t = 0; t <= pas; t++) {
-      const x = Math.round(mx + 3 + ((finX - mx) * t) / pas), y = Math.round(my + 2 + ((finY - my) * t) / pas);
-      for (let w = -5; w <= 5; w++) poser(x, y + w, w <= -4 ? C.mancheClair : C.manche);
+    // Main : coin haut gauche du sprite, placé pour que l'anse sorte du poing
+    const mainX = mx - PRISE_MAIN.x * m, mainY = my - PRISE_MAIN.y * m;
+
+    // Bras : une manche qui part du poignet et sort par le bas droit de
+    // l'écran, de plus en plus large (elle se rapproche de nous)
+    const ax = mainX + ATTACHE_MAIN.x * m, ay = mainY + ATTACHE_MAIN.y * m;
+    const vx = L + 14 - ax, vy = my + 44 - ay;
+    const longueur = Math.hypot(vx, vy);
+    const ux = vx / longueur, uy = vy / longueur; // le long du bras
+    const nx = -uy, ny = ux;                      // en travers (n > 0 : dessous)
+    const OURLET = 7 * m;                         // le début de la manche reste caché sous la main
+    for (let t = 0; t <= longueur; t += 0.5) {
+      const demi = 4.5 + t * 0.1;
+      for (let s = -demi; s <= demi; s += 0.5) {
+        const x = Math.round(ax + ux * t + nx * s), y = Math.round(ay + uy * t + ny * s);
+        let c;
+        if (demi - Math.abs(s) < 1) c = C.mancheBord;    // contour
+        else if (t >= OURLET && t < OURLET + 2) c = C.poignet; // ourlet, juste à la sortie de la main
+        else if (s > demi - 3) c = C.mancheLumiere;      // dessous, éclairé par la flamme
+        else if (s < -demi + 3) c = C.mancheOmbre;       // dessus, dans l'ombre
+        else c = C.manche;
+        poser(x, y, c);
+      }
     }
     // Anse : deux fils de la main aux bords du chapeau
     for (const bord of [gauche + 3 * e, gauche + 6 * e - 1]) {
@@ -1025,14 +1458,14 @@
     lignes.forEach((ligne, j) => {
       for (let i = 0; i < ligne.length; i++) {
         const c = ligne[i];
-        if (c !== ".") poserGros(gauche + i * e, haut + j * e, C[c] || couleurFeu(c));
+        if (c !== ".") poserGros(gauche + i * e, haut + j * e, C[c] || couleurFeu(c), e);
       }
     });
-    // Main, par-dessus le haut de l'anse (même échelle que la lampe)
+    // Main, par-dessus le haut de l'anse (pixels doubles, plus petits que la lampe)
     MAIN.forEach((ligne, j) => {
       for (let i = 0; i < ligne.length; i++) {
         const c = ligne[i];
-        if (c !== ".") poserGros(mx - 3 * e + i * e, my - 4 * e + j * e, C[c]);
+        if (c !== ".") poserGros(mainX + i * m, mainY + j * m, C[c], m);
       }
     });
   }
@@ -1108,7 +1541,7 @@
       changement = true;
     }
     if (scene === "yeux" && souris) {
-      animerSouris();
+      animerSouris(souris);
       changement = true;
     }
     if (scene === "portes") {
@@ -1118,6 +1551,14 @@
       if (Math.random() < 0.5) lampe.image = Math.floor(Math.random() * FLAMMES_LAMPE.length);
       lampe.souffle += 0.12;
       placerMain();
+      // Bougie : petite flamme qui danse ; souris qui fuit la lampe
+      if (bougie) {
+        bougie.intensite += (0.88 + Math.random() * 0.24 - bougie.intensite) * 0.6;
+        if (Math.random() < 0.6) bougie.image = Math.floor(Math.random() * FLAMMES_BOUGIE.length);
+      }
+      if (champis) animerChampis();
+      fuirLampe(sourisTrois);
+      animerSouris(sourisTrois);
       changement = true;
     }
     if (inscription && scene === "yeux") {

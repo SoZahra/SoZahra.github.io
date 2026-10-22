@@ -40,7 +40,8 @@
   // État courant de l'intro
   const etat = {
     index: -1,          // bulle en cours
-    // "inactif" | "ecriture" | "attente" | "choix" | "entree" | "portes" | "fin"
+    // "inactif" | "ecriture" | "attente" | "choix" | "entree" | "portes"
+    // | "vers-piece" | "piece" | "fin"
     phase: "inactif",
     minuterie: null,    // timer de la machine à écrire
     position: 0,        // nombre de caractères déjà affichés
@@ -529,7 +530,9 @@
       b.append(plaque);
       b.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (etat.phase === "portes") quitterIntro(p.cible);
+        if (etat.phase !== "portes") return;
+        if (p.piece && window.PIECES && window.PIECES[p.piece]) entrerDansPiece(p.piece);
+        else quitterIntro(p.cible);
       });
       // Lampe pointée sur la porte (survol souris) : elle prend le focus
       // et de la fumée en sort
@@ -599,6 +602,42 @@
   }
 
   /* ============================================================
+     Pièces explorables (window.PIECES) : derrière une porte, une salle
+     à part (ex. le bureau des projets) ; on y entre par un fondu au noir
+     et on peut revenir aux portes
+     ============================================================ */
+
+  function entrerDansPiece(nom) {
+    etat.phase = "vers-piece";
+    etat.piece = nom;
+    fumer(-1);
+    el.bulle.classList.remove("est-visible", "apparait");
+    racine.classList.add("vers-piece");
+    clearTimeout(etat.minuterie);
+    etat.minuterie = setTimeout(() => {
+      el.portes.hidden = true;
+      window.PIECES[nom].ouvrir({ retour: revenirAuxPortes });
+      etat.phase = "piece";
+    }, dureeCss("--duree-piece"));
+  }
+
+  function revenirAuxPortes() {
+    if (etat.phase !== "piece") return;
+    etat.phase = "vers-piece";
+    fermerPiece();
+    // Le noir est encore là (classe vers-piece) : il se dissipe sur les portes
+    etat.minuterie = setTimeout(() => {
+      racine.classList.remove("vers-piece");
+      montrerPortes();
+    }, dureeCss("--duree-piece") / 2);
+  }
+
+  function fermerPiece() {
+    if (etat.piece && window.PIECES && window.PIECES[etat.piece]) window.PIECES[etat.piece].fermer();
+    etat.piece = null;
+  }
+
+  /* ============================================================
      Choix : souris + clavier (flèches haut/bas, Entrée)
      ============================================================ */
 
@@ -658,6 +697,12 @@
 
   function surTouche(e) {
     if (!racine.classList.contains("intro-active") || etat.phase === "fin") return;
+    // Dans une pièce, c'est elle qui gère le clavier (Échap = retour aux portes)
+    if (etat.phase === "piece") return;
+    if (etat.phase === "vers-piece") {
+      e.preventDefault();
+      return;
+    }
 
     if (e.key === "Escape") {
       e.preventDefault();
@@ -701,6 +746,7 @@
 
   function surClic(e) {
     if (e.target.closest("button, a")) return;
+    if (etat.phase === "piece" || etat.phase === "vers-piece") return;
     if (etat.phase === "choix") refocaliserDans(el.choix);
     else if (etat.phase === "portes") refocaliserDans(el.portes);
     else avancer();
@@ -749,7 +795,8 @@
     el.choix.hidden = true;
     // Retour dans la salle d'entrée : portes cachées, seuls des yeux
     // brillent dans l'arche
-    racine.classList.remove("vue-portes", "entree-porte");
+    fermerPiece();
+    racine.classList.remove("vue-portes", "entree-porte", "vers-piece");
     el.portes.hidden = true;
     fumer(-1);
     changerScene("yeux");
@@ -780,6 +827,7 @@
     clearTimeout(regard.timerAleatoire);
     etat.regardActif = false;
     marquerVue();
+    fermerPiece();
     if (window.SON_NEON) window.SON_NEON.couper(); // le portfolio est silencieux
 
     el.portfolio.inert = false;

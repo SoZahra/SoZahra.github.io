@@ -987,3 +987,386 @@ body {
     content: none;
   }
 }
+
+/* ============================================================
+   PIÈCES explorables (derrière une porte) — js/piece-projets.js
+   On y entre par un fondu au noir (classe vers-piece sur <html>).
+   ============================================================ */
+
+:root {
+  --duree-piece: 500ms;
+  --duree-zoom: 650ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duree-piece: 0ms;
+    --duree-zoom: 0ms;
+  }
+}
+
+.vers-piece .voile {
+  opacity: 1;
+  transition: opacity var(--duree-piece) ease;
+}
+
+.piece {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #000;
+  opacity: 0;
+  transition: opacity var(--duree-piece) ease;
+  cursor: default;
+}
+
+.piece[hidden] {
+  display: none;
+}
+
+.piece.est-ouverte {
+  opacity: 1;
+}
+
+.piece:focus {
+  outline: none;
+}
+
+/* La « caméra » : elle se rapproche du bureau quand on clique dessus */
+.piece-scene {
+  position: absolute;
+  inset: 0;
+  transform-origin: var(--bureau-x, 50%) var(--bureau-y, 80%);
+  transition: transform var(--duree-zoom) cubic-bezier(0.45, 0, 0.2, 1), filter var(--duree-zoom) ease;
+}
+
+.zoom-bureau .piece-scene {
+  transform: scale(var(--bureau-zoom, 2));
+}
+
+.inventaire-visible .piece-scene {
+  filter: brightness(0.4);
+}
+
+.piece-fond {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* Zone cliquable posée sur le bureau dessiné (contour doré au survol, dans le canevas) */
+.piece-objet {
+  position: absolute;
+  left: var(--bureau-gauche);
+  top: var(--bureau-haut);
+  width: var(--bureau-largeur);
+  height: var(--bureau-hauteur);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.piece-objet:focus {
+  outline: none; /* le contour doré dessiné autour du bureau sert d'indicateur */
+}
+
+.piece-etiquette {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  padding: 4px 12px;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  color: #f2ca70;
+  font: 400 16px/1.5 var(--police-texte);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.piece-objet:hover .piece-etiquette,
+.piece-objet:focus-visible .piece-etiquette {
+  visibility: visible;
+}
+
+.zoom-bureau .piece-etiquette,
+.zoom-bureau .piece-consigne {
+  visibility: hidden;
+}
+
+.piece-consigne {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: 50%;
+  max-width: calc(100% - 32px - 2 * 160px);
+  margin: 0;
+  padding: 8px 16px;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  font: 400 16px/1.5 var(--police-texte);
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.piece-retour {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+}
+
+.inventaire-visible .piece-retour {
+  visibility: hidden;
+}
+
+/* --- Inventaire : un livre ouvert, la sacoche à gauche, la fiche à droite --- */
+.inventaire {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 72px 16px 24px;
+  animation: cadre-pixel 240ms steps(4, end) both;
+}
+
+.inventaire[hidden] {
+  display: none;
+}
+
+.inventaire-livre {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  width: min(960px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 24px;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  background: #0b0a10;
+  color: var(--texte);
+  font: 400 16px/1.75 var(--police-texte);
+  text-align: left;
+}
+
+.inventaire-page {
+  min-width: 0;
+}
+
+.inventaire-sac {
+  padding-right: 24px;
+  border-right: 2px dashed #3a3650; /* reliure du livre */
+}
+
+.inventaire-titre {
+  margin: 0 0 16px;
+  font: 400 32px/1.25 var(--police-texte);
+  letter-spacing: 0.05em;
+}
+
+.inventaire-grille {
+  display: grid;
+  grid-template-columns: repeat(3, 80px);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inventaire-case {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  padding: 0;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  background: #14121c;
+  cursor: pointer;
+}
+
+/* Trait de la couleur de la catégorie, comme la rareté d'un objet */
+.inventaire-case::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  left: 6px;
+  height: 4px;
+  background: var(--rarete, #888);
+}
+
+.inventaire-case:hover,
+.inventaire-case.est-choisi {
+  border-image-source: url("../assets/ui/pc98/cadre-survol.svg");
+  background: #241f33;
+}
+
+.inventaire-case.est-choisi {
+  outline: 2px solid #f2ca70;
+  outline-offset: 2px;
+}
+
+.inventaire-case:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.icone-document {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.inventaire-aide {
+  margin: 16px 0 0;
+  color: var(--texte-doux);
+  font-size: 16px;
+}
+
+.inventaire-detail {
+  padding-left: 24px;
+}
+
+.inventaire-detail p {
+  margin: 0 0 12px;
+}
+
+.detail-entete {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.icone-grande {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  padding: 8px;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  background: #14121c;
+  box-sizing: content-box;
+}
+
+.detail-titre {
+  margin: 0 0 4px;
+  font: 400 32px/1.25 var(--police-texte);
+}
+
+.inventaire-detail .detail-rarete {
+  margin: 0;
+}
+
+.inventaire-detail .detail-resume {
+  color: var(--texte-doux);
+}
+
+.detail-libelle {
+  color: #f2ca70;
+}
+
+.detail-outils,
+.detail-effets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-outils li {
+  padding: 0 8px;
+  border: 2px solid #3a3650;
+  background: #14121c;
+}
+
+.detail-effets {
+  flex-direction: column;
+  gap: 0;
+  color: #7cc48f;
+}
+
+.detail-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.detail-liens .btn-cadre {
+  text-decoration: none;
+}
+
+.inventaire-fermer {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+}
+
+/* Téléphone : la sacoche au-dessus, la fiche en dessous */
+@media (max-width: 720px) {
+  .inventaire {
+    padding-top: 72px;
+  }
+
+  .inventaire-livre {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .inventaire-sac {
+    padding: 0 0 16px;
+    border-right: 0;
+    border-bottom: 2px dashed #3a3650;
+  }
+
+  .inventaire-grille {
+    grid-template-columns: repeat(auto-fill, 64px);
+    gap: 8px;
+  }
+
+  .inventaire-case {
+    width: 64px;
+    height: 64px;
+  }
+
+  .icone-document {
+    width: 32px;
+    height: 32px;
+  }
+
+  .inventaire-aide {
+    display: none;
+  }
+
+  .inventaire-detail {
+    padding: 16px 0 0;
+  }
+
+  .icone-grande {
+    width: 64px;
+    height: 64px;
+  }
+
+  .detail-titre {
+    font-size: 24px;
+  }
+
+  .piece-consigne {
+    top: auto;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    max-width: calc(100% - 32px);
+  }
+}
