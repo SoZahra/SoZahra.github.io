@@ -2,9 +2,11 @@
  * Le personnage en pixel art (16×32). Pour l'instant, seuls ses yeux sont
  * utilisés (dialogues de l'intro, js/fond-pixel.js) ; le personnage complet
  * et son comportement (creer) sont gardés de côté pour la page « whoami ».
- * Brune, cheveux longs et frange lourde, robe sombre à col claudine, bottes
- * noires à couture jaune façon Dr. Martens. Proportions à la Stardew Valley,
- * ambiance « cozy horror » à la Welcome to Elderfield, palette PC-98.
+ * Brune, cheveux longs et frange lourde. Même tenue que son modèle 3D
+ * (models/fatima.glb) : mage-peintre en long manteau bordeaux brodé d'or,
+ * corset de cuir, épaulière dorée sur l'épaule gauche, gants, ceinture à
+ * fioles, pantalon sombre et hautes bottes noires ; son pinceau a la pointe
+ * dorée qui luit. Proportions à la Stardew Valley, palette PC-98.
  *
  * Chaque sprite est une grille de lettres (une lettre = un pixel, "." = vide) ;
  * la légende des couleurs est dans COULEURS. Le haut du corps (lignes 0 à 25)
@@ -13,27 +15,33 @@
 window.PERSONNAGE_PIXEL = (() => {
   "use strict";
 
-  // Esprit « cozy horror » (à la Welcome to Elderfield) : peau pâle et
-  // grisée, grands yeux sombres au reflet unique, cheveux et robe presque
-  // noirs, col pâle. Couleurs froides, tirées vers les violets du décor
+  // Grands yeux sombres au reflet unique, cheveux presque noirs, peau mate
+  // comme sur son modèle 3D ; le bordeaux et l'or reprennent sa tenue
   // (js/fond-pixel.js l'assombrit en plus selon la lumière de la torche)
   const COULEURS = {
     K: "#0e0c16", // contour
-    H: "#2e2230", // cheveux
-    h: "#4a3646", // reflet des cheveux
-    S: "#b9adb8", // peau
-    s: "#857a8c", // peau dans l'ombre
+    H: "#2a1e26", // cheveux
+    h: "#4a3644", // reflet des cheveux
+    S: "#b4876c", // peau
+    s: "#7c5a50", // peau dans l'ombre
     E: "#0a0810", // yeux
     e: "#dcd6ea", // reflet dans les yeux
-    D: "#4a2c4c", // robe
-    d: "#2e1c34", // robe dans l'ombre
-    L: "#644466", // reflet de la robe
-    w: "#8e88a2", // col claudine
+    D: "#6e2232", // manteau bordeaux
+    d: "#43141f", // manteau dans l'ombre
+    L: "#903646", // reflet du manteau
+    O: "#c9a04e", // broderies, épaulière et boucle dorées
+    o: "#7e5f2a", // or dans l'ombre
+    C: "#3c2c28", // corset de cuir
+    c: "#251b19", // cuir dans l'ombre (ceinture)
+    V: "#e2683a", // fioles de peinture qui luisent
+    M: "#4e3428", // gants
+    N: "#1e1a24", // pantalon
     B: "#171420", // bottes
-    b: "#34304a", // reflet des bottes
-    Y: "#8a7a54", // couture jaune des bottes (ternie)
+    b: "#34304a", // reflet des bottes (revers)
     G: "#f4f0ff", // yeux qui brillent dans le noir
     g: "#5c5a90", // halo autour des yeux
+    P: "#6b4a2c", // manche du pinceau
+    T: "#f2c25a", // pointe du pinceau, dorée et lumineuse
   };
 
   /* ---------- De face ---------- */
@@ -52,25 +60,26 @@ window.PERSONNAGE_PIXEL = (() => {
     "KHHHsSSSSSSsHHHK",
     "KHHHHsSSSSsHHHHK",
     "KHHHHKKssKKHHHHK",
-    "KHHHKwwwwwwKHHHK",
-    "KHHKDDLDDDDdKHHK",
-    "KHKSDLDDDDDdSKHK",
-    "KHKSDDDDDDDdSKHK",
-    "KHKSDDDDDDDdSKHK",
-    ".KKsDDDDDDDdsKK.",
-    "...KDDDDDDDDdK..",
-    "..KDDLDDDDDDDdK.",
-    "..KDLDDDDDDDDdK.",
-    ".KDDDDDDDDDDDDdK",
-    ".KddddddddddddK.",
-    "..KKKKKKKKKKKK..",
+    "KHHHKDOssODKHHHK",
+    "KHHKDLCCCCDdOOoK",
+    "KHKDLCCOOCCdDoOK",
+    "KHKDLCcCCcCdDKHK",
+    "KHKDLcOcVcVdDKHK",
+    ".KKMDLNNNNDdMKK.",
+    "...KDLNNNNNDdK..",
+    "..KDLONNNNNODdK.",
+    "..KDLONNKNNODdK.",
+    ".KDDLONNKNNOdDdK",
+    ".KOOOONNKNNOOOK.",
+    "..KKKNNNKNNNKK..",
   ];
+  // Hautes bottes à revers
   const FACE_JAMBES = [
-    ".....KSK.KSK....",
-    ".....KSK.KSK....",
-    "....KBbBKBbBK...",
+    ".....KbbKbbK....",
+    ".....KBBKBBK....",
+    ".....KBbKBbK....",
     "....KBBBKBBBK...",
-    "...KYYYYKYYYYK..",
+    "...KBBBBKBBBBK..",
     "...KKKKKKKKKKK..",
   ];
   // Clignement : l'œil devient une simple ligne
@@ -92,39 +101,84 @@ window.PERSONNAGE_PIXEL = (() => {
     "KHHHHHHHSSSSsK..",
     "KHHHHHHHKSSsK...",
     "KHHHHHHHHKsK....",
-    "KHHHHHHKwwwwK...",
-    "KHHHHHKDDLDDK...",
-    "KHHHHHKDLDDDK...",
-    "KHHHHHKDDDDdK...",
-    ".KHHHHKDDDDdK...",
-    "..KHHHKDDSDdK...",
-    "....KDDDDDDdK...",
-    "...KDDLDDDDDdK..",
-    "...KDLDDDDDDdK..",
-    "..KDDDDDDDDDDdK.",
-    "..KdddddddddddK.",
-    "...KKKKKKKKKKK..",
+    "KHHHHHHKDDODK...",
+    "KHHHHHKOOoDCK...",
+    "KHHHHHKOoDDCK...",
+    "KHHHHHKDDDCcK...",
+    ".KHHHHKDDDVcK...",
+    "..KHHHKDDMDcK...",
+    "....KDDLDNNNK...",
+    "...KDDLDDONNNK..",
+    "...KDLDDDDONNK..",
+    "..KDDDDDDDDONNK.",
+    "..KOOOOOOOOONNK.",
+    "...KKKKKNNNKKK..",
   ];
   const PROFIL_CLIGNE = PROFIL_HAUT.map((l, y) => (y === 8 ? l.replace("eE", "SS") : l));
   const PAS = [
     // jambes serrées
     [
-      "......KSSK......",
-      "......KSSK......",
+      "......KbbK......",
+      "......KBBK......",
       ".....KBBbBK.....",
       ".....KBBBBBK....",
-      ".....KYYYYYK....",
+      ".....KBBBBBK....",
       ".....KKKKKKK....",
     ],
     // jambes écartées
     [
-      ".....KSKKSK.....",
-      "....KSK..KSK....",
+      ".....KbKKbK.....",
+      "....KBK..KBK....",
       "...KBbK...KBbK..",
       "...KBBBK..KBBBK.",
-      "...KYYYK..KYYYK.",
+      "...KBBBK..KBBBK.",
       "...KKKKK..KKKKK.",
     ],
+  ];
+
+  /* ---------- De dos (page whoami : elle peint, puis se retourne) ----------
+   * Même silhouette que de face (la figurine 3D en a besoin), les cheveux
+   * longs couvrent la tête et le haut du dos. */
+  const DOS_HAUT = [
+    "....KKKKKKKK....",
+    "...KHHHHHHHHK...",
+    "..KHHhhHHHHHHK..",
+    ".KHHhHHHHHHHHHK.",
+    ".KHHHHHHHhHHHHK.",
+    "KHHHHHHHhHHHHHHK",
+    "KHHHHHHhHHHHHHHK",
+    "KHHHHHHhHHHHHHHK",
+    "KHHHHHHHHHHHHHHK",
+    "KHHHHHHHHHHHHHHK",
+    "KHHHHHHHHHHHHHHK",
+    "KHHHHHHHHhHHHHHK",
+    "KHHHHHHHhHHHHHHK",
+    "KHHHHHHHHHHHHHHK",
+    "KHHHHHHHHHHHHHHK",
+    "KoOOdHHHHHHDKHHK",
+    "KOoDdHHHHHHLDKHK",
+    "KHKDdHHHHHHLDKHK",
+    "KHKDdVHHHHcLDKHK",
+    ".KKMdDDHHDLDMKK.",
+    "..KdDDHHDDLDK...",
+    ".KdDODDdDDOLDK..",
+    ".KdDODdOdDOLDK..",
+    "KdDdODdOdDOLDDK.",
+    ".KOOOOOdOOOOOOK.",
+    "..KKNNNKNNNKKK..",
+  ];
+  // Bas du manteau, bottes : silhouette de face vue en miroir
+  const miroir = (l) => [...l].reverse().join("");
+  const DOS_JAMBES = FACE_JAMBES.map(miroir);
+  // En train de peindre : le bras droit (à droite de l'image, de dos) est
+  // levé vers la toile ; il est retiré du corps et redessiné par BRAS_PEINT
+  const DOS_PEINT = DOS_HAUT.map((l, y) => (y >= 16 && y <= 19 ? l.slice(0, 12) + "d" + l.slice(13) : l));
+  // Bras + pinceau, en [colonne, ligne, couleur] depuis le coin du sprite.
+  // Trois positions : le pinceau monte et descend sur la toile.
+  const BRAS_PEINT = [
+    [[13, 16, "D"], [14, 15, "D"], [15, 14, "D"], [16, 13, "M"], [17, 12, "P"], [18, 11, "P"], [19, 10, "T"]],
+    [[13, 16, "D"], [14, 15, "D"], [15, 15, "D"], [16, 14, "M"], [17, 13, "P"], [18, 12, "P"], [19, 11, "T"]],
+    [[13, 16, "D"], [14, 16, "D"], [15, 15, "D"], [16, 15, "M"], [17, 14, "P"], [18, 13, "P"], [19, 13, "T"]],
   ];
 
   const LARGEUR = 16, HAUTEUR = 32;
@@ -234,7 +288,10 @@ window.PERSONNAGE_PIXEL = (() => {
     faceCligne: [...FACE_CLIGNE, ...FACE_JAMBES],
     profil1: [...PROFIL_HAUT, ...PAS[0]],
     profil2: [...PROFIL_HAUT, ...PAS[1]],
+    profilCligne: [...PROFIL_CLIGNE, ...PAS[0]],
+    dos: [...DOS_HAUT, ...DOS_JAMBES],
+    dosPeint: [...DOS_PEINT, ...DOS_JAMBES],
   };
 
-  return { LARGEUR, HAUTEUR, COULEURS, SPRITES, creer, dessinerYeux };
+  return { LARGEUR, HAUTEUR, COULEURS, SPRITES, BRAS_PEINT, creer, dessinerYeux };
 })();

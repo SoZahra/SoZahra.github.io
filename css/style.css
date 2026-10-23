@@ -1036,12 +1036,12 @@ body {
 .piece-scene {
   position: absolute;
   inset: 0;
-  transform-origin: var(--bureau-x, 50%) var(--bureau-y, 80%);
+  transform-origin: var(--objet-x, 50%) var(--objet-y, 80%);
   transition: transform var(--duree-zoom) cubic-bezier(0.45, 0, 0.2, 1), filter var(--duree-zoom) ease;
 }
 
-.zoom-bureau .piece-scene {
-  transform: scale(var(--bureau-zoom, 2));
+.zoom-objet .piece-scene {
+  transform: scale(var(--objet-zoom, 2));
 }
 
 .inventaire-visible .piece-scene {
@@ -1058,10 +1058,10 @@ body {
 /* Zone cliquable posée sur le bureau dessiné (contour doré au survol, dans le canevas) */
 .piece-objet {
   position: absolute;
-  left: var(--bureau-gauche);
-  top: var(--bureau-haut);
-  width: var(--bureau-largeur);
-  height: var(--bureau-hauteur);
+  left: var(--objet-gauche);
+  top: var(--objet-haut);
+  width: var(--objet-largeur);
+  height: var(--objet-hauteur);
   padding: 0;
   border: 0;
   background: none;
@@ -1093,8 +1093,8 @@ body {
   visibility: visible;
 }
 
-.zoom-bureau .piece-etiquette,
-.zoom-bureau .piece-consigne {
+.zoom-objet .piece-etiquette,
+.zoom-objet .piece-consigne {
   visibility: hidden;
 }
 
@@ -1368,5 +1368,542 @@ body {
     top: auto;
     bottom: max(16px, env(safe-area-inset-bottom));
     max-width: calc(100% - 32px);
+  }
+}
+
+/* ============================================================
+   PIÈCE « whoami » — l'atelier (js/piece-whoami.js)
+   Elle peint, se retourne et parle ; un clic sur elle ouvre sa fiche
+   de personnage : figurine 3D (js/figurine-3d.js) + panneau déplié.
+   ============================================================ */
+
+/* Tant qu'elle ne s'est pas retournée, pas d'étiquette au survol */
+.piece-objet[aria-disabled="true"] {
+  cursor: default;
+}
+
+.piece-objet[aria-disabled="true"] .piece-etiquette,
+.zoom-objet .whoami-bulle,
+.piece-whoami.zoom-objet .piece-retour {
+  visibility: hidden;
+}
+
+/* Sa réplique, dans une boîte de dialogue en bas de l'écran */
+.whoami-bulle {
+  position: absolute;
+  left: 50%;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  width: min(720px, calc(100% - 32px));
+  padding: 16px 24px;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  font: 400 16px/1.75 var(--police-texte);
+  text-align: left;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.whoami-bulle[hidden] {
+  display: none;
+}
+
+.whoami-replique {
+  min-height: 3.5em;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .whoami-bulle.est-visible .whoami-replique {
+    animation: cadre-pixel 240ms steps(4, end) both;
+  }
+}
+
+/* Éclair doré quand on clique sur elle (pendant que la caméra s'approche) */
+.eclair {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(circle at var(--objet-x, 50%) var(--objet-y, 60%), #fff6d8 0, rgba(242, 202, 112, 0.7) 18%, rgba(242, 202, 112, 0) 60%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fiche-eclair .eclair {
+    animation: eclair 800ms steps(6, end) 250ms both;
+  }
+}
+
+@keyframes eclair {
+  0% { opacity: 0; }
+  45% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* --- La fiche : fond sombre, rayons dorés, figurine, panneau --- */
+.fiche {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 60%, #2a1c3c 0%, #0c0812 55%, #050308 100%);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.fiche[hidden] {
+  display: none;
+}
+
+.fiche.est-ouverte {
+  opacity: 1;
+}
+
+/* Rayons de lumière qui tournent lentement derrière elle */
+.fiche-rayons {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  width: 200vmax;
+  height: 200vmax;
+  margin: -100vmax 0 0 -100vmax;
+  background: repeating-conic-gradient(from 0deg, rgba(242, 202, 112, 0.1) 0deg 5deg, rgba(242, 202, 112, 0) 5deg 15deg);
+  -webkit-mask-image: radial-gradient(circle, #000 0, transparent 40%);
+  mask-image: radial-gradient(circle, #000 0, transparent 40%);
+  transition: left 900ms cubic-bezier(0.45, 0, 0.2, 1), top 900ms cubic-bezier(0.45, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fiche-rayons {
+    animation: rayons 60s linear infinite;
+  }
+}
+
+@keyframes rayons {
+  to { transform: rotate(360deg); }
+}
+
+.fiche-deployee .fiche-rayons {
+  left: 27%;
+}
+
+.fiche-3d {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  cursor: grab;
+  touch-action: none;
+}
+
+.fiche-3d:active {
+  cursor: grabbing;
+}
+
+/* Sans WebGL : une carte (sprite de face / de dos) qui fait un tour */
+.fiche-repli {
+  display: none;
+}
+
+.sans-3d .fiche-3d {
+  display: none;
+}
+
+.sans-3d .fiche-repli {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  perspective: 800px;
+  transition: transform 900ms cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+.sans-3d.fiche-deployee .fiche-repli {
+  transform: translateX(-23vw);
+}
+
+.fiche-carte {
+  position: relative;
+  width: 160px;
+  height: 320px;
+  transform-style: preserve-3d;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fiche-carte {
+    animation: carte-tour 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+
+@keyframes carte-tour {
+  from { transform: scale(0.1) rotateY(0); }
+  to { transform: scale(1) rotateY(360deg); }
+}
+
+.fiche-carte canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  backface-visibility: hidden;
+}
+
+.fiche-carte-derriere {
+  transform: rotateY(180deg);
+}
+
+.fiche-aide {
+  position: absolute;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 27%;
+  margin: 0;
+  color: var(--texte-doux);
+  font: 400 16px/1.5 var(--police-texte);
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 400ms ease 1.4s;
+  pointer-events: none;
+}
+
+.fiche-deployee .fiche-aide {
+  opacity: 0.8;
+}
+
+.sans-3d .fiche-aide {
+  display: none;
+}
+
+.fiche-fermer {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  z-index: 1;
+}
+
+/* Le panneau se déplie comme un volet qui pivote sur son bord gauche */
+.fiche-panneau {
+  position: absolute;
+  top: 50%;
+  right: max(24px, 4vw);
+  width: min(520px, 48vw);
+  max-height: calc(100% - 128px);
+  overflow: hidden auto;
+  padding: 24px;
+  scrollbar-color: #4a4566 transparent;
+  scrollbar-width: thin;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  background: rgba(11, 10, 16, 0.94);
+  color: var(--texte);
+  font: 400 16px/1.75 var(--police-texte);
+  text-align: left;
+  transform-origin: 0% 50%;
+  transform: translateY(-50%) perspective(1600px) rotateY(-96deg);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 1000ms cubic-bezier(0.18, 0.9, 0.25, 1.12), opacity 250ms ease, visibility 0s linear 1000ms;
+}
+
+.fiche-deployee .fiche-panneau {
+  transform: translateY(-50%) perspective(1600px) rotateY(0);
+  opacity: 1;
+  visibility: visible;
+  transition: transform 1000ms cubic-bezier(0.18, 0.9, 0.25, 1.12), opacity 250ms ease, visibility 0s;
+}
+
+/* Reflet doré qui balaie le panneau une fois déplié */
+.fiche-panneau::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, rgba(255, 236, 180, 0) 35%, rgba(255, 236, 180, 0.22) 50%, rgba(255, 236, 180, 0) 65%);
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fiche-deployee .fiche-panneau::after {
+    animation: balayage 1100ms ease-out 800ms both;
+  }
+}
+
+@keyframes balayage {
+  to { transform: translateX(100%); }
+}
+
+/* Chaque bloc arrive à son tour */
+.fiche-bloc {
+  opacity: 0;
+  transform: translateX(24px);
+  transition: opacity 350ms ease, transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: calc(450ms + var(--i, 0) * 90ms);
+}
+
+.fiche-deployee .fiche-bloc {
+  opacity: 1;
+  transform: none;
+}
+
+.fiche-entete {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.fiche-portrait {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 8px;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  background: #1a1426;
+  box-sizing: content-box;
+  image-rendering: pixelated;
+}
+
+.fiche-titres {
+  flex: 1;
+  min-width: 0;
+}
+
+.fiche-panneau p {
+  margin: 0 0 8px;
+}
+
+.fiche-panneau .fiche-classe {
+  margin: 0;
+  color: #f2ca70;
+}
+
+/* Cinzel : réservée aux noms */
+.fiche-nom {
+  margin: 0;
+  color: #f4ead2;
+  font: 700 32px/1.2 "Cinzel", Georgia, serif;
+  text-shadow: 0 0 12px rgba(242, 202, 112, 0.45);
+}
+
+.fiche-panneau .fiche-etoiles {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0 0;
+  color: #f2ca70;
+}
+
+.fiche-etoiles svg {
+  width: 14px;
+  height: 14px;
+  shape-rendering: crispEdges;
+}
+
+.fiche-rang {
+  align-self: flex-start;
+  padding: 0 8px;
+  border: 2px solid #f2ca70;
+  background: linear-gradient(#5a4113, #2b1e0b);
+  color: #ffe6a0;
+  font: 400 24px/1.5 var(--police-texte);
+  letter-spacing: 0.05em;
+}
+
+.fiche-niveau {
+  margin-top: 16px;
+}
+
+.fiche-panneau .fiche-nv {
+  margin: 0 0 4px;
+}
+
+.fiche-nv strong {
+  color: #f4ead2;
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.fiche-libelle {
+  color: #f2ca70;
+}
+
+.fiche-panneau .fiche-exp {
+  margin: 4px 0 8px;
+  color: var(--texte-doux);
+  text-align: right;
+}
+
+.fiche-panneau .fiche-devise {
+  color: var(--texte-doux);
+}
+
+/* Barres segmentées, qui se remplissent en paliers */
+.fiche-barre {
+  position: relative;
+  display: block;
+  height: 12px;
+  border: 2px solid #3a3650;
+  background: #15121e;
+}
+
+.fiche-barre i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #f2ca70 0 6px, #a57a2a 6px 8px);
+  transition: width 900ms steps(12, end);
+  transition-delay: calc(650ms + var(--i, 0) * 90ms);
+}
+
+.fiche-barre-exp i {
+  background: repeating-linear-gradient(90deg, #7fa8e0 0 6px, #3d5f8f 6px 8px);
+}
+
+.fiche-deployee .fiche-barre i {
+  width: var(--v);
+}
+
+.fiche-sous-titre {
+  margin: 20px 0 10px;
+  padding-bottom: 4px;
+  border-bottom: 2px dashed #3a3650;
+  color: #f2ca70;
+  font: 400 16px/1.5 var(--police-texte);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.fiche-attributs {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fiche-attributs li {
+  display: grid;
+  grid-template-columns: minmax(0, 12em) minmax(0, 1fr) 3ch;
+  gap: 12px;
+  align-items: center;
+}
+
+.fiche-nombre {
+  color: #f4ead2;
+  text-align: right;
+}
+
+.fiche-competences {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fiche-competences li {
+  padding: 0 8px;
+  border: 2px solid #3a3650;
+  background: #14121c;
+}
+
+.fiche-quetes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fiche-annee {
+  color: #f2ca70;
+}
+
+.fiche-lieu {
+  color: var(--texte-doux);
+}
+
+.fiche-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.fiche-liens .btn-cadre {
+  text-decoration: none;
+}
+
+/* Écran étroit ou vertical : elle en haut, le panneau monte du bas
+   (même condition que cadrage() dans js/piece-whoami.js) */
+@media (max-width: 720px), (orientation: portrait) {
+  .fiche-deployee .fiche-rayons {
+    top: 20%;
+    left: 50%;
+  }
+
+  .sans-3d.fiche-deployee .fiche-repli {
+    transform: translateY(-30vh) scale(0.5);
+  }
+
+  .fiche-aide {
+    display: none;
+  }
+
+  .fiche-panneau {
+    top: auto;
+    right: 16px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 16px;
+    width: auto;
+    max-height: 58%;
+    padding: 16px;
+    transform-origin: 50% 100%;
+    transform: perspective(1200px) rotateX(-90deg);
+  }
+
+  .fiche-deployee .fiche-panneau {
+    transform: perspective(1200px) rotateX(0);
+  }
+
+  .fiche-nom {
+    font-size: 24px;
+  }
+
+  .fiche-portrait {
+    width: 48px;
+    height: 48px;
+  }
+
+  .fiche-attributs li {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 3ch;
+  }
+
+  .whoami-bulle {
+    padding: 12px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fiche,
+  .fiche-panneau,
+  .fiche-bloc,
+  .fiche-barre i,
+  .fiche-rayons,
+  .sans-3d .fiche-repli {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  /* La bulle occupe le bas : la consigne de l'atelier reste en haut */
+  .piece-whoami .piece-consigne {
+    top: calc(max(16px, env(safe-area-inset-top)) + 56px);
+    bottom: auto;
   }
 }

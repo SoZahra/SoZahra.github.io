@@ -817,13 +817,13 @@
     }
     const pct = (v, t) => `${(v / t) * 100}%`;
     const s = el.piece.style;
-    s.setProperty("--bureau-gauche", pct(ax, L));
-    s.setProperty("--bureau-haut", pct(ay, H));
-    s.setProperty("--bureau-largeur", pct(bx - ax + 1, L));
-    s.setProperty("--bureau-hauteur", pct(by - ay + 1, H));
-    s.setProperty("--bureau-x", pct((ax + bx) / 2, L));
-    s.setProperty("--bureau-y", pct((ay + by) / 2, H));
-    s.setProperty("--bureau-zoom", String(Math.min(2.6, (L * 0.8) / (bx - ax), (H * 0.6) / (by - ay)).toFixed(2)));
+    s.setProperty("--objet-gauche", pct(ax, L));
+    s.setProperty("--objet-haut", pct(ay, H));
+    s.setProperty("--objet-largeur", pct(bx - ax + 1, L));
+    s.setProperty("--objet-hauteur", pct(by - ay + 1, H));
+    s.setProperty("--objet-x", pct((ax + bx) / 2, L));
+    s.setProperty("--objet-y", pct((ay + by) / 2, H));
+    s.setProperty("--objet-zoom", String(Math.min(2.6, (L * 0.8) / (bx - ax), (H * 0.6) / (by - ay)).toFixed(2)));
   }
 
   /* ---------- Rendu : éclairage des bougies + tramage ---------- */
@@ -1217,7 +1217,7 @@
     inventaireOuvert = true;
     survol = false;
     dessiner();
-    el.piece.classList.add("zoom-bureau");
+    el.piece.classList.add("zoom-objet");
     clearTimeout(minuterie);
     minuterie = setTimeout(() => {
       el.inventaire.hidden = false;
@@ -1233,7 +1233,7 @@
     inventaireOuvert = false;
     clearTimeout(minuterie);
     el.inventaire.hidden = true;
-    el.piece.classList.remove("inventaire-visible", "zoom-bureau");
+    el.piece.classList.remove("inventaire-visible", "zoom-objet");
     el.bureau.focus({ preventScroll: true });
   }
 
