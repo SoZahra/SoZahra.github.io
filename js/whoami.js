@@ -17,6 +17,12 @@
  *   histoire    : paragraphes (tableau de chaînes)
  *   quetes      : parcours [{ annee, titre, lieu }]
  *   liens       : [{ libelle, url }]
+ *   tenues      : skins du modèle 3D, la 1re est celle par défaut
+ *                 [{ nom, modele, vignette, yeuxFermes?, buste? }]
+ *                 yeuxFermes : texture aux paupières fermées (clignement)
+ *                 buste      : true si le modèle s'arrête au buste (cadrage)
+ *   fond        : (facultatif) image de fond de la fiche, ex. "images/fond.jpg" ;
+ *                 sans elle, c'est l'atelier, flouté, qu'on voit derrière
  *
  * ⚠ Seuls le nom, la classe, la devise et le lien GitHub sont vrais : le
  *   reste (marqué « Exemple ») est à remplacer par tes informations.
@@ -58,5 +64,20 @@ window.WHOAMI = {
 
   liens: [
     { libelle: "GitHub", url: "https://github.com/SoZahra" },
+  ],
+
+  tenues: [
+    {
+      nom: "Mage-peintre",
+      modele: "models/fatima.glb",
+      yeuxFermes: "models/fatima-yeux-fermes.jpg",
+      vignette: "images/tenues/peintre.jpg",
+      buste: true,
+    },
+    {
+      nom: "Armure",
+      modele: "models/fatima-armure.glb",
+      vignette: "images/tenues/armure.jpg",
+    },
   ],
 };

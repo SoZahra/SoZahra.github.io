@@ -49,7 +49,9 @@
   // qui ne sont ni éclairées ni tramées : le nom gravé reste lisible.
   // couloir : texture du couloir derrière les portes, révélée par la lampe
   // dans la salle sombre (-1 = pas dans une ouverture)
-  let L, H, texture, couloir, fixe, image, lumiere, portes;
+  // seuil : pour chaque pixel d'une ouverture, n° de la porte et distance
+  // au bord (ombre de l'embrasure) ; -1 ailleurs
+  let L, H, texture, couloir, seuil, fixe, image, lumiere, portes;
 
   /* ---------- Deux salles ----------
    * "entree" : une seule grande porte, le nom gravé au-dessus (dialogues) ;
@@ -58,10 +60,26 @@
    * les recopie dans les variables ci-dessus, utilisées par le dessin. */
   const salles = {};
   function activerSalle(nom) {
-    ({ portes, texture, couloir, fixe, lumiere } = salles[nom]);
+    ({ portes, texture, couloir, seuil, fixe, lumiere } = salles[nom]);
   }
   function memoriserSalle(nom) {
-    salles[nom] = { portes, texture, couloir, fixe, lumiere };
+    salles[nom] = { portes, texture, couloir, seuil, fixe, lumiere };
+  }
+
+  /* ---------- Aperçu des pièces derrière les portes ----------
+   * Dans la salle aux trois portes, chaque arche laisse deviner sa pièce
+   * (window.PIECES[nom].apercu() : js/piece-projets.js, piece-whoami.js,
+   * piece-contact.js), réduite de moitié, sombre, révélée par la lampe ; le
+   * feu ou les bougies de la pièce y luisent un peu d'eux-mêmes. Sans
+   * aperçu, c'est le couloir de briques. */
+  let apercus = [];
+  function preparerApercus() {
+    const liste = (CONFIG.portes && CONFIG.portes.liste) || [];
+    apercus = liste.map((p) => {
+      const piece = p.piece && window.PIECES && window.PIECES[p.piece];
+      if (!piece || !piece.apercu) return null;
+      try { return piece.apercu(); } catch (e) { return null; }
+    });
   }
 
   /* ---------- Stèles : le nom de chaque porte gravé au-dessus ----------
@@ -602,6 +620,7 @@
   function calculerTexture() {
     texture = new Float32Array(L * H);
     couloir = new Float32Array(L * H).fill(-1);
+    seuil = new Int8Array(L * H * 2).fill(-1);
     const bas = portes[0].bas;
     for (let y = 0; y < H; y++) {
       const rangee = Math.floor(y / BRIQUE_H);
@@ -625,6 +644,10 @@
           const joint = y % 5 === 4 || (x + (Math.floor(y / 5) % 2) * 4) % 8 === 7;
           const fond = Math.max(0, 1 - (p.bas - y) / p.hauteur);
           couloir[i] = joint ? 0.06 : (0.16 + hasard(x * 3, y) * 0.08) * (0.45 + 0.55 * fond);
+          let k = 0;
+          while (k < portes.length - 1 && Math.abs(x - portes[k + 1].cx) < Math.abs(x - portes[k].cx)) k++;
+          seuil[i * 2] = k;
+          seuil[i * 2 + 1] = Math.min(100, Math.round(-d));
           continue;
         }
         if (d < 5) {
@@ -1271,7 +1294,12 @@
           // ... et les champignons, d'une lueur froide
           const lc = sombre ? lumiereChampis(x, y) : 0;
           if (sombre) eclairage = Math.max(eclairage * TORCHE_DANS_LE_NOIR, ll, lb, lc * 0.9);
-          // Dans une ouverture, la lampe révèle le couloir qui est derrière
+          // Dans une ouverture, la lampe révèle la pièce qui est derrière
+          const a = sombre && seuil[i * 2] >= 0 ? apercus[seuil[i * 2]] : null;
+          if (a) {
+            pixelApercu(px, i, x, y, a, ll, avecFumee ? densite[i] : 0);
+            continue;
+          }
           let tex = sombre && couloir[i] >= 0 ? Math.max(texture[i], couloir[i] * 3 * ll) : texture[i];
           // Nom gravé : le creux et sa lèvre ne ressortent que sous la lampe
           if (sombre && gravure[i]) {
@@ -1285,8 +1313,9 @@
           // Fumée par-dessus le mur (pas sur les stèles : les noms restent lisibles),
           // éclairée elle aussi pour rester visible dans l'ombre
           if (avecFumee && densite[i] > 0) {
-            const a = densite[i];
-            v = v * (1 - a) + (0.6 + 0.3 * eclairage) * a;
+            // Gris fumé, assez sombre et un peu transparent (blanc, ça faisait vapeur)
+            const a = densite[i] * 0.8;
+            v = v * (1 - a) + (0.28 + 0.27 * eclairage) * a;
           }
 
           // Lueur de l'enseigne : le mur s'éclaire près des lettres allumées
@@ -1315,6 +1344,46 @@
     }
     dessinerPremierPlan(px);
     ctx.putImageData(image, 0, 0);
+  }
+
+  // Un pixel de la pièce vue par l'arche : ses propres couleurs, réduites
+  // (ECHELLE_APERCU pixels de la pièce par pixel du mur, moyennés) pour en
+  // voir l'essentiel, très sombres, éclairées par la lampe ; plus noir
+  // contre l'embrasure
+  const ECHELLE_APERCU = 2;
+  function pixelApercu(px, i, x, y, a, ll, fumee) {
+    const p = portes[seuil[i * 2]];
+    const img = a.image, s = ECHELLE_APERCU;
+    // Cadrage : centré sur le point d'intérêt, sans sortir de la pièce
+    const demi = p.demiLargeur * s;
+    const cx = Math.max(demi, Math.min(img.width - demi, a.x));
+    const bas = Math.min(img.height, Math.max(a.bas, p.hauteur * s));
+    const ax0 = Math.round(cx + (x - p.cx) * s), ay0 = Math.round(bas - (p.bas - y) * s);
+    let r = 0, g = 0, b = 0, n = 0, flamme = false;
+    for (let dy = 0; dy < s; dy++) {
+      for (let dx = 0; dx < s; dx++) {
+        const ax = ax0 + dx, ay = ay0 + dy;
+        if (ax < 0 || ay < 0 || ax >= img.width || ay >= img.height) continue;
+        const k = (ay * img.width + ax) * 4;
+        r += img.data[k]; g += img.data[k + 1]; b += img.data[k + 2]; n++;
+        if (img.data[k] >= 236 && img.data[k + 2] < 160) flamme = true;
+      }
+    }
+    if (n) { r /= n; g /= n; b /= n; }
+    const bord = Math.min(1, seuil[i * 2 + 1] / 4);
+    const f = Math.min(0.75, 0.05 + ll * 0.6) * (0.3 + 0.7 * bord);
+    // Les flammes de la pièce restent visibles même dans le noir
+    const e = Math.max(f, flamme ? 0.55 : 0);
+    r *= e; g *= e; b *= e;
+    // Teinte chaude de la lampe
+    const chaud = Math.min(1, ll) * 0.25;
+    r = Math.min(255, r * (1 + chaud)); b *= 1 - chaud * 0.6;
+    if (fumee > 0) {
+      const a = fumee * 0.8, gris = 60 + 50 * ll;
+      r = r * (1 - a) + gris * a; g = g * (1 - a) + gris * 0.95 * a; b = b * (1 - a) + gris * 1.05 * a;
+    }
+    const j = i * 4;
+    px[j] = r; px[j + 1] = g; px[j + 2] = b; px[j + 3] = 255;
   }
 
   // Enseigne, yeux, souris (salle d'entrée) ou lampe à pétrole (salle aux trois portes)
@@ -1474,6 +1543,7 @@
     miseEnPage();
     fumee.bouffees = []; // positions calculées pour l'ancienne mise en page
     placerLampe();
+    if (scene === "portes") preparerApercus();
     rayon = lumiere.rayon;
     dessiner(rayon);
   }
@@ -1521,7 +1591,10 @@
     activerSalle(scene === "portes" ? "trois" : "entree");
     // Le néon ne bourdonne que dans la salle d'entrée, sous l'enseigne
     if (window.SON_NEON) window.SON_NEON.regler(scene === "yeux" && inscription && STYLE === "neon" ? 1 : 0);
-    if (scene === "portes") placerLampe(); // la lampe commence devant la porte du milieu
+    if (scene === "portes") {
+      placerLampe(); // la lampe commence devant la porte du milieu
+      preparerApercus();
+    }
     yeux.ouverts = true;
     dessiner(rayon);
   });

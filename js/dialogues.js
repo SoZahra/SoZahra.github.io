@@ -76,14 +76,14 @@ window.INTRO_CONFIG = {
    * On entre dans la porte et on arrive devant une porte par destination ; un clic sur
    * une porte ouvre la section correspondante du portfolio.
    * cible = id de la section ; piece = pièce explorable ouverte à la place
-   * (window.PIECES, ex. js/piece-projets.js, js/piece-whoami.js), avec retour possible aux portes. Supprime ce bloc pour revenir directement
+   * (window.PIECES, ex. js/piece-projets.js, js/piece-whoami.js, js/piece-contact.js), avec retour possible aux portes. Supprime ce bloc pour revenir directement
    * au portfolio après la dernière bulle (ou mets des "choix" sur une bulle). */
   portes: {
     consigne: "Approche ta lampe d'une porte.",
     liste: [
       { libelle: "Projets",       cible: "#projets", piece: "projets" },
       { libelle: "whoami",        cible: "#about",   piece: "whoami" },
-      { libelle: "Contact",       cible: "#contact" },
+      { libelle: "Contact",       cible: "#contact", piece: "contact" },
     ],
   },
 

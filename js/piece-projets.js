@@ -30,6 +30,12 @@
     grille: $("inventaire-grille"),
     detail: $("inventaire-detail"),
     fermer: $("inventaire-fermer"),
+    toile: $("inventaire-toile"),
+    onglets: $("inventaire-onglets"),
+    compteurs: $("inventaire-compteurs"),
+    rayon: $("inventaire-rayon"),
+    total: $("inventaire-total"),
+    vitrine: $("inventaire-vitrine"),
   };
   if (!DONNEES || !el.piece || !el.canvas) return;
 
@@ -1093,123 +1099,227 @@
     return c;
   }
 
-  /* ---------- Inventaire ---------- */
-  let choisi = 0;
+  /* ---------- Inventaire ----------
+   * Plein écran façon menu de jeu : onglets (catégories) en haut, grille de
+   * cases à gauche, le document en grand au centre, sa fiche à droite,
+   * les touches en bas. */
+  const NOMS_DOCUMENTS = {
+    parchemin: "Parchemin", lettre: "Lettre scellée", carnet: "Carnet",
+    carte: "Carte", plan: "Plans", grimoire: "Grimoire",
+  };
+  let choisi = 0;      // indice dans DONNEES.liste
+  let filtre = "tous"; // "tous" ou une clé de DONNEES.categories
+  let visibles = [];   // indices des projets de l'onglet affiché
   let inventaireOuvert = false;
   let minuterie = null;
   const duree = (ms) => (mouvementReduit.matches ? 0 : ms);
 
-  function remplirGrille() {
-    el.titre.textContent = DONNEES.titre || "Projets";
-    const cases = DONNEES.liste.map((p, k) => {
-      const li = document.createElement("li");
-      const b = document.createElement("button");
+  const creer = (balise, classe, texte) => {
+    const n = document.createElement(balise);
+    if (classe) n.className = classe;
+    if (texte != null) n.textContent = texte;
+    return n;
+  };
+  const losange = () => creer("span", "fiche-losange");
+
+  // Dernière année citée ("2023 – 2024" → 2024), pour trier
+  function anneeDe(p) {
+    const m = String(p.annee || "").match(/\d{4}/g);
+    return m ? Number(m[m.length - 1]) : 0;
+  }
+  // Du plus récent au plus ancien (tri stable : l'ordre du fichier départage)
+  const ORDRE = DONNEES.liste.map((p, k) => k).sort((a, b) => anneeDe(DONNEES.liste[b]) - anneeDe(DONNEES.liste[a]));
+
+  /* Fond peint : coups de pinceau sombres, une lueur ambrée derrière le
+   * document, puis tramage de Bayer, comme le reste de l'intro */
+  const PINCEAU = [[46, 36, 24], [24, 32, 36], [58, 44, 26], [10, 10, 14], [34, 26, 34], [30, 34, 28]];
+  function peindreToile() {
+    const c = el.toile;
+    const L2 = Math.ceil(innerWidth / 3);
+    const H2 = Math.ceil(innerHeight / 3);
+    c.width = L2;
+    c.height = H2;
+    const buf = new Float32Array(L2 * H2 * 3);
+    for (let i = 0; i < L2 * H2; i++) buf.set([14, 13, 18], i * 3);
+
+    const traits = Math.round((L2 * H2) / 500);
+    for (let t = 0; t < traits; t++) {
+      // Surtout des traits verticaux au centre, horizontaux sur les côtés
+      const x0 = Math.random() * L2;
+      const y0 = Math.random() * H2;
+      const auCentre = Math.abs(x0 / L2 - 0.5) < 0.2;
+      const angle = (auCentre || Math.random() < 0.3 ? Math.PI / 2 : 0) + (Math.random() - 0.5) * 0.5;
+      const long = 20 + Math.random() * (auCentre ? H2 * 0.6 : L2 * 0.25);
+      const large = 3 + Math.random() * 10;
+      const force = 0.15 + Math.random() * 0.35;
+      const couleur = PINCEAU[Math.floor(Math.random() * PINCEAU.length)];
+      const ca = Math.cos(angle), sa = Math.sin(angle);
+      const r = Math.ceil(long / 2 + large);
+      for (let y = Math.max(0, Math.floor(y0 - r)); y < Math.min(H2, y0 + r); y++) {
+        for (let x = Math.max(0, Math.floor(x0 - r)); x < Math.min(L2, x0 + r); x++) {
+          const u = (x - x0) * ca + (y - y0) * sa;   // le long du trait
+          const v = -(x - x0) * sa + (y - y0) * ca;  // en travers
+          if (Math.abs(u) > long / 2 || Math.abs(v) > large / 2) continue;
+          // Poils du pinceau : chaque rangée en travers a sa propre charge
+          const poil = 0.4 + 0.6 * hasard(Math.floor(v * 1.5) + t * 7, t);
+          const a = force * poil * (1 - Math.pow(Math.abs(u) / (long / 2), 3));
+          const i = (y * L2 + x) * 3;
+          for (let k = 0; k < 3; k++) buf[i + k] += (couleur[k] - buf[i + k]) * a;
+        }
+      }
+    }
+
+    const img = new ImageData(L2, H2);
+    for (let y = 0; y < H2; y++) {
+      for (let x = 0; x < L2; x++) {
+        const i = y * L2 + x;
+        const dx = x / L2 - 0.5, dy = y / H2 - 0.45;
+        const lueur = Math.max(0, 1 - Math.hypot(dx * 2.2, dy * 2.6));       // derrière le document
+        const vignette = 1 - Math.min(0.7, Math.hypot(dx * 1.4, (y / H2 - 0.5) * 1.6) * 0.8);
+        const seuil = BAYER[(y & 3) * 4 + (x & 3)];
+        const chaud = [70, 46, 20];
+        for (let k = 0; k < 3; k++) {
+          const val = (buf[i * 3 + k] + chaud[k] * lueur * lueur) * vignette;
+          img.data[i * 4 + k] = Math.min(255, Math.floor(val / 12 + seuil) * 12);
+        }
+        img.data[i * 4 + 3] = 255;
+      }
+    }
+    c.getContext("2d").putImageData(img, 0, 0);
+  }
+
+  function remplirOnglets() {
+    el.titre.replaceChildren(creer("span", "inventaire-sceau"), DONNEES.titre || "Projets");
+    const cles = ["tous", ...Object.keys(DONNEES.categories).filter((c) => DONNEES.liste.some((p) => p.categorie === c))];
+    el.onglets.replaceChildren(...cles.map((cle) => {
+      const b = creer("button", "inventaire-onglet", cle === "tous" ? "Tous" : DONNEES.categories[cle].libelle);
       b.type = "button";
-      b.className = "inventaire-case";
+      b.dataset.cle = cle;
+      b.addEventListener("click", () => filtrer(cle, true));
+      return b;
+    }));
+    const annees = ORDRE.map((k) => anneeDe(DONNEES.liste[k])).filter(Boolean);
+    const compteurs = [creer("span", "", `${DONNEES.liste.length} documents`)];
+    if (annees.length) {
+      const debut = Math.min(...annees), fin = Math.max(...annees);
+      compteurs.push(creer("span", "", debut === fin ? String(fin) : `${debut} – ${fin}`));
+    }
+    compteurs.forEach((s) => s.prepend(losange()));
+    el.compteurs.replaceChildren(...compteurs);
+  }
+
+  // Onglet : ne garde que les projets de la catégorie
+  function filtrer(cle, focaliser) {
+    filtre = cle;
+    visibles = ORDRE.filter((k) => cle === "tous" || DONNEES.liste[k].categorie === cle);
+    for (const b of el.onglets.children) b.setAttribute("aria-pressed", String(b.dataset.cle === cle));
+    el.rayon.replaceChildren(losange(), cle === "tous" ? "Tous les documents" : DONNEES.categories[cle].libelle);
+    el.total.textContent = `${visibles.length}/${DONNEES.liste.length}`;
+
+    el.grille.replaceChildren(...visibles.map((k) => {
+      const p = DONNEES.liste[k];
+      const li = document.createElement("li");
+      const b = creer("button", "inventaire-case");
+      b.type = "button";
+      b.dataset.k = k;
       const cat = DONNEES.categories[p.categorie];
       if (cat) b.style.setProperty("--rarete", cat.couleur);
-      b.append(creerIcone(p.document));
-      const nom = document.createElement("span");
-      nom.className = "sr-only";
-      nom.textContent = p.titre;
-      b.append(nom);
+      b.append(creerIcone(p.document), creer("span", "sr-only", p.titre));
+      const an = anneeDe(p);
+      if (an) b.append(creer("span", "inventaire-case-annee", String(an)));
       b.addEventListener("click", () => choisir(k, true));
       b.addEventListener("focus", () => choisir(k, false));
       li.append(b);
       return li;
-    });
-    el.grille.replaceChildren(...cases);
+    }));
+    if (!visibles.includes(choisi)) choisi = visibles[0];
+    choisir(choisi, false);
+    if (focaliser) caseDe(choisi)?.focus({ preventScroll: true });
+  }
+
+  const caseDe = (k) => el.grille.querySelector(`[data-k="${k}"]`);
+
+  function changerOnglet(sens) {
+    const cles = Array.from(el.onglets.children, (b) => b.dataset.cle);
+    const n = (cles.indexOf(filtre) + sens + cles.length) % cles.length;
+    filtrer(cles[n], true);
   }
 
   function choisir(k, depuisClic) {
+    if (k == null) return;
+    const change = k !== choisi || !el.vitrine.firstChild;
     choisi = k;
-    Array.from(el.grille.querySelectorAll(".inventaire-case")).forEach((b, i) => {
-      b.setAttribute("aria-pressed", String(i === k));
-      b.classList.toggle("est-choisi", i === k);
-    });
-    afficherDetail(DONNEES.liste[k]);
-    // Sur téléphone, la fiche est sous la grille : on la fait venir
+    for (const b of el.grille.querySelectorAll(".inventaire-case")) {
+      const oui = Number(b.dataset.k) === k;
+      b.setAttribute("aria-pressed", String(oui));
+      b.classList.toggle("est-choisi", oui);
+    }
+    const p = DONNEES.liste[k];
+    if (change) {
+      // Un nouveau canevas rejoue l'animation d'apparition
+      const grand = creerIcone(p.document);
+      grand.classList.add("icone-vitrine");
+      el.vitrine.replaceChildren(grand);
+    }
+    afficherDetail(p);
+    // Sur téléphone, tout est empilé : on fait venir l'objet choisi
     if (depuisClic && window.matchMedia("(max-width: 720px)").matches) {
-      el.detail.scrollIntoView({ block: "start", behavior: mouvementReduit.matches ? "auto" : "smooth" });
+      el.vitrine.scrollIntoView({ block: "start", behavior: mouvementReduit.matches ? "auto" : "smooth" });
     }
   }
 
   function afficherDetail(p) {
     const cat = DONNEES.categories[p.categorie] || { libelle: "", couleur: "#ccc" };
     const fiche = document.createDocumentFragment();
-    const entete = document.createElement("div");
-    entete.className = "detail-entete";
-    const grande = creerIcone(p.document);
-    grande.classList.add("icone-grande");
-    const titres = document.createElement("div");
-    const h3 = document.createElement("h3");
-    h3.className = "detail-titre";
-    h3.textContent = p.titre;
-    const rarete = document.createElement("p");
-    rarete.className = "detail-rarete";
-    rarete.style.color = cat.couleur;
-    rarete.textContent = [cat.libelle, p.annee].filter(Boolean).join(" · ");
-    titres.append(h3, rarete);
-    entete.append(grande, titres);
-    fiche.append(entete);
 
-    if (p.resume) {
-      const r = document.createElement("p");
-      r.className = "detail-resume";
-      r.textContent = `« ${p.resume} »`;
-      fiche.append(r);
-    }
-    for (const texte of p.description || []) {
-      const d = document.createElement("p");
-      d.textContent = texte;
-      fiche.append(d);
-    }
+    const bandeau = creer("div", "detail-bandeau");
+    bandeau.style.setProperty("--rarete", cat.couleur);
+    const petite = creerIcone(p.document);
+    petite.classList.add("icone-bandeau");
+    bandeau.append(petite, creer("h3", "detail-titre", p.titre));
+    fiche.append(bandeau);
+
+    const rarete = creer("p", "detail-rarete");
+    rarete.style.setProperty("--rarete", cat.couleur);
+    rarete.append(losange(), [cat.libelle, p.annee].filter(Boolean).join(" · "));
+    fiche.append(rarete);
+
+    const section = creer("p", "detail-section", "Détails");
+    section.prepend(creer("span", "detail-etoile", "✱"));
+    fiche.append(section);
+
+    if (p.resume) fiche.append(creer("p", "detail-resume", `« ${p.resume} »`));
+    for (const texte of p.description || []) fiche.append(creer("p", "", texte));
+
     const ligne = (libelle, contenu) => {
-      const dl = document.createElement("p");
-      dl.className = "detail-ligne";
-      const s = document.createElement("span");
-      s.className = "detail-libelle";
-      s.textContent = libelle;
-      dl.append(s, " ", contenu);
+      const dl = creer("p", "detail-ligne");
+      dl.append(creer("span", "detail-libelle", libelle), " ", contenu);
       fiche.append(dl);
     };
-    if (p.role) ligne("Rôle", p.role);
-    if (p.outils && p.outils.length) {
-      const ul = document.createElement("ul");
-      ul.className = "detail-outils";
-      ul.setAttribute("aria-label", "Outils");
-      for (const o of p.outils) {
-        const li = document.createElement("li");
-        li.textContent = o;
-        ul.append(li);
-      }
+    if (p.role) ligne("Rôle :", p.role);
+    ligne("Type :", NOMS_DOCUMENTS[p.document] || "Document");
+    const liste = (classe, libelle, elements) => {
+      if (!elements || !elements.length) return;
+      const ul = creer("ul", classe);
+      ul.setAttribute("aria-label", libelle);
+      for (const e of elements) ul.append(creer("li", "", e));
       fiche.append(ul);
-    }
-    if (p.effets && p.effets.length) {
-      const ul = document.createElement("ul");
-      ul.className = "detail-effets";
-      ul.setAttribute("aria-label", "Effets");
-      for (const e of p.effets) {
-        const li = document.createElement("li");
-        li.textContent = e;
-        ul.append(li);
-      }
-      fiche.append(ul);
-    }
+    };
+    liste("detail-outils", "Outils", p.outils);
+    liste("detail-effets", "Effets", p.effets);
+
     if (p.liens && p.liens.length) {
-      const nav = document.createElement("div");
-      nav.className = "detail-liens";
+      const nav = creer("div", "detail-liens");
       for (const l of p.liens) {
-        const a = document.createElement("a");
-        a.className = "btn-cadre";
+        const a = creer("a", "btn-cadre", `${l.libelle} ▷`);
         a.href = l.url;
-        a.textContent = `${l.libelle} ▷`;
         if (/^https?:/.test(l.url)) { a.target = "_blank"; a.rel = "noopener"; }
         nav.append(a);
       }
       fiche.append(nav);
     }
     el.detail.replaceChildren(fiche);
+    el.detail.scrollTop = 0;
   }
 
   function ouvrirInventaire() {
@@ -1220,11 +1330,10 @@
     el.piece.classList.add("zoom-objet");
     clearTimeout(minuterie);
     minuterie = setTimeout(() => {
+      peindreToile();
       el.inventaire.hidden = false;
       el.piece.classList.add("inventaire-visible");
-      const cases = el.grille.querySelectorAll(".inventaire-case");
-      if (cases[choisi]) cases[choisi].focus({ preventScroll: true });
-      choisir(choisi, false);
+      filtrer(filtre, true);
     }, duree(650));
   }
 
@@ -1240,10 +1349,10 @@
   // Grille au clavier : flèches (colonnes calculées d'après la mise en page)
   function deplacer(dx, dy) {
     const cases = Array.from(el.grille.querySelectorAll(".inventaire-case"));
-    const premiereLigne = cases.filter((b) => b.offsetTop === cases[0].offsetTop).length || 1;
-    let k = choisi + dx + dy * premiereLigne;
-    k = Math.max(0, Math.min(cases.length - 1, k));
-    cases[k].focus();
+    const colonnes = cases.filter((b) => b.offsetTop === cases[0].offsetTop).length || 1;
+    let n = visibles.indexOf(choisi) + dx + dy * colonnes;
+    n = Math.max(0, Math.min(cases.length - 1, n));
+    cases[n].focus();
   }
 
   function surTouche(e) {
@@ -1255,7 +1364,14 @@
       else if (options.retour) options.retour();
       return;
     }
-    if (!inventaireOuvert || !e.target.closest(".inventaire-grille")) return;
+    if (!inventaireOuvert || e.ctrlKey || e.metaKey || e.altKey) return;
+    const onglet = { q: -1, e: 1 }[e.key.toLowerCase()];
+    if (onglet) {
+      e.preventDefault();
+      changerOnglet(onglet);
+      return;
+    }
+    if (!e.target.closest(".inventaire-grille")) return;
     const sens = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
     if (sens) {
       e.preventDefault();
@@ -1287,7 +1403,7 @@
     el.piece.hidden = true;
   }
 
-  remplirGrille();
+  remplirOnglets();
   el.bureau.setAttribute("aria-label", "Le bureau : fouiller les documents des projets");
   el.bureau.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -1311,10 +1427,6 @@
     if (options.retour) options.retour();
   });
   el.piece.addEventListener("click", (e) => e.stopPropagation()); // pas de clic « avancer » de l'intro
-  // Clic à côté du livre d'inventaire : on le referme
-  el.inventaire.addEventListener("click", (e) => {
-    if (e.target === el.inventaire) fermerInventaire();
-  });
   document.addEventListener("keydown", surTouche, true);
 
   let attente = null;
@@ -1324,9 +1436,27 @@
     attente = setTimeout(() => {
       construire();
       dessiner();
+      if (inventaireOuvert) peindreToile();
     }, 150);
   });
 
+  // Aperçu pour la salle aux trois portes (js/fond-pixel.js) : la pièce,
+  // dessinée hors de l'écran, qu'on devine par l'arche de sa porte ;
+  // x / bas = point du décor posé au milieu du seuil
+  function apercu() {
+    if (ouverte) return null;
+    construire();
+    survol = false;
+    dessiner();
+    let ax = L, bx = 0, by = 0;
+    for (let i = 0; i < L * H; i++) {
+      if (!masque[i]) continue;
+      const x = i % L;
+      ax = Math.min(ax, x); bx = Math.max(bx, x); by = Math.max(by, (i - x) / L);
+    }
+    return { image: ctx.getImageData(0, 0, L, H), x: Math.round((ax + bx) / 2), bas: by - 4 };
+  }
+
   window.PIECES = window.PIECES || {};
-  window.PIECES.projets = { ouvrir, fermer };
+  window.PIECES.projets = { ouvrir, fermer, apercu };
 })();

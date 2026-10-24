@@ -8,8 +8,10 @@
  * Au centre, elle peint à son chevalet (une maquette de site sur la toile),
  * de dos. Elle nous entend entrer, sursaute (« ! »), se retourne et dit une
  * seule réplique. Survol = contour doré ; clic = elle apparaît en grand en
- * 3D (js/figurine-3d.js, chargé à la demande), fait un tour complet, puis
- * se place à gauche et sa fiche de personnage se déplie à droite.
+ * 3D (js/figurine-3d.js, chargé à la demande, en buste), fait un tour
+ * complet, puis sa fiche se déploie autour d'elle comme un écran
+ * d'équipement de jeu : onglets en haut, identité à gauche, compétences à
+ * droite, attributs en bas. Elle cligne des yeux de temps en temps.
  * Textes et données : js/whoami.js.
  *
  * Ouverte par js/intro.js (porte « whoami ») via window.PIECES.whoami :
@@ -43,7 +45,10 @@
 
   // Module 3D, chargé seulement quand on entre dans l'atelier
   const URL_FIGURINE = new URL("figurine-3d.js", document.currentScript.src).href;
-  const URL_MODELE = new URL("../models/fatima.glb", document.currentScript.src).href;
+  // Tenues (skins) du modèle 3D : chemins relatifs à la page
+  const adresse = (chemin) => (chemin ? new URL(chemin, document.baseURI).href : null);
+  const TENUES = (DONNEES.tenues || []).map((t) => ({ ...t, modele: adresse(t.modele), yeuxFermes: adresse(t.yeuxFermes) }));
+  let tenue = TENUES[0] || { modele: adresse("models/fatima.glb"), buste: true };
 
   const ctx = el.canvas.getContext("2d");
   const mouvementReduit = matchMedia("(prefers-reduced-motion: reduce)");
@@ -108,6 +113,7 @@
   let lueurs = [];      // lueur verte de l'écran
   let vapeur = [];      // vapeur du thé
   let survol = false;
+  let sansElle = false; // aperçu pour la salle aux portes : la pièce sans elle
   let ouverte = false;
   let options = {};
   let geo = {};
@@ -715,7 +721,7 @@
         px[j] = r; px[j + 1] = g; px[j + 2] = b; px[j + 3] = 255;
       }
     }
-    dessinerPerso(px);
+    if (!sansElle) dessinerPerso(px);
     dessinerChat(px);
     // Vapeur du thé
     for (const p of vapeur) {
@@ -952,7 +958,7 @@
   function prechargerFigurine() {
     if (!chargement) {
       chargement = import(URL_FIGURINE)
-        .then((module) => { module.prechargerModele(URL_MODELE).catch(() => {}); return module; })
+        .then((module) => { module.prechargerModele(tenue.modele).catch(() => {}); return module; })
         .catch(() => null);
     }
     return chargement;
@@ -967,7 +973,8 @@
         dos: PERSO.SPRITES.dos,
         couleurs: PERSO.COULEURS,
         reduit: mouvementReduit.matches,
-        modele: URL_MODELE,
+        modele: tenue.modele,
+        clignement: tenue.yeuxFermes,
       });
     } catch (e) {
       figurine = null; // pas de WebGL : on passera par la carte qui tourne
@@ -978,11 +985,37 @@
     return figurine;
   }
 
-  // Où se place la figurine une fois la fiche dépliée
+  // Où se place la figurine une fois la fiche dépliée : au centre, de trois
+  // quarts. Un buste est plus grand et son bas passe sous le fondu au noir.
   const ecranEtroit = matchMedia("(max-width: 720px), (orientation: portrait)");
   function cadrage(deploye) {
     if (!deploye) return { x: 0.5, y: 0.5, zoom: 1, regard: 0 };
-    return ecranEtroit.matches ? { x: 0.5, y: 0.23, zoom: 0.36, regard: 0 } : { x: 0.27, y: 0.52, zoom: 1, regard: 0.4 };
+    if (tenue.buste) {
+      return ecranEtroit.matches ? { x: 0.5, y: 0.36, zoom: 0.8, regard: 0.3 } : { x: 0.5, y: 0.6, zoom: 1.3, regard: 0.35 };
+    }
+    return ecranEtroit.matches ? { x: 0.5, y: 0.3, zoom: 0.55, regard: 0.3 } : { x: 0.5, y: 0.5, zoom: 1.05, regard: 0.35 };
+  }
+
+  // Changer de tenue : le nouveau modèle surgit du cercle, comme à l'ouverture
+  let changement = null;
+  async function changerTenue(t) {
+    if (t === tenue || changement) return;
+    tenue = t;
+    majTenues();
+    const fig = figurine;
+    if (!fig || !ficheOuverte) return;
+    changement = fig.changerModele(t.modele, t.yeuxFermes).catch(() => {});
+    await changement;
+    changement = null;
+    if (!ficheOuverte || tenue !== t) return;
+    fig.apparaitre(() => fig.placer(cadrage(true)));
+  }
+  // Les boutons des tenues (construits avec la fiche)
+  let boutonsTenues = [];
+  function majTenues() {
+    boutonsTenues.forEach(({ b, t }) => b.setAttribute("aria-pressed", String(t === tenue)));
+    const nom = el.panneau.querySelector(".fiche-tenue-nom");
+    if (nom) nom.textContent = tenue.nom || "";
   }
 
   function ouvrirFiche() {
@@ -1072,22 +1105,61 @@
   // Étoile en pixels (7×7)
   const ETOILE = '<svg viewBox="0 0 7 7" aria-hidden="true" focusable="false"><path d="M3 0h1v2h3v1h-1v1h-1v1h1v2h-1v-1h-1v-1h-1v1h-1v1h-1v-2h1v-1h-1v-1h-1v-1h3z" fill="currentColor"/></svg>';
 
+  // Écran de personnage façon jeu : barre du haut (onglets, niveau,
+  // rareté), identité et onglet choisi à gauche, elle au centre, équipement
+  // à droite (tenues, compétences, fiche de l'objet survolé), attributs en
+  // bas, rappel des touches tout en bas
   function construireFiche() {
     const d = DONNEES;
     const blocs = [];
-    const bloc = (titre) => {
-      const s = creer("section", "fiche-bloc");
-      if (titre) s.append(creer("h3", "fiche-sous-titre", titre));
+    const bloc = (balise, classe) => {
+      const s = creer(balise, `fiche-bloc ${classe}`);
       blocs.push(s);
       return s;
     };
+    const touche = (texte) => creer("kbd", "fiche-touche", texte);
+    const losange = () => {
+      const l = creer("span", "fiche-losange");
+      l.setAttribute("aria-hidden", "true");
+      return l;
+    };
 
-    // En-tête : portrait, classe, nom, étoiles, rang
-    const entete = creer("header", "fiche-entete fiche-bloc");
-    blocs.push(entete);
-    entete.append(portrait());
+    /* ----- Haut : onglets au centre, niveau et rareté à droite ----- */
+    const haut = bloc("div", "fiche-haut");
+    const navigation = creer("div", "fiche-navigation");
+    const onglets = creer("div", "fiche-onglets");
+    onglets.setAttribute("role", "tablist");
+    onglets.setAttribute("aria-label", "Fiche");
+    const toucheQ = touche("Q"), toucheE = touche("E");
+    toucheQ.setAttribute("aria-hidden", "true");
+    toucheE.setAttribute("aria-hidden", "true");
+    navigation.append(toucheQ, onglets, toucheE);
+
+    const etat = creer("div", "fiche-etat");
+    const niveau = creer("div", "fiche-niveau");
+    const insigne = creer("span", "fiche-insigne");
+    insigne.append(creer("span", "", String(d.niveau)));
+    insigne.setAttribute("aria-label", `Niveau ${d.niveau}`);
+    const exp = creer("div", "fiche-exp");
+    const barreExp = creer("div", "fiche-barre fiche-barre-exp");
+    barreExp.setAttribute("role", "img");
+    barreExp.setAttribute("aria-label", `Expérience : ${d.exp[0]} sur ${d.exp[1]}`);
+    const remplissage = creer("i");
+    remplissage.style.setProperty("--v", `${(d.exp[0] / d.exp[1]) * 100}%`);
+    barreExp.append(remplissage);
+    exp.append(creer("span", "fiche-libelle", "EXP"), barreExp, creer("span", "fiche-exp-valeur", `${d.exp[0]} / ${d.exp[1]}`));
+    niveau.append(insigne, exp);
+    etat.append(niveau);
+    if (d.rang) etat.append(creer("span", "fiche-rang", d.rang));
+    haut.append(navigation, etat);
+
+    /* ----- Gauche : identité, puis le contenu de l'onglet ----- */
+    const gauche = bloc("div", "fiche-gauche");
+    const entete = creer("header", "fiche-entete");
     const titres = creer("div", "fiche-titres");
-    titres.append(creer("p", "fiche-classe", d.classe));
+    const classe = creer("p", "fiche-classe");
+    classe.append(losange(), d.classe);
+    titres.append(classe);
     const nom = creer("h2", "fiche-nom", d.nom);
     nom.id = "fiche-nom";
     titres.append(nom);
@@ -1095,25 +1167,168 @@
     etoiles.setAttribute("aria-label", `Rareté : ${d.etoiles} étoiles`);
     etoiles.innerHTML = ETOILE.repeat(d.etoiles);
     titres.append(etoiles);
-    entete.append(titres);
-    if (d.rang) entete.append(creer("span", "fiche-rang", d.rang));
+    entete.append(portrait(), titres);
+    gauche.append(entete);
+    if (d.devise) gauche.append(creer("p", "fiche-devise", `« ${d.devise} »`));
 
-    // Niveau et expérience
-    const niveau = bloc();
-    niveau.classList.add("fiche-niveau");
-    const nv = creer("p", "fiche-nv");
-    nv.append(creer("span", "fiche-libelle", "Niv."), " ", creer("strong", "", String(d.niveau)));
-    const exp = creer("div", "fiche-barre fiche-barre-exp");
-    exp.setAttribute("role", "img");
-    exp.setAttribute("aria-label", `Expérience : ${d.exp[0]} sur ${d.exp[1]}`);
-    const remplissage = creer("i");
-    remplissage.style.setProperty("--v", `${(d.exp[0] / d.exp[1]) * 100}%`);
-    exp.append(remplissage);
-    niveau.append(nv, exp, creer("p", "fiche-exp", `EXP ${d.exp[0]} / ${d.exp[1]}`));
-    if (d.devise) niveau.append(creer("p", "fiche-devise", `« ${d.devise} »`));
+    const pages = [];
+    const page = (titre) => {
+      const p = creer("section", "fiche-page");
+      pages.push({ titre, p });
+      return p;
+    };
 
-    // Attributs
-    const attr = bloc("Attributs");
+    // Onglet « Personnage » : le profil en bref
+    const profil = page("Personnage");
+    const dl = creer("dl", "fiche-profil");
+    const ligneProfil = (cle, valeur) => dl.append(creer("dt", "", cle), creer("dd", "", valeur));
+    ligneProfil("Classe", d.classe);
+    ligneProfil("Niveau", String(d.niveau));
+    if (d.rang) ligneProfil("Rang", `${d.rang} · ${"★".repeat(d.etoiles)}`);
+    ligneProfil("Expérience", `${d.exp[0]} / ${d.exp[1]}`);
+    if (d.competences) ligneProfil("Compétences", String(d.competences.length));
+    profil.append(dl);
+
+    // Onglet « Histoire »
+    if (d.histoire && d.histoire.length) {
+      const h = page("Histoire");
+      for (const p of d.histoire) h.append(creer("p", "", p));
+    }
+
+    // Onglet « Quêtes » : une frise, de la plus récente à la plus ancienne
+    if (d.quetes && d.quetes.length) {
+      const q = page("Quêtes");
+      const ol = creer("ol", "fiche-quetes");
+      for (const e of d.quetes) {
+        const li = creer("li");
+        li.append(creer("span", "fiche-annee", e.annee), creer("span", "fiche-quete", e.titre));
+        if (e.lieu) li.append(creer("span", "fiche-lieu", e.lieu));
+        ol.append(li);
+      }
+      q.append(ol);
+    }
+
+    const boutons = pages.map(({ titre, p }, k) => {
+      const b = creer("button", "fiche-onglet", titre);
+      b.type = "button";
+      b.id = `fiche-onglet-${k}`;
+      p.id = `fiche-page-${k}`;
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-controls", p.id);
+      p.setAttribute("role", "tabpanel");
+      p.setAttribute("aria-labelledby", b.id);
+      b.addEventListener("click", (e) => { e.stopPropagation(); choisir(k); });
+      onglets.append(b);
+      gauche.append(p);
+      return b;
+    });
+    let ongletActif = 0;
+    function choisir(k, focus = false) {
+      ongletActif = k;
+      boutons.forEach((b, i) => {
+        b.setAttribute("aria-selected", String(i === k));
+        b.tabIndex = i === k ? 0 : -1;
+        pages[i].p.hidden = i !== k;
+      });
+      if (focus) boutons[k].focus();
+    }
+    const voisin = (sens) => (ongletActif + sens + boutons.length) % boutons.length;
+    // Flèches dans les onglets, Q / E partout dans la fiche (comme L1 / R1)
+    onglets.addEventListener("keydown", (e) => {
+      const sens = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (!sens) return;
+      e.preventDefault();
+      choisir(voisin(sens), true);
+    });
+    el.fiche.addEventListener("keydown", (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || !el.fiche.classList.contains("fiche-deployee")) return;
+      const sens = { q: -1, e: 1 }[e.key.toLowerCase()];
+      if (!sens) return;
+      e.preventDefault();
+      choisir(voisin(sens));
+    });
+    choisir(0);
+
+    /* ----- Droite : l'équipement ----- */
+    const droite = bloc("div", "fiche-droite");
+    droite.append(creer("h3", "fiche-sous-titre", "Équipement"));
+
+    // Tenues : petites cases, le nom de celle portée à côté
+    if (TENUES.length > 1) {
+      const ligne = creer("div", "fiche-tenues");
+      const libelle = creer("p", "fiche-tenues-libelle");
+      libelle.append(creer("span", "fiche-libelle", "Tenue"), creer("span", "fiche-tenue-nom"));
+      const liste = creer("div", "fiche-tenues-liste");
+      boutonsTenues = TENUES.map((t) => {
+        const b = creer("button", "fiche-case fiche-tenue");
+        b.type = "button";
+        b.setAttribute("aria-label", `Tenue : ${t.nom}`);
+        b.title = t.nom;
+        const img = creer("img");
+        img.src = t.vignette;
+        img.alt = "";
+        img.loading = "lazy";
+        b.append(img);
+        b.addEventListener("click", (e) => { e.stopPropagation(); changerTenue(t); });
+        // On commence à télécharger le modèle dès le survol
+        const precharger = () => prechargerFigurine().then((m) => m && m.prechargerModele(t.modele).catch(() => {}));
+        b.addEventListener("pointerenter", precharger, { once: true });
+        b.addEventListener("focus", precharger, { once: true });
+        liste.append(b);
+        return { b, t };
+      });
+      ligne.append(libelle, liste);
+      droite.append(ligne);
+    }
+
+    // Compétences : des cases d'inventaire ; survol ou focus = sa fiche
+    const competences = (d.competences || []).map((c) => (typeof c === "string" ? { nom: c } : c));
+    if (competences.length) {
+      const grille = creer("ul", "fiche-competences");
+      grille.setAttribute("aria-label", "Compétences");
+      const detail = creer("div", "fiche-detail");
+      detail.setAttribute("aria-live", "polite");
+      const montrer = (c, b) => {
+        grille.querySelectorAll(".est-choisie").forEach((x) => x.classList.remove("est-choisie"));
+        b.classList.add("est-choisie");
+        const titre = creer("p", "fiche-detail-nom", c.nom);
+        const type = creer("p", "fiche-detail-type");
+        type.append(losange(), c.niveau ? `Compétence · Niv. ${c.niveau}` : "Compétence");
+        detail.replaceChildren(titre, type);
+        if (c.texte) detail.append(creer("p", "fiche-detail-texte", c.texte));
+      };
+      competences.forEach((c, k) => {
+        const li = creer("li");
+        const b = creer("button", "fiche-case fiche-objet");
+        b.type = "button";
+        if (c.niveau) b.append(creer("span", "fiche-objet-niveau", String(c.niveau)));
+        b.append(creer("span", "fiche-objet-nom", c.nom));
+        const voir = () => montrer(c, b);
+        b.addEventListener("pointerenter", voir);
+        b.addEventListener("focus", voir);
+        b.addEventListener("click", (e) => { e.stopPropagation(); voir(); });
+        li.append(b);
+        grille.append(li);
+        if (k === 0) montrer(c, b);
+      });
+      droite.append(grille, detail);
+    }
+
+    if (d.liens && d.liens.length) {
+      const nav = creer("nav", "fiche-liens");
+      nav.setAttribute("aria-label", "Liens");
+      for (const l of d.liens) {
+        const a = creer("a", "btn-cadre", `${l.libelle} ▷`);
+        a.href = l.url;
+        if (/^https?:/.test(l.url)) { a.target = "_blank"; a.rel = "noopener"; }
+        nav.append(a);
+      }
+      droite.append(nav);
+    }
+
+    /* ----- Bas : les attributs en gros chiffres ----- */
+    const bas = bloc("section", "fiche-bas");
+    bas.setAttribute("aria-label", "Attributs");
     const ul = creer("ul", "fiche-attributs");
     for (const a of d.attributs || []) {
       const li = creer("li");
@@ -1124,53 +1339,31 @@
       barre.setAttribute("aria-hidden", "true");
       const n = creer("span", "fiche-nombre", String(a.valeur));
       n.dataset.valeur = a.valeur;
-      li.append(creer("span", "fiche-attribut", a.libelle), barre, n);
+      li.append(losange(), creer("span", "fiche-attribut", a.libelle), n, barre);
       ul.append(li);
     }
-    attr.append(ul);
+    bas.append(ul);
 
-    // Compétences
-    if (d.competences && d.competences.length) {
-      const comp = bloc("Compétences");
-      const liste = creer("ul", "fiche-competences");
-      for (const c of d.competences) liste.append(creer("li", "", c));
-      comp.append(liste);
-    }
+    /* ----- Tout en bas : les touches ----- */
+    const aide = bloc("div", "fiche-touches");
+    aide.setAttribute("aria-hidden", "true");
+    const rappel = (touches, texte) => {
+      const s = creer("span", "fiche-rappel");
+      s.append(...touches.map(touche), creer("span", "", texte));
+      aide.append(s);
+    };
+    rappel(["Glisser"], "Tourner");
+    rappel(["Q", "E"], "Onglets");
+    if (TENUES.length > 1) rappel(["Clic"], "Changer de tenue");
+    rappel(["Échap"], "Retour");
 
-    // Histoire
-    if (d.histoire && d.histoire.length) {
-      const h = bloc("Histoire");
-      for (const p of d.histoire) h.append(creer("p", "", p));
-    }
+    // Image de fond facultative (sinon l'atelier, flouté, derrière)
+    if (d.fond) el.fiche.style.setProperty("--fiche-image", `url("${new URL(d.fond, document.baseURI).href}")`);
 
-    // Quêtes accomplies (parcours)
-    if (d.quetes && d.quetes.length) {
-      const q = bloc("Quêtes accomplies");
-      const ol = creer("ol", "fiche-quetes");
-      for (const e of d.quetes) {
-        const li = creer("li");
-        li.append(creer("span", "fiche-annee", e.annee), " ", creer("span", "", e.titre));
-        if (e.lieu) li.append(creer("span", "fiche-lieu", ` — ${e.lieu}`));
-        ol.append(li);
-      }
-      q.append(ol);
-    }
-
-    // Liens
-    if (d.liens && d.liens.length) {
-      const nav = bloc();
-      nav.classList.add("fiche-liens");
-      for (const l of d.liens) {
-        const a = creer("a", "btn-cadre", `${l.libelle} ▷`);
-        a.href = l.url;
-        if (/^https?:/.test(l.url)) { a.target = "_blank"; a.rel = "noopener"; }
-        nav.append(a);
-      }
-    }
-
-    // Chaque bloc arrive à son tour quand le panneau se déplie
+    // Chaque bloc arrive à son tour quand la fiche se déplie
     blocs.forEach((b, k) => b.style.setProperty("--i", k));
     el.panneau.replaceChildren(...blocs);
+    majTenues();
 
     // Carte de secours (sans WebGL) : le sprite de face et de dos
     if (el.repli) {
@@ -1280,6 +1473,20 @@
     }, 150);
   });
 
+  // Aperçu pour la salle aux trois portes (js/fond-pixel.js) : la pièce,
+  // dessinée hors de l'écran, qu'on devine par l'arche de sa porte ;
+  // x / bas = point du décor posé au milieu du seuil
+  // (le chevalet ; elle n'y est pas : on ne la voit que dans la pièce où on entre)
+  function apercu() {
+    if (ouverte) return null;
+    construire();
+    survol = false;
+    sansElle = true;
+    dessiner();
+    sansElle = false;
+    return { image: ctx.getImageData(0, 0, L, H), x: geo.px + 18, bas: geo.pieds + 6 };
+  }
+
   window.PIECES = window.PIECES || {};
-  window.PIECES.whoami = { ouvrir, fermer };
+  window.PIECES.whoami = { ouvrir, fermer, apercu };
 })();

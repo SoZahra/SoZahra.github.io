@@ -13,12 +13,14 @@
  *
  * Chargé à la demande (import dynamique) par js/piece-whoami.js :
  *   prechargerModele(url) — commence à télécharger le .glb (dès l'entrée)
- *   const fig = creerFigurine(canvas, { face, dos, couleurs, reduit, modele });
+ *   const fig = creerFigurine(canvas, { face, dos, couleurs, reduit, modele, clignement });
+ *                            (clignement : texture du modèle aux yeux fermés)
  *   fig.pret              — promesse : le modèle est en place (ou abandonné)
  *   fig.apparaitre(fin)   — cercle magique, pilier de lumière, elle surgit en
  *                            faisant un tour complet ; fin() quand c'est fini
  *   fig.placer({ x, y, zoom })  — recadre (x, y en fraction de l'écran)
  *   fig.tourner()         — un tour complet (aussi au clic sur elle)
+ *   fig.changerModele(url, clignement) — change de modèle (tenues) ; promesse
  *   fig.pause() / fig.reprendre() / fig.redimensionner()
  * On peut la faire tourner en la glissant à la souris ou au doigt.
  */
@@ -161,7 +163,7 @@ function textureDegrade() {
 
 /* ---------- La figurine ---------- */
 
-export function creerFigurine(canvas, { face, dos, couleurs, reduit = false, modele = null }) {
+export function creerFigurine(canvas, { face, dos, couleurs, reduit = false, modele = null, clignement = null }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: Boolean(modele), alpha: true });
   renderer.setPixelRatio(1);
   renderer.setClearColor(0x000000, 0);
@@ -204,32 +206,70 @@ export function creerFigurine(canvas, { face, dos, couleurs, reduit = false, mod
 
   // Le vrai modèle remplace les voxels dès qu'il est chargé : mis à la
   // hauteur de la figurine, pieds au sol, centré sur l'axe de rotation
-  let modeleCharge = false;
-  const pret = modele
-    ? prechargerModele(modele).then((gltf) => {
+  // On peut aussi changer de modèle ensuite (les tenues de la fiche).
+  let modeleCharge = false, objetActuel = maillage;
+  // Clignement : une copie de la texture où les paupières sont peintes
+  // fermées (models/fatima-yeux-fermes.jpg), affichée un court instant
+  let peau = null, yeuxOuverts = null, yeuxFermes = null, prochainClin = 3, finClin = 0;
+  // Lumière douce de face (comme un projecteur sur une fiche de perso) :
+  // les textures peintes du modèle sont plus sombres que les voxels
+  const projecteur = new THREE.DirectionalLight(0xffe6c8, 1.4);
+  projecteur.position.set(0, 10, 60);
+
+  // Un modèle n'est préparé qu'une fois (le .glb chargé reste en cache)
+  function preparer(objet) {
+    if (objet.userData.prepare) return;
+    const boite = new THREE.Box3().setFromObject(objet);
+    const taille = boite.getSize(new THREE.Vector3()), centre = boite.getCenter(new THREE.Vector3());
+    const echelle = HAUTEUR / taille.y;
+    objet.scale.setScalar(echelle);
+    objet.position.set(-centre.x * echelle, -boite.min.y * echelle - HAUTEUR / 2, -centre.z * echelle);
+    objet.traverse((o) => {
+      if (!o.isMesh) return;
+      // Sans reflets d'environnement, le métal paraît noir : on l'adoucit
+      // (sans en ajouter à un modèle qui n'en a pas, comme le buste en tissu)
+      o.material.metalness = Math.min(o.material.metalness, 0.35);
+      if (o.material.specularIntensity !== undefined) o.material.specularIntensity = 0.5;
+      if (!objet.userData.peau && o.material.map) objet.userData.peau = o.material;
+    });
+    objet.userData.prepare = true;
+  }
+
+  const texturesYeux = new Map();
+  function chargerYeux(url, map) {
+    if (!texturesYeux.has(url)) {
+      texturesYeux.set(url, new THREE.TextureLoader().loadAsync(url).then((tex) => {
+        // mêmes réglages que la texture du glTF (pas de retournement)
+        tex.flipY = false;
+        tex.colorSpace = map.colorSpace;
+        tex.wrapS = map.wrapS;
+        tex.wrapT = map.wrapT;
+        return tex;
+      }));
+    }
+    return texturesYeux.get(url);
+  }
+
+  function changerModele(url, yeux = null) {
+    return prechargerModele(url).then((gltf) => {
       const objet = gltf.scene;
-      const boite = new THREE.Box3().setFromObject(objet);
-      const taille = boite.getSize(new THREE.Vector3()), centre = boite.getCenter(new THREE.Vector3());
-      const echelle = HAUTEUR / taille.y;
-      objet.scale.setScalar(echelle);
-      objet.position.set(-centre.x * echelle, -boite.min.y * echelle - HAUTEUR / 2, -centre.z * echelle);
-      objet.traverse((o) => {
-        if (!o.isMesh) return;
-        // Sans reflets d'environnement, le métal paraît noir : on l'adoucit
-        o.material.metalness = 0.35;
-        if (o.material.specularIntensity !== undefined) o.material.specularIntensity = 0.5;
-      });
-      // Lumière douce de face (comme un projecteur sur une fiche de perso) :
-      // les textures peintes du modèle sont plus sombres que les voxels
-      const face = new THREE.DirectionalLight(0xffe6c8, 1.4);
-      face.position.set(0, 10, 60);
-      scene.add(face);
-      perso.remove(maillage);
+      preparer(objet);
+      if (peau && yeuxOuverts) peau.map = yeuxOuverts; // l'ancien garde les yeux ouverts
+      perso.remove(objetActuel);
       perso.add(objet);
+      objetActuel = objet;
+      if (!modeleCharge) scene.add(projecteur);
       modeleCharge = true;
+      peau = objet.userData.peau || null;
+      yeuxOuverts = peau && peau.map;
+      yeuxFermes = null;
+      if (yeux && peau) {
+        chargerYeux(yeux, peau.map).then((tex) => { if (objetActuel === objet) yeuxFermes = tex; }).catch(() => {});
+      }
       redimensionner();
-    }).catch(() => {}) // on garde les voxels
-    : Promise.resolve();
+    });
+  }
+  const pret = modele ? changerModele(modele, clignement).catch(() => {}) : Promise.resolve(); // sinon les voxels
 
   // Cercle magique au sol
   const SOL = -HAUTEUR / 2 - 0.5;
@@ -351,6 +391,15 @@ export function creerFigurine(canvas, { face, dos, couleurs, reduit = false, mod
     perso.rotation.y = angle;
     cercle.rotation.z = t * 0.25;
 
+    // Elle cligne des yeux toutes les 2 à 6 s (parfois deux fois de suite)
+    if (yeuxFermes) {
+      if (t >= prochainClin) {
+        finClin = t + 0.13;
+        prochainClin = t + (Math.random() < 0.2 ? 0.35 : 2 + Math.random() * 4);
+      }
+      peau.map = t < finClin ? yeuxFermes : yeuxOuverts;
+    }
+
     // Étincelles
     for (let k = 0; k < NB; k++) {
       positions[k * 3 + 1] += vitesses[k] * (a < 1 ? 2 : 1) * dt * 60;
@@ -442,5 +491,5 @@ export function creerFigurine(canvas, { face, dos, couleurs, reduit = false, mod
   }
 
   redimensionner();
-  return { pret, apparaitre, tourner, placer, pause, reprendre, redimensionner };
+  return { pret, apparaitre, tourner, placer, pause, reprendre, redimensionner, changerModele };
 }

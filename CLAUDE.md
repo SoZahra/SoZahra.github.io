@@ -18,17 +18,26 @@ police bitmap (DotGothic16), lignes CRT, ambiance demeure éclairée à la bougi
    (`inscription.style: "lustre"`), torches, souris. Pas de zoom.
 3. Salle aux 3 portes (`js/fond-pixel.js`) : vue à la 1re personne, lampe à
    pétrole au premier plan dont la lumière suit la souris ; stèles gravées ;
-   fumée au survol d'une porte.
+   fumée au survol d'une porte. Chaque arche laisse voir sa pièce (méthode
+   `apercu()` de chaque `window.PIECES`), révélée par la lampe.
 4. Pièces derrière les portes (`window.PIECES`) :
    - **Projets** (`js/piece-projets.js`, données `js/projets.js`) : bureau
-     ancien, inventaire façon jeu. Les 6 projets sont des EXEMPLES à remplacer.
+     ancien ; clic dessus → inventaire plein écran façon menu de jeu
+     (onglets = catégories, touches Q/E ; grille, document en grand, fiche).
+     Les 6 projets sont des EXEMPLES à remplacer.
    - **Qui suis-je ?** (`js/piece-whoami.js`, données `js/whoami.js`) : atelier
      avec lustre et rayon de lune. Elle peint de dos, nous entend, se retourne,
      dit une réplique (1re visite). Clic sur elle → fiche de personnage façon
      gacha : modèle 3D (`js/figurine-3d.js`, three.js r170 dans `js/vendor/`)
      qui surgit d'un cercle magique, puis panneau qui se déplie. Dans
      `js/whoami.js`, seuls nom, classe, devise et GitHub sont vrais.
-   - **Contact** : pas encore faite.
+   - **Contact** (`js/piece-contact.js`, données `js/contact.js`) : salon
+     de la demeure, feu de cheminée animé (éclaire la pièce, crépite si le
+     son est activé). Elle somnole sur le canapé, se réveille et parle ; clic
+     sur elle = réplique suivante. Secrétaire → lettre (formulaire Formspree,
+     ou `mailto:` si `formspree` est vide) qui se plie, se scelle et
+     s'envole ; café → copie l'adresse ; cadres sur la cheminée → LinkedIn,
+     GitHub, CV. Adresse, Formspree, LinkedIn et CV sont des EXEMPLES.
 
 ## Le personnage
 

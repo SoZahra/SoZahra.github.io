@@ -20,9 +20,16 @@
 
 ## Modèle 3D
 
-- `models/fatima.glb` — personnage 3D de Fatima en mage-peintre : illustrations
-  générées à partir de sa photo avec Nano Banana 2.1, puis modèle 3D généré avec
-  Hunyuan 3D V3, via Figma Weave. Textures réduites pour le web.
+- `models/fatima.glb` — buste 3D de Fatima en mage-peintre (tenue par défaut) :
+  quatre vues (face, profils, dos) générées avec Gemini à partir de sa photo,
+  puis modèle 3D généré avec Hunyuan 3D V3, via Figma Weave. Texture réduite
+  pour le web.
+- `models/fatima-yeux-fermes.jpg` — la même texture, paupières peintes fermées
+  pour le clignement — réalisée pour ce site.
+- `models/fatima-armure.glb` — tenue « Armure », personnage en pied :
+  illustrations générées à partir de sa photo avec Nano Banana 2.1, puis modèle
+  3D généré avec Hunyuan 3D V3, via Figma Weave. Textures réduites pour le web.
+- `images/tenues/` — vignettes des tenues, recadrées depuis ces illustrations.
 
 ## Polices
 

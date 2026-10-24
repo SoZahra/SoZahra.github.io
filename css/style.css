@@ -1124,14 +1124,22 @@ body {
   visibility: hidden;
 }
 
-/* --- Inventaire : un livre ouvert, la sacoche à gauche, la fiche à droite --- */
+/* --- Inventaire : plein écran façon menu de jeu. Onglets en haut, grille
+   de cases à gauche, le document en grand au centre, sa fiche à droite --- */
 .inventaire {
+  --or: #f2ca70;
+  --or-pale: #ffe6a0;
+  --or-sombre: #a57a2a;
+  --ivoire: #f4ead2;
+  --trait: rgba(242, 202, 112, 0.28);
+  --rouge: #e0443a;
   position: absolute;
   inset: 0;
   z-index: 2;
-  display: grid;
-  place-items: center;
-  padding: 72px 16px 24px;
+  background: #0e0d12;
+  color: var(--ivoire);
+  font: 400 16px/1.6 var(--police-texte);
+  text-align: left;
   animation: cadre-pixel 240ms steps(4, end) both;
 }
 
@@ -1139,85 +1147,279 @@ body {
   display: none;
 }
 
-.inventaire-livre {
+.inventaire-toile {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.inventaire-ecran {
+  position: absolute;
+  inset: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  width: min(960px, 100%);
-  max-height: 100%;
-  overflow: auto;
-  padding: 24px;
-  border-style: solid;
-  border-width: 0;
-  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
-  background: #0b0a10;
-  color: var(--texte);
-  font: 400 16px/1.75 var(--police-texte);
-  text-align: left;
+  grid-template-columns: minmax(280px, 380px) minmax(120px, 1fr) minmax(280px, 420px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "haut haut haut"
+    "sac vitrine detail"
+    "touches touches touches";
+  gap: 20px 32px;
+  padding: max(24px, env(safe-area-inset-top)) max(40px, 3vw) max(16px, env(safe-area-inset-bottom));
 }
 
-.inventaire-page {
+/* Cadre fin à 12 px du bord */
+.inventaire-ecran::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1px solid var(--trait);
+  pointer-events: none;
+}
+
+/* Traits dorés en biais dans le coin haut gauche */
+.inventaire-ecran::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(560px, 45vw);
+  height: min(420px, 50vh);
+  background:
+    linear-gradient(142deg, transparent 49.8%, rgba(242, 202, 112, 0.45) 50%, transparent 50.2%),
+    linear-gradient(118deg, transparent 69.8%, rgba(242, 202, 112, 0.3) 70%, transparent 70.2%),
+    linear-gradient(160deg, transparent 29.8%, rgba(242, 202, 112, 0.25) 30%, transparent 30.2%);
+  -webkit-mask-image: radial-gradient(circle at 0 0, #000 30%, transparent 75%);
+  mask-image: radial-gradient(circle at 0 0, #000 30%, transparent 75%);
+  pointer-events: none;
+}
+
+.inventaire-ecran > * {
+  position: relative;
+  z-index: 1;
   min-width: 0;
+  min-height: 0;
 }
 
-.inventaire-sac {
-  padding-right: 24px;
-  border-right: 2px dashed #3a3650; /* reliure du livre */
+/* ---------- Haut : titre à gauche, onglets à droite ---------- */
+.inventaire-haut {
+  grid-area: haut;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--trait);
+  box-shadow: 0 4px 0 -3px var(--trait);
 }
 
 .inventaire-titre {
-  margin: 0 0 16px;
-  font: 400 32px/1.25 var(--police-texte);
-  letter-spacing: 0.05em;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin: 0;
+  color: var(--ivoire);
+  font: 400 28px/1.2 var(--police-texte);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(242, 202, 112, 0.35);
+}
+
+/* Sceau : un losange dans un losange */
+.inventaire-sceau {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--or);
+  background: radial-gradient(var(--or) 0 3px, transparent 4px);
+  transform: rotate(45deg);
+  box-shadow: 0 0 10px rgba(242, 202, 112, 0.4);
+}
+
+.inventaire-onglets {
+  display: flex;
+  align-items: center;
+}
+
+.inventaire-onglet {
+  position: relative;
+  padding: 2px 14px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--texte-doux);
+  font: 400 14px/1.6 var(--police-texte);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.inventaire-onglet + .inventaire-onglet::before {
+  content: "";
+  position: absolute;
+  top: 25%;
+  left: -1px;
+  width: 1px;
+  height: 50%;
+  background: var(--texte-doux);
+  opacity: 0.5;
+}
+
+.inventaire-onglet:hover {
+  color: var(--ivoire);
+}
+
+.inventaire-onglet[aria-pressed="true"] {
+  border-color: var(--or-sombre);
+  background: linear-gradient(#3d2c12, #1d150a);
+  color: var(--or-pale);
+}
+
+/* Coin replié en haut à droite de l'onglet choisi */
+.inventaire-onglet[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  border-style: solid;
+  border-width: 0 8px 8px 0;
+  border-color: transparent var(--or) transparent transparent;
+}
+
+.inventaire-onglet:focus-visible,
+.inventaire-case:focus-visible,
+.inventaire-fermer:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Gauche : la sacoche ---------- */
+.inventaire-sac {
+  grid-area: sac;
+  display: flex;
+  flex-direction: column;
+}
+
+.inventaire-compteurs {
+  display: flex;
+  gap: 24px;
+  margin: 0 0 4px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+.inventaire-rayon {
+  display: flex;
+  align-items: center;
+  margin: 0 0 12px;
+  font: 400 20px/1.4 var(--police-texte);
+  letter-spacing: 0.06em;
+}
+
+.inventaire-casier {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14px;
+  gap: 12px;
+  flex: 0 1 auto;
+  min-height: 0;
 }
 
 .inventaire-grille {
   display: grid;
-  grid-template-columns: repeat(3, 80px);
+  grid-template-columns: repeat(4, 72px);
+  grid-auto-rows: 72px;
   gap: 12px;
+  align-content: start;
   margin: 0;
-  padding: 0;
+  padding: 6px;
+  overflow-y: auto;
   list-style: none;
+  scrollbar-width: none;
 }
 
+/* Glissière décorative : un fil, une flèche à chaque bout, un losange au milieu */
+.inventaire-glissiere {
+  position: relative;
+  background:
+    linear-gradient(var(--trait), var(--trait)) center / 1px calc(100% - 28px) no-repeat;
+}
+
+.inventaire-glissiere::before,
+.inventaire-glissiere::after {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  color: var(--or-sombre);
+  font-size: 10px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.inventaire-glissiere::before {
+  content: "▲";
+  top: 0;
+}
+
+.inventaire-glissiere::after {
+  content: "▼";
+  bottom: 0;
+}
+
+.inventaire-pied {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 26px 0 6px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+/* Une case : fond teinté par la catégorie (la « rareté »), coin coloré,
+   année en bas à droite comme la quantité d'un objet */
 .inventaire-case {
+  --rarete: #888;
   position: relative;
   display: grid;
   place-items: center;
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   padding: 0;
-  border-style: solid;
-  border-width: 0;
-  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
-  background: #14121c;
+  border: 2px solid color-mix(in srgb, var(--rarete) 45%, #0b0a10);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rarete) 38%, #1a1622) 0%, color-mix(in srgb, var(--rarete) 14%, #0b0a10) 75%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), 0 3px 0 rgba(0, 0, 0, 0.5);
   cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
 
-/* Trait de la couleur de la catégorie, comme la rareté d'un objet */
-.inventaire-case::after {
+.inventaire-case::before {
   content: "";
   position: absolute;
-  right: 6px;
-  bottom: 6px;
-  left: 6px;
-  height: 4px;
-  background: var(--rarete, #888);
+  top: -2px;
+  right: -2px;
+  border-style: solid;
+  border-width: 0 14px 14px 0;
+  border-color: transparent var(--rarete) transparent transparent;
 }
 
-.inventaire-case:hover,
+.inventaire-case:hover {
+  border-color: color-mix(in srgb, var(--rarete) 70%, #fff);
+  transform: translateY(-2px);
+}
+
 .inventaire-case.est-choisi {
-  border-image-source: url("../assets/ui/pc98/cadre-survol.svg");
-  background: #241f33;
+  border-color: var(--rouge);
+  box-shadow: 0 0 0 1px var(--rouge), 0 0 14px rgba(224, 68, 58, 0.75), inset 0 0 10px rgba(224, 68, 58, 0.35);
 }
 
-.inventaire-case.est-choisi {
-  outline: 2px solid #f2ca70;
-  outline-offset: 2px;
-}
-
-.inventaire-case:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+.inventaire-case-annee {
+  position: absolute;
+  right: 4px;
+  bottom: 0;
+  color: var(--ivoire);
+  font-size: 12px;
+  line-height: 1.4;
+  text-shadow: 1px 1px 0 #000, -1px 0 0 #000;
 }
 
 .icone-document {
@@ -1226,46 +1428,118 @@ body {
   image-rendering: pixelated;
 }
 
-.inventaire-aide {
-  margin: 16px 0 0;
-  color: var(--texte-doux);
-  font-size: 16px;
+/* ---------- Centre : le document en grand ---------- */
+.inventaire-vitrine {
+  grid-area: vitrine;
+  display: grid;
+  place-items: center;
 }
 
+/* Ombre au sol sous le document */
+.inventaire-vitrine::after {
+  content: "";
+  position: absolute;
+  top: calc(50% + min(130px, 13vw));
+  left: 50%;
+  width: min(220px, 22vw);
+  height: 18px;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.65), transparent);
+  transform: translateX(-50%);
+  animation: ombre-flotte 4s ease-in-out infinite;
+}
+
+.icone-vitrine {
+  width: min(256px, 26vw, 100%);
+  height: auto;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 0 24px rgba(255, 200, 120, 0.18)) drop-shadow(6px 10px 0 rgba(0, 0, 0, 0.45));
+  animation:
+    vitrine-entree 280ms steps(4, end) both,
+    vitrine-flotte 4s ease-in-out 280ms infinite;
+}
+
+@keyframes vitrine-entree {
+  from { opacity: 0; transform: scale(0.8); }
+}
+
+@keyframes vitrine-flotte {
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes ombre-flotte {
+  50% { transform: translateX(-50%) scale(0.88); opacity: 0.7; }
+}
+
+/* ---------- Droite : la fiche ---------- */
 .inventaire-detail {
-  padding-left: 24px;
+  grid-area: detail;
+  align-self: stretch;
+  padding: 4px 24px;
+  border-inline: 3px double var(--trait);
+  overflow-y: auto;
+  color: #ece0c4;
+  scrollbar-color: #4a4566 transparent;
+  scrollbar-width: thin;
 }
 
 .inventaire-detail p {
   margin: 0 0 12px;
 }
 
-.detail-entete {
+/* Bandeau du nom : petite icône, nom en Cinzel, hachures dorées */
+.detail-bandeau {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
-  margin-bottom: 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--or-sombre);
+  background:
+    repeating-linear-gradient(135deg, rgba(242, 202, 112, 0.12) 0 2px, transparent 2px 7px) right / 28% 100% no-repeat,
+    linear-gradient(90deg, #2c2116, #17131c);
 }
 
-.icone-grande {
+.icone-bandeau {
   flex: none;
-  width: 96px;
-  height: 96px;
-  padding: 8px;
-  border-style: solid;
-  border-width: 0;
-  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
-  background: #14121c;
-  box-sizing: content-box;
+  width: 32px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--rarete) 60%, #000);
+  background: color-mix(in srgb, var(--rarete) 25%, #0b0a10);
+  image-rendering: pixelated;
 }
 
 .detail-titre {
-  margin: 0 0 4px;
-  font: 400 32px/1.25 var(--police-texte);
+  flex: 1;
+  margin: 0;
+  color: var(--ivoire);
+  font: 700 18px/1.3 "Cinzel", Georgia, serif;
+  text-align: center;
 }
 
 .inventaire-detail .detail-rarete {
-  margin: 0;
+  display: flex;
+  align-items: center;
+  margin: 16px 0 4px;
+  padding: 4px 12px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rarete) 22%, transparent), transparent 80%);
+  color: var(--rarete);
+}
+
+.inventaire-detail .detail-rarete .fiche-losange {
+  background: var(--rarete);
+}
+
+.inventaire-detail .detail-section {
+  margin-bottom: 12px;
+  padding: 0 12px 2px;
+  border-bottom: 1px solid var(--trait);
+  color: var(--texte-doux);
+  letter-spacing: 0.08em;
+}
+
+.detail-etoile {
+  margin-right: 6px;
+  color: var(--or);
 }
 
 .inventaire-detail .detail-resume {
@@ -1273,7 +1547,7 @@ body {
 }
 
 .detail-libelle {
-  color: #f2ca70;
+  color: var(--or);
 }
 
 .detail-outils,
@@ -1288,8 +1562,8 @@ body {
 
 .detail-outils li {
   padding: 0 8px;
-  border: 2px solid #3a3650;
-  background: #14121c;
+  border: 1px solid var(--or-sombre);
+  background: rgba(20, 16, 12, 0.8);
 }
 
 .detail-effets {
@@ -1309,32 +1583,102 @@ body {
   text-decoration: none;
 }
 
-.inventaire-fermer {
-  position: absolute;
-  top: max(16px, env(safe-area-inset-top));
-  left: max(16px, env(safe-area-inset-left));
+/* ---------- Bas : les touches ---------- */
+.inventaire-touches {
+  grid-area: touches;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--trait);
+  font-size: 15px;
+  letter-spacing: 0.06em;
 }
 
-/* Téléphone : la sacoche au-dessus, la fiche en dessous */
+.inventaire-aide .fiche-touche + .fiche-touche {
+  margin-left: 4px;
+}
+
+.inventaire-aide .fiche-touche:not(:first-child) {
+  margin-left: 16px;
+}
+
+.inventaire-aide .fiche-touche + .fiche-touche:not(:first-child) {
+  margin-left: 4px;
+}
+
+.inventaire-fermer {
+  padding: 2px 4px;
+  border: 0;
+  background: none;
+  color: var(--ivoire);
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.inventaire-fermer:hover {
+  color: var(--or-pale);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icone-vitrine,
+  .inventaire-vitrine::after {
+    animation: none;
+  }
+}
+
+/* Téléphone : tout s'empile et défile */
 @media (max-width: 720px) {
-  .inventaire {
-    padding-top: 72px;
-  }
-
-  .inventaire-livre {
+  .inventaire-ecran {
     grid-template-columns: minmax(0, 1fr);
-    padding: 16px;
+    grid-template-rows: none;
+    grid-auto-rows: max-content;
+    grid-template-areas: "haut" "sac" "vitrine" "detail" "touches";
+    gap: 16px;
+    padding: max(20px, env(safe-area-inset-top)) 16px 0;
+    overflow-y: auto;
   }
 
-  .inventaire-sac {
-    padding: 0 0 16px;
-    border-right: 0;
-    border-bottom: 2px dashed #3a3650;
+  .inventaire-ecran::after {
+    display: none;
+  }
+
+  .inventaire-haut {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .inventaire-titre {
+    font-size: 22px;
+  }
+
+  .inventaire-onglets {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .inventaire-casier {
+    display: block;
   }
 
   .inventaire-grille {
     grid-template-columns: repeat(auto-fill, 64px);
-    gap: 8px;
+    grid-auto-rows: 64px;
+    gap: 10px;
+    overflow: visible;
+  }
+
+  .inventaire-glissiere,
+  .inventaire-aide,
+  .inventaire-vitrine::after {
+    display: none;
+  }
+
+  .inventaire-pied {
+    margin-right: 6px;
   }
 
   .inventaire-case {
@@ -1342,28 +1686,30 @@ body {
     height: 64px;
   }
 
-  .icone-document {
-    width: 32px;
-    height: 32px;
+  .inventaire-case .icone-document {
+    width: 40px;
+    height: 40px;
   }
 
-  .inventaire-aide {
-    display: none;
+  .icone-vitrine {
+    width: 144px;
   }
 
   .inventaire-detail {
-    padding: 16px 0 0;
+    padding: 0;
+    border: 0;
+    overflow: visible;
   }
 
-  .icone-grande {
-    width: 64px;
-    height: 64px;
+  .inventaire-touches {
+    position: sticky;
+    bottom: 0;
+    padding: 8px 0 max(12px, env(safe-area-inset-bottom));
+    background: #0e0d12;
   }
+}
 
-  .detail-titre {
-    font-size: 24px;
-  }
-
+@media (max-width: 720px) {
   .piece-consigne {
     top: auto;
     bottom: max(16px, env(safe-area-inset-bottom));
@@ -1441,13 +1787,19 @@ body {
   100% { opacity: 0; }
 }
 
-/* --- La fiche : fond sombre, rayons dorés, figurine, panneau --- */
+/* --- La fiche : l'atelier flouté derrière (ou une image, --fiche-image,
+   depuis le champ « fond » de js/whoami.js), figurine, interface
+   façon écran de personnage de jeu --- */
 .fiche {
   position: absolute;
   inset: 0;
   z-index: 3;
   overflow: hidden;
-  background: radial-gradient(ellipse at 50% 60%, #2a1c3c 0%, #0c0812 55%, #050308 100%);
+  background:
+    linear-gradient(rgba(8, 6, 12, 0.8), rgba(8, 6, 12, 0.8)),
+    var(--fiche-image, none) center / cover no-repeat;
+  -webkit-backdrop-filter: blur(6px) brightness(0.6);
+  backdrop-filter: blur(6px) brightness(0.6);
   opacity: 0;
   transition: opacity 400ms ease;
 }
@@ -1458,35 +1810,6 @@ body {
 
 .fiche.est-ouverte {
   opacity: 1;
-}
-
-/* Rayons de lumière qui tournent lentement derrière elle */
-.fiche-rayons {
-  position: absolute;
-  top: 52%;
-  left: 50%;
-  width: 200vmax;
-  height: 200vmax;
-  margin: -100vmax 0 0 -100vmax;
-  background: repeating-conic-gradient(from 0deg, rgba(242, 202, 112, 0.1) 0deg 5deg, rgba(242, 202, 112, 0) 5deg 15deg);
-  -webkit-mask-image: radial-gradient(circle, #000 0, transparent 40%);
-  mask-image: radial-gradient(circle, #000 0, transparent 40%);
-  transition: left 900ms cubic-bezier(0.45, 0, 0.2, 1), top 900ms cubic-bezier(0.45, 0, 0.2, 1);
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .fiche-rayons {
-    animation: rayons 60s linear infinite;
-  }
-}
-
-@keyframes rayons {
-  to { transform: rotate(360deg); }
-}
-
-.fiche-deployee .fiche-rayons {
-  left: 27%;
 }
 
 .fiche-3d {
@@ -1522,7 +1845,7 @@ body {
 }
 
 .sans-3d.fiche-deployee .fiche-repli {
-  transform: translateX(-23vw);
+  transform: translateY(-6vh) scale(1.3);
 }
 
 .fiche-carte {
@@ -1556,110 +1879,291 @@ body {
   transform: rotateY(180deg);
 }
 
-.fiche-aide {
+/* Fondu au noir : le bas du buste disparaît, les côtés s'assombrissent
+   pour que les colonnes restent lisibles */
+.fiche-fondu {
   position: absolute;
-  bottom: max(24px, env(safe-area-inset-bottom));
-  left: 27%;
-  margin: 0;
-  color: var(--texte-doux);
-  font: 400 16px/1.5 var(--police-texte);
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 400ms ease 1.4s;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(5, 3, 8, 0.7) 0%, rgba(5, 3, 8, 0) 14%, rgba(5, 3, 8, 0) 50%, rgba(5, 3, 8, 0.88) 72%, #050308 86%),
+    linear-gradient(90deg, rgba(5, 3, 8, 0.92) 0%, rgba(5, 3, 8, 0) 34%, rgba(5, 3, 8, 0) 66%, rgba(5, 3, 8, 0.92) 100%);
   pointer-events: none;
 }
 
-.fiche-deployee .fiche-aide {
-  opacity: 0.8;
-}
-
-.sans-3d .fiche-aide {
+.fiche-aide {
   display: none;
 }
 
 .fiche-fermer {
   position: absolute;
-  top: max(16px, env(safe-area-inset-top));
-  left: max(16px, env(safe-area-inset-left));
+  top: max(20px, env(safe-area-inset-top));
+  left: max(32px, 3vw);
   z-index: 1;
 }
 
-/* Le panneau se déplie comme un volet qui pivote sur son bord gauche */
+/* Couleurs de l'écran de personnage */
+.fiche {
+  --or: #f2ca70;
+  --or-pale: #ffe6a0;
+  --or-sombre: #a57a2a;
+  --ivoire: #f4ead2;
+  --trait: rgba(242, 202, 112, 0.28);
+}
+
+/* ---------- L'interface : une grille par-dessus toute la fiche ----------
+   Le centre reste vide : on y attrape la figurine pour la faire tourner */
 .fiche-panneau {
   position: absolute;
-  top: 50%;
-  right: max(24px, 4vw);
-  width: min(520px, 48vw);
-  max-height: calc(100% - 128px);
-  overflow: hidden auto;
-  padding: 24px;
-  scrollbar-color: #4a4566 transparent;
-  scrollbar-width: thin;
-  border-style: solid;
-  border-width: 0;
-  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
-  background: rgba(11, 10, 16, 0.94);
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "haut haut haut"
+    "gauche . droite"
+    "bas bas bas"
+    "touches touches touches";
+  gap: 20px 40px;
+  padding: max(20px, env(safe-area-inset-top)) max(32px, 3vw) max(12px, env(safe-area-inset-bottom));
   color: var(--texte);
-  font: 400 16px/1.75 var(--police-texte);
+  font: 400 16px/1.6 var(--police-texte);
   text-align: left;
-  transform-origin: 0% 50%;
-  transform: translateY(-50%) perspective(1600px) rotateY(-96deg);
-  opacity: 0;
   visibility: hidden;
-  transition: transform 1000ms cubic-bezier(0.18, 0.9, 0.25, 1.12), opacity 250ms ease, visibility 0s linear 1000ms;
+  pointer-events: none;
+  transition: visibility 0s linear 600ms;
 }
 
 .fiche-deployee .fiche-panneau {
-  transform: translateY(-50%) perspective(1600px) rotateY(0);
-  opacity: 1;
   visibility: visible;
-  transition: transform 1000ms cubic-bezier(0.18, 0.9, 0.25, 1.12), opacity 250ms ease, visibility 0s;
+  transition: visibility 0s;
 }
 
-/* Reflet doré qui balaie le panneau une fois déplié */
-.fiche-panneau::after {
+.fiche-panneau > * {
+  pointer-events: auto;
+}
+
+/* Équerres dorées aux quatre coins de l'écran */
+.fiche-panneau::before {
   content: "";
   position: absolute;
-  inset: 0;
-  background: linear-gradient(105deg, rgba(255, 236, 180, 0) 35%, rgba(255, 236, 180, 0.22) 50%, rgba(255, 236, 180, 0) 65%);
-  transform: translateX(-100%);
+  inset: 8px;
+  background:
+    linear-gradient(var(--or), var(--or)) top left / 28px 2px no-repeat,
+    linear-gradient(var(--or), var(--or)) top left / 2px 28px no-repeat,
+    linear-gradient(var(--or), var(--or)) top right / 28px 2px no-repeat,
+    linear-gradient(var(--or), var(--or)) top right / 2px 28px no-repeat,
+    linear-gradient(var(--or), var(--or)) bottom left / 28px 2px no-repeat,
+    linear-gradient(var(--or), var(--or)) bottom left / 2px 28px no-repeat,
+    linear-gradient(var(--or), var(--or)) bottom right / 28px 2px no-repeat,
+    linear-gradient(var(--or), var(--or)) bottom right / 2px 28px no-repeat;
+  opacity: 0.6;
   pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .fiche-deployee .fiche-panneau::after {
-    animation: balayage 1100ms ease-out 800ms both;
-  }
-}
-
-@keyframes balayage {
-  to { transform: translateX(100%); }
-}
-
-/* Chaque bloc arrive à son tour */
+/* Chaque bloc arrive à son tour, depuis son bord */
 .fiche-bloc {
   opacity: 0;
-  transform: translateX(24px);
-  transition: opacity 350ms ease, transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  transition-delay: calc(450ms + var(--i, 0) * 90ms);
+  transition: opacity 350ms ease, transform 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: calc(300ms + var(--i, 0) * 120ms);
 }
+
+.fiche-haut { transform: translateY(-16px); }
+.fiche-gauche { transform: translateX(-40px); }
+.fiche-droite { transform: translateX(40px); }
+.fiche-bas,
+.fiche-touches { transform: translateY(24px); }
 
 .fiche-deployee .fiche-bloc {
   opacity: 1;
   transform: none;
 }
 
+/* Petits éléments communs */
+.fiche-losange {
+  display: inline-block;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  background: var(--or);
+  vertical-align: 0.15em;
+  transform: rotate(45deg);
+}
+
+.fiche-libelle {
+  color: var(--or);
+}
+
+.fiche-touche {
+  display: inline-block;
+  min-width: 24px;
+  padding: 0 6px;
+  border: 2px solid #4a4566;
+  border-bottom-width: 4px;
+  background: #15121e;
+  color: var(--ivoire);
+  font: 400 12px/18px var(--police-texte);
+  text-align: center;
+}
+
+.fiche-panneau p {
+  margin: 0 0 8px;
+}
+
+/* ---------- Haut : onglets au centre, niveau et rang à droite ---------- */
+.fiche-haut {
+  grid-area: haut;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 48px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--trait);
+}
+
+.fiche-navigation {
+  grid-column: 2;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.fiche-onglets {
+  display: flex;
+  gap: 4px;
+}
+
+.fiche-onglet {
+  position: relative;
+  padding: 4px 16px;
+  border: 0;
+  background: none;
+  color: var(--texte-doux);
+  font: 400 16px/1.5 var(--police-texte);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.fiche-onglet:hover {
+  color: var(--ivoire);
+}
+
+/* L'onglet choisi : doré, losange au-dessus, trait qui touche la ligne */
+.fiche-onglet[aria-selected="true"] {
+  color: var(--or);
+}
+
+.fiche-onglet[aria-selected="true"]::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--or);
+  box-shadow: 0 0 8px rgba(242, 202, 112, 0.8);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.fiche-onglet[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: -14px;
+  left: 12px;
+  height: 2px;
+  background: var(--or);
+}
+
+.fiche-onglet:focus-visible,
+.fiche-case:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.fiche-etat {
+  grid-column: 3;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-self: end;
+}
+
+.fiche-niveau {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Insigne de niveau : un losange doré, le chiffre au centre */
+.fiche-insigne {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--or);
+  background: linear-gradient(135deg, #5a4113, #1e1608);
+  transform: rotate(45deg);
+}
+
+.fiche-insigne span {
+  color: var(--ivoire);
+  font: 700 14px/1 "Cinzel", Georgia, serif;
+  transform: rotate(-45deg);
+}
+
+.fiche-exp {
+  display: grid;
+  grid-template-columns: auto 120px;
+  gap: 0 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.fiche-exp-valeur {
+  grid-column: 2;
+  color: var(--texte-doux);
+  text-align: right;
+}
+
+.fiche-rang {
+  padding: 0 10px;
+  border: 2px solid var(--or);
+  background: linear-gradient(#5a4113, #2b1e0b);
+  color: var(--or-pale);
+  font: 400 20px/1.5 var(--police-texte);
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 12px rgba(242, 202, 112, 0.25);
+}
+
+/* ---------- Colonnes ---------- */
+.fiche-gauche,
+.fiche-droite {
+  align-self: start;
+  max-height: 100%;
+  overflow: hidden auto;
+  scrollbar-color: #4a4566 transparent;
+  scrollbar-width: thin;
+}
+
+/* --- Gauche : identité et onglet choisi --- */
+.fiche-gauche {
+  grid-area: gauche;
+}
+
 .fiche-entete {
   display: flex;
   gap: 16px;
   align-items: center;
+  margin-bottom: 12px;
 }
 
 .fiche-portrait {
   flex: none;
-  width: 64px;
-  height: 64px;
-  padding: 8px;
+  width: 56px;
+  height: 56px;
+  padding: 6px;
   border-style: solid;
   border-width: 0;
   border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
@@ -1673,28 +2177,29 @@ body {
   min-width: 0;
 }
 
-.fiche-panneau p {
-  margin: 0 0 8px;
-}
-
 .fiche-panneau .fiche-classe {
+  display: flex;
+  align-items: center;
   margin: 0;
-  color: #f2ca70;
+  color: var(--or);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-/* Cinzel : réservée aux noms */
+/* Cinzel : réservée aux noms et aux grands chiffres */
 .fiche-nom {
-  margin: 0;
-  color: #f4ead2;
-  font: 700 32px/1.2 "Cinzel", Georgia, serif;
-  text-shadow: 0 0 12px rgba(242, 202, 112, 0.45);
+  margin: 2px 0 4px;
+  color: var(--ivoire);
+  font: 700 36px/1.1 "Cinzel", Georgia, serif;
+  text-shadow: 0 0 16px rgba(242, 202, 112, 0.4);
 }
 
 .fiche-panneau .fiche-etoiles {
   display: flex;
   gap: 4px;
-  margin: 6px 0 0;
-  color: #f2ca70;
+  margin: 0;
+  color: var(--or);
 }
 
 .fiche-etoiles svg {
@@ -1703,49 +2208,119 @@ body {
   shape-rendering: crispEdges;
 }
 
-.fiche-rang {
-  align-self: flex-start;
-  padding: 0 8px;
-  border: 2px solid #f2ca70;
-  background: linear-gradient(#5a4113, #2b1e0b);
-  color: #ffe6a0;
-  font: 400 24px/1.5 var(--police-texte);
-  letter-spacing: 0.05em;
-}
-
-.fiche-niveau {
-  margin-top: 16px;
-}
-
-.fiche-panneau .fiche-nv {
-  margin: 0 0 4px;
-}
-
-.fiche-nv strong {
-  color: #f4ead2;
-  font-size: 24px;
-  font-weight: 400;
-}
-
-.fiche-libelle {
-  color: #f2ca70;
-}
-
-.fiche-panneau .fiche-exp {
-  margin: 4px 0 8px;
+.fiche-panneau .fiche-devise {
+  margin: 0 0 16px;
+  padding-left: 12px;
+  border-left: 2px solid var(--trait);
   color: var(--texte-doux);
+  font-style: italic;
+}
+
+/* Le contenu des onglets, dans un cadre PC-98 */
+.fiche-page {
+  padding: 16px;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  background: rgba(11, 10, 16, 0.85);
+}
+
+.fiche-page[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fiche-page:not([hidden]) {
+    animation: page-entree 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+@keyframes page-entree {
+  from { opacity: 0; transform: translateX(-12px); }
+}
+
+/* Profil : libellé à gauche, valeur à droite, pointillés entre les lignes */
+.fiche-profil {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  margin: 0;
+}
+
+.fiche-profil dt,
+.fiche-profil dd {
+  padding: 6px 0;
+  border-bottom: 1px dashed #3a3650;
+}
+
+.fiche-profil dt {
+  color: var(--texte-doux);
+}
+
+.fiche-profil dd {
+  margin: 0;
+  color: var(--ivoire);
   text-align: right;
 }
 
-.fiche-panneau .fiche-devise {
+.fiche-profil dt:last-of-type,
+.fiche-profil dd:last-of-type {
+  border-bottom: 0;
+}
+
+/* Quêtes : une frise verticale, un losange par étape */
+.fiche-quetes {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 20px;
+  list-style: none;
+}
+
+.fiche-quetes::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 3px;
+  width: 2px;
+  background: var(--trait);
+}
+
+.fiche-quetes li {
+  position: relative;
+  display: grid;
+  padding: 0 0 12px;
+}
+
+.fiche-quetes li::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: -20px;
+  width: 8px;
+  height: 8px;
+  background: var(--or);
+  transform: rotate(45deg);
+}
+
+.fiche-annee {
+  color: var(--or);
+  font-size: 14px;
+}
+
+.fiche-quete {
+  color: var(--ivoire);
+}
+
+.fiche-lieu {
   color: var(--texte-doux);
+  font-size: 14px;
 }
 
 /* Barres segmentées, qui se remplissent en paliers */
 .fiche-barre {
   position: relative;
   display: block;
-  height: 12px;
+  height: 10px;
   border: 2px solid #3a3650;
   background: #15121e;
 }
@@ -1756,9 +2331,9 @@ body {
   bottom: 0;
   left: 0;
   width: 0;
-  background: repeating-linear-gradient(90deg, #f2ca70 0 6px, #a57a2a 6px 8px);
+  background: repeating-linear-gradient(90deg, var(--or) 0 6px, var(--or-sombre) 6px 8px);
   transition: width 900ms steps(12, end);
-  transition-delay: calc(650ms + var(--i, 0) * 90ms);
+  transition-delay: calc(650ms + var(--i, 0) * 120ms);
 }
 
 .fiche-barre-exp i {
@@ -1770,18 +2345,190 @@ body {
 }
 
 .fiche-sous-titre {
-  margin: 20px 0 10px;
-  padding-bottom: 4px;
-  border-bottom: 2px dashed #3a3650;
-  color: #f2ca70;
-  font: 400 16px/1.5 var(--police-texte);
-  letter-spacing: 0.1em;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 0 0 12px;
+  color: var(--or);
+  font: 400 14px/1.5 var(--police-texte);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.fiche-attributs {
+/* Un filet doré après le titre */
+.fiche-sous-titre::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, var(--trait), transparent);
+}
+
+/* --- Droite : l'équipement --- */
+.fiche-droite {
+  grid-area: droite;
+}
+
+/* Une case d'inventaire : cadre pixel, fond doré sombre, lueur au survol */
+.fiche-case {
+  position: relative;
   display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 2px solid #4a4566;
+  background: radial-gradient(circle at 50% 30%, #5a4113 0%, #2b1e0b 60%, #140e05 100%);
+  color: var(--or-pale);
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.fiche-case:hover,
+.fiche-case.est-choisie,
+.fiche-case[aria-pressed="true"] {
+  border-color: var(--or);
+  box-shadow: 0 0 10px rgba(242, 202, 112, 0.45), inset 0 0 8px rgba(242, 202, 112, 0.25);
+}
+
+/* Tenues : une ligne, le nom à gauche, les petites cases à droite */
+.fiche-tenues {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.fiche-panneau .fiche-tenues-libelle {
+  display: grid;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.fiche-tenue-nom {
+  color: var(--ivoire);
+}
+
+.fiche-tenues-liste {
+  display: flex;
   gap: 6px;
+}
+
+.fiche-tenue {
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+}
+
+.fiche-tenue img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(0.7) brightness(0.6);
+  transition: filter 150ms ease;
+}
+
+.fiche-tenue:hover img,
+.fiche-tenue[aria-pressed="true"] img {
+  filter: none;
+}
+
+.sans-3d .fiche-tenues {
+  display: none;
+}
+
+/* Compétences : grille de cases, niveau dans le coin */
+.fiche-competences {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fiche-objet {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 4px;
+}
+
+.fiche-objet-nom {
+  font: 400 12px/1.25 var(--police-texte);
+  text-align: center;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+/* La fiche (et l'inventaire des projets) sont des fenêtres modales : les
+   boutons du haut de l'intro (son, passer) les recouvriraient, on les cache
+   tant qu'elles sont ouvertes */
+body:has(.fiche.est-ouverte) .intro-controles,
+body:has(.inventaire:not([hidden])) .intro-controles {
+  display: none;
+}
+
+.fiche-objet-niveau {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  color: var(--ivoire);
+  font: 400 11px/1 var(--police-texte);
+}
+
+/* Fiche de l'objet survolé, comme la description d'un objet de jeu */
+.fiche-detail {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-style: solid;
+  border-width: 0;
+  border-image: url("../assets/ui/pc98/cadre.svg") 3 fill / 6px stretch;
+  background: rgba(11, 10, 16, 0.85);
+}
+
+.fiche-panneau .fiche-detail-nom {
+  margin: 0;
+  color: var(--ivoire);
+  font: 700 20px/1.3 "Cinzel", Georgia, serif;
+}
+
+.fiche-panneau .fiche-detail-type {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  color: var(--or);
+  font-size: 14px;
+}
+
+.fiche-panneau .fiche-detail-texte {
+  margin: 8px 0 0;
+  color: var(--texte-doux);
+  font-size: 14px;
+}
+
+.fiche-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.fiche-liens .btn-cadre {
+  text-decoration: none;
+}
+
+/* ---------- Bas : les attributs en gros chiffres ---------- */
+.fiche-bas {
+  grid-area: bas;
+  padding-top: 12px;
+  border-top: 2px solid var(--trait);
+}
+
+.fiche-attributs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1789,99 +2536,176 @@ body {
 
 .fiche-attributs li {
   display: grid;
-  grid-template-columns: minmax(0, 12em) minmax(0, 1fr) 3ch;
-  gap: 12px;
+  grid-template-columns: auto 1fr;
+  gap: 2px 0;
   align-items: center;
+  min-width: 150px;
+  padding: 0 24px;
+}
+
+/* Séparateur vertical entre deux attributs */
+.fiche-attributs li + li {
+  border-left: 1px solid var(--trait);
+}
+
+.fiche-attribut {
+  color: var(--texte-doux);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .fiche-nombre {
-  color: #f4ead2;
-  text-align: right;
+  grid-column: 1 / -1;
+  color: var(--ivoire);
+  font: 700 32px/1.1 "Cinzel", Georgia, serif;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(242, 202, 112, 0.35);
 }
 
-.fiche-competences {
+.fiche-attributs .fiche-barre {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-width: 1px;
+}
+
+/* ---------- Tout en bas : les touches ---------- */
+.fiche-touches {
+  grid-area: touches;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.fiche-competences li {
-  padding: 0 8px;
-  border: 2px solid #3a3650;
-  background: #14121c;
-}
-
-.fiche-quetes {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.fiche-annee {
-  color: #f2ca70;
-}
-
-.fiche-lieu {
+  gap: 8px 24px;
+  justify-content: center;
   color: var(--texte-doux);
+  font-size: 12px;
 }
 
-.fiche-liens {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 20px;
+.fiche-rappel {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
 }
 
-.fiche-liens .btn-cadre {
-  text-decoration: none;
-}
-
-/* Écran étroit ou vertical : elle en haut, le panneau monte du bas
-   (même condition que cadrage() dans js/piece-whoami.js) */
-@media (max-width: 720px), (orientation: portrait) {
-  .fiche-deployee .fiche-rayons {
-    top: 20%;
-    left: 50%;
-  }
-
-  .sans-3d.fiche-deployee .fiche-repli {
-    transform: translateY(-30vh) scale(0.5);
-  }
-
-  .fiche-aide {
+/* Sans souris, les rappels de touches n'ont pas de sens */
+@media (hover: none), (pointer: coarse) {
+  .fiche-touches,
+  .fiche-navigation .fiche-touche {
     display: none;
   }
+}
 
+/* Écran moyen : colonnes plus étroites */
+@media (max-width: 1200px) {
   .fiche-panneau {
-    top: auto;
-    right: 16px;
-    bottom: max(16px, env(safe-area-inset-bottom));
-    left: 16px;
-    width: auto;
-    max-height: 58%;
-    padding: 16px;
-    transform-origin: 50% 100%;
-    transform: perspective(1200px) rotateX(-90deg);
-  }
-
-  .fiche-deployee .fiche-panneau {
-    transform: perspective(1200px) rotateX(0);
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(240px, 300px);
+    gap: 16px 24px;
   }
 
   .fiche-nom {
-    font-size: 24px;
-  }
-
-  .fiche-portrait {
-    width: 48px;
-    height: 48px;
+    font-size: 28px;
   }
 
   .fiche-attributs li {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 3ch;
+    min-width: 120px;
+    padding: 0 16px;
+  }
+
+  .fiche-nombre {
+    font-size: 26px;
+  }
+
+  .fiche-exp {
+    display: none;
+  }
+}
+
+/* Écran étroit ou vertical : elle en haut, l'interface défile en dessous
+   (même condition que cadrage() dans js/piece-whoami.js) */
+@media (max-width: 720px), (orientation: portrait) {
+  .sans-3d.fiche-deployee .fiche-repli {
+    transform: translateY(-25vh) scale(0.6);
+  }
+
+  .fiche-fondu {
+    background: linear-gradient(180deg, rgba(5, 3, 8, 0) 40%, rgba(5, 3, 8, 0.9) 62%, #050308 75%);
+  }
+
+  .fiche-panneau::before,
+  .fiche-touches {
+    display: none;
+  }
+
+  /* Tout l'écran défile ; on laisse de la place à elle en haut */
+  .fiche-panneau {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 58vh 16px max(24px, env(safe-area-inset-bottom));
+    overflow: hidden auto;
+    pointer-events: auto;
+  }
+
+  .fiche-panneau > * {
+    flex: none;
+  }
+
+  /* Ordre : niveau et onglets, identité et onglet, attributs, équipement */
+  .fiche-haut {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .fiche-exp {
+    display: grid;
+  }
+
+  .fiche-gauche,
+  .fiche-droite {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .fiche-droite {
+    order: 1;
+  }
+
+  .fiche-onglet {
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+
+  .fiche-onglet[aria-selected="true"]::after {
+    bottom: -2px;
+  }
+
+  .fiche-nom {
+    font-size: 26px;
+  }
+
+  .fiche-portrait {
+    width: 40px;
+    height: 40px;
+  }
+
+  .fiche-attributs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 0;
+  }
+
+  .fiche-attributs li {
+    min-width: 0;
+    padding: 0 12px;
+  }
+
+  .fiche-attributs li + li {
+    border-left: 0;
+  }
+
+  .fiche-nombre {
+    font-size: 24px;
   }
 
   .whoami-bulle {
@@ -1894,7 +2718,6 @@ body {
   .fiche-panneau,
   .fiche-bloc,
   .fiche-barre i,
-  .fiche-rayons,
   .sans-3d .fiche-repli {
     transition: none !important;
   }
@@ -1905,5 +2728,254 @@ body {
   .piece-whoami .piece-consigne {
     top: calc(max(16px, env(safe-area-inset-top)) + 56px);
     bottom: auto;
+  }
+}
+
+/* ============================================================
+   PIÈCE « Contact » — le salon (js/piece-contact.js)
+   Elle somnole près du feu ; le secrétaire ouvre une lettre sur
+   parchemin qui se plie, se scelle à la cire et s'envole.
+   ============================================================ */
+
+/* Les objets n'ont pas tous la même taille : l'étiquette ne déborde pas */
+.piece-contact .piece-etiquette {
+  z-index: 1;
+}
+
+.piece-contact.zoom-objet .piece-retour {
+  visibility: hidden;
+}
+
+/* --- La lettre --- */
+.lettre {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 72px 16px 24px;
+  overflow: hidden;
+  animation: cadre-pixel 240ms steps(4, end) both;
+}
+
+.lettre[hidden] {
+  display: none;
+}
+
+.lettre-pile {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 100%;
+  display: grid;
+  transition: transform 600ms steps(6, end);
+}
+
+.lettre-papier {
+  max-height: calc(100vh - 96px);
+  max-height: calc(100dvh - 96px);
+  overflow: auto;
+  padding: 32px 40px;
+  /* Parchemin : bords brunis, ombre portée en escalier, liseré sombre */
+  background:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 55%, rgba(94, 60, 24, 0.35) 100%),
+    #d9c599;
+  box-shadow:
+    inset 0 0 0 2px #8b7350,
+    0 0 0 2px #3a2d1b,
+    6px 6px 0 2px #000;
+  color: #2b1d10;
+  font: 400 16px/1.75 var(--police-texte);
+  text-align: left;
+  transform-origin: 50% 50%;
+  transition: transform 450ms steps(3, end), filter 450ms steps(3, end);
+}
+
+.lettre-titre {
+  margin: 0 0 16px;
+  color: #6e1820;
+  font: 400 24px/1.3 var(--police-texte);
+  letter-spacing: 0.04em;
+}
+
+.lettre-ligne {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.lettre-salutation {
+  font-size: 18px;
+}
+
+.lettre input,
+.lettre textarea {
+  width: 100%;
+  margin: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-bottom: 2px dashed #8b7350;
+  border-radius: 0;
+  background: transparent;
+  color: #1a1008;
+  font: inherit;
+}
+
+/* Papier ligné pour le message */
+.lettre textarea {
+  min-height: calc(1.75em * 6);
+  border: 0;
+  background: repeating-linear-gradient(transparent 0 calc(1.75em - 2px), rgba(94, 75, 47, 0.45) calc(1.75em - 2px) 1.75em);
+  line-height: 1.75em;
+  resize: vertical;
+}
+
+.lettre input::placeholder,
+.lettre textarea::placeholder {
+  color: #6f5d40;
+  opacity: 1;
+}
+
+.lettre input:focus-visible,
+.lettre textarea:focus-visible {
+  outline: 3px solid #6e1820;
+  outline-offset: 2px;
+}
+
+.lettre [aria-invalid="true"] {
+  border-bottom-color: #8a1e2c;
+  background-color: rgba(138, 30, 44, 0.1);
+}
+
+.lettre-piege {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+}
+
+.lettre-erreur {
+  min-height: 1.75em;
+  margin: 0 0 8px;
+  color: #8a1e2c;
+}
+
+.lettre-erreur:empty {
+  min-height: 0;
+}
+
+.lettre-envoyer {
+  justify-self: end;
+}
+
+.lettre-formulaire {
+  display: grid;
+}
+
+.lettre-fermer {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+}
+
+/* Le cachet de cire : tombe sur la lettre pliée, en gros pixels */
+.lettre-cachet {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(2.5);
+  transition: opacity 300ms steps(3, end), transform 300ms steps(3, end);
+  pointer-events: none;
+}
+
+.lettre canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* 1. La lettre se plie */
+.est-pliee .lettre-papier {
+  transform: scaleY(0.3);
+  filter: brightness(0.85);
+}
+
+.est-pliee .lettre-papier > * {
+  visibility: hidden;
+}
+
+/* 2. Le cachet tombe dessus */
+.est-scellee .lettre-cachet {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+
+/* 3. Elle s'envole */
+.est-envoyee .lettre-pile {
+  transform: translate(40vw, -120vh) rotate(-14deg);
+}
+
+.est-pliee .lettre-fermer {
+  visibility: hidden;
+}
+
+/* Accusé d'envoi : une enveloppe scellée */
+.lettre-fin {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.lettre-fin:not([hidden]) {
+  animation: cadre-pixel 240ms steps(4, end) both;
+}
+
+.lettre-fin[hidden] {
+  display: none;
+}
+
+.lettre-fin p {
+  margin: 0 0 8px;
+}
+
+.lettre-enveloppe {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 76px;
+  margin-bottom: 8px;
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 1px), #8b7350 calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)) left top / 50% 70% no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 1px), #8b7350 calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)) right top / 50% 70% no-repeat,
+    #cdb88a;
+  box-shadow: inset 0 0 0 2px #5e4b2f, 4px 4px 0 #3a2d1b;
+}
+
+.lettre-enveloppe canvas {
+  width: 32px;
+  height: 32px;
+  margin-top: 8px;
+}
+
+@media (max-width: 720px) {
+  .lettre-papier {
+    padding: 20px;
+  }
+
+  .lettre-titre {
+    font-size: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lettre-pile,
+  .lettre-papier,
+  .lettre-cachet {
+    transition: none;
   }
 }
