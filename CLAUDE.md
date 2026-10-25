@@ -39,6 +39,26 @@ police bitmap (DotGothic16), lignes CRT, ambiance demeure éclairée à la bougi
      s'envole ; café → copie l'adresse ; cadres sur la cheminée → LinkedIn,
      GitHub, CV. Adresse, Formspree, LinkedIn et CV sont des EXEMPLES.
 
+## Version rapide
+
+`express.html` (`css/express.css`, `js/express.js`) : le portfolio en une
+page pour qui n'a pas le temps de faire l'intro. Lien « Version rapide » en
+haut de l'intro. Couleurs voulues par Fatima : surtout noir et blanc, une
+seule couleur vive en touches (corail `#ff4a3d`, préféré au bleu essayé),
+rien de trop sombre ; elle
+veut du simple (cartes de projet = carrés unis).
+Intro (`js/express-papier.js`, inspirée de l'identité Big Cartel) : une
+affiche corail avec « FATIMA ZAYANI » arrive froissée en boule, se déplie
+(elle reste un peu froissée), puis se refroisse et s'envole au défilement.
+Plis calculés dans le shader à partir de `PLIS` (tirés en JS et passés en
+uniformes : le même pliage sert en JS à recentrer la boule). Pas de buste
+3D ici. Ensuite : manifeste mot à mot, projets en carrés qui défilent en
+diagonale comme sur huyml.co (`js/express-billets.js` ; champ `image`
+facultatif dans `js/projets.js`), bandes défilantes, contact. En haut à gauche, ses yeux (frange
+arrondie, eye-liner) suivent la souris et clignent ; de temps en temps la
+carte pivote et montre « Fatima Zayani » (pas de monogramme « FZ »). Mêmes données
+que la version immersive. Éviter `-webkit-text-stroke` avec Cinzel.
+
 ## Le personnage
 
 - Pixel art 16×32 : `js/personnage-pixel.js` (face, profil, dos, dos qui

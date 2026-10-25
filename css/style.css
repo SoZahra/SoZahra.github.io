@@ -401,6 +401,10 @@ body {
   cursor: pointer;
 }
 
+a.btn-cadre {
+  text-decoration: none;
+}
+
 .btn-cadre:hover {
   border-image-source: var(--btn-survol);
 }

@@ -79,5 +79,17 @@ window.WHOAMI = {
       modele: "models/fatima-armure.glb",
       vignette: "images/tenues/armure.jpg",
     },
+    {
+      nom: "Veste brodée",
+      modele: "models/fatima-buste.glb",
+      vignette: "images/tenues/veste.jpg",
+      buste: true,
+    },
+    {
+      nom: "Veste simple",
+      modele: "models/fatima-simple.glb",
+      vignette: "images/tenues/simple.jpg",
+      buste: true,
+    },
   ],
 };

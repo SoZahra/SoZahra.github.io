@@ -10,6 +10,7 @@
 - **Cadres PC-98** (`assets/ui/pc98/`), fond généré (`js/fond-pixel.js`), police gravée
   (`js/police-pixel.js`), personnage (`js/personnage-pixel.js`), pièces (`js/piece-projets.js`,
   `js/piece-whoami.js`) et figurine 3D (`js/figurine-3d.js`) — réalisés pour ce site.
+- **Version rapide** (`express.html`, `css/express.css`, `js/express.js`, `js/express-papier.js`, `js/express-billets.js`) — réalisée pour ce site.
 
 ## Bibliothèques
 
@@ -29,6 +30,18 @@
 - `models/fatima-armure.glb` — tenue « Armure », personnage en pied :
   illustrations générées à partir de sa photo avec Nano Banana 2.1, puis modèle
   3D généré avec Hunyuan 3D V3, via Figma Weave. Textures réduites pour le web.
+- `models/fatima-buste.glb` — tenue « Veste brodée », en buste : modèle 3D
+  généré avec Meshy V6, via Figma Weave, à partir d'une illustration ; grain de
+  beauté replacé et teint retouché sur la texture ; frange, mèches tombant
+  devant les épaules, collier à fleur
+  noire et créoles modélisés dans Blender
+  pour ce site. Texture réduite pour le web.
+- `images/tenues/veste.jpg` — vignette rendue depuis ce modèle (Blender, EEVEE).
+- `models/fatima-simple.glb` — tenue « Veste simple » : le même buste, veste
+  repeinte en écru uni sans broderies dans Blender pour ce site.
+- `images/tenues/simple.jpg` — vignette rendue depuis ce modèle (Blender, EEVEE).
+- `models/fatima-levres.png` — masque des lèvres sur la texture de ce modèle (lèvres en couleur
+  sur le buste en noir et blanc de la version rapide) — réalisé pour ce site.
 - `images/tenues/` — vignettes des tenues, recadrées depuis ces illustrations.
 
 ## Polices

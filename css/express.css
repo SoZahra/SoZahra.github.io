@@ -1,0 +1,357 @@
+/*
+ * Version rapide du portfolio (express.html) : noir et blanc, une seule
+ * couleur vive (corail vermillon) en touches. Intro : une affiche en papier
+ * corail à son nom, qui se déplie puis se froisse au défilement.
+ */
+@font-face {
+  font-family: "Cinzel";
+  src: url("../fonts/Cinzel-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+:root {
+  --blanc: #f6f5f2;
+  --blanc-2: #ecebe7;
+  --noir: #111;
+  --gris: #8a8784;
+  --gris-clair: #cfccc7;
+  --accent: #ff4a3d;
+  --trait: rgba(17, 17, 17, 0.14);
+  --marge: clamp(16px, 4vw, 56px);
+  --titre: "Cinzel", "Times New Roman", serif;
+  --police: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --courbe: cubic-bezier(0.2, 0.8, 0.2, 1);
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--blanc);
+  color: var(--noir);
+  font-family: var(--police);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  overflow-x: clip;
+}
+
+/* Léger grain de papier sur toute la page */
+body::after {
+  content: ""; position: fixed; inset: -50%; z-index: 50; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  animation: grain 0.9s steps(4) infinite;
+}
+@keyframes grain {
+  25% { transform: translate(-3%, 2%); }
+  50% { transform: translate(2%, -3%); }
+  75% { transform: translate(-1%, -2%); }
+}
+
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+.evitement {
+  position: fixed; left: var(--marge); top: -100px; z-index: 70;
+  background: var(--noir); color: var(--blanc); padding: 8px 14px;
+}
+.evitement:focus { top: 12px; }
+
+/* ---------- Curseur ---------- */
+.curseur { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  body.a-curseur, body.a-curseur a, body.a-curseur button { cursor: none; }
+  .curseur {
+    display: grid; place-items: center;
+    position: fixed; left: 0; top: 0; z-index: 55; pointer-events: none;
+    width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    background: var(--accent);
+    transition: width 0.35s var(--courbe), height 0.35s var(--courbe), margin 0.35s var(--courbe), background 0.3s;
+  }
+  .curseur span {
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #fff;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .curseur.est-grand { width: 86px; height: 86px; margin: -43px 0 0 -43px; }
+  .curseur.est-grand span { opacity: 1; }
+  .curseur.est-lien { width: 40px; height: 40px; margin: -20px 0 0 -20px; background: rgba(255, 74, 61, 0.25); }
+}
+
+/* ---------- En-tête ---------- */
+.entete {
+  position: fixed; inset: 0 0 auto 0; z-index: 40;
+  display: flex; align-items: center; gap: 24px;
+  padding: 18px var(--marge);
+  color: var(--noir);
+}
+.entete a { text-decoration: none; }
+/* Ses yeux à la place du monogramme : frange, eye-liner, pupilles qui
+   suivent la souris (js/express.js) et clignement de temps en temps */
+.yeux { display: block; line-height: 0; perspective: 300px; text-decoration: none; }
+.yeux svg { width: 68px; height: auto; overflow: visible; display: block; }
+/* De temps en temps, la carte pivote et montre son nom au dos. Les deux
+   faces s'échangent aussi en fondu à mi-tour : jamais superposées, même
+   si le navigateur ignore backface-visibility */
+.yeux-carte { display: block; position: relative; transform-style: preserve-3d; transition: transform 0.9s var(--courbe); }
+.yeux.tourne .yeux-carte { transform: rotateY(180deg); }
+.yeux-face { display: block; -webkit-backface-visibility: hidden; backface-visibility: hidden; transition: opacity 0.05s linear 0.12s; }
+.yeux.tourne .yeux-recto { opacity: 0; }
+.yeux-nom {
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center;
+  transform: rotateY(180deg); opacity: 0;
+  font-family: var(--titre); font-weight: 700; font-size: 0.82rem; line-height: 1.05;
+  letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+}
+.yeux.tourne .yeux-nom { opacity: 1; }
+.oeil { transform-box: fill-box; transform-origin: center; }
+.yeux.cligne .oeil { animation: cligner 0.18s ease-in-out; }
+@keyframes cligner { 50% { transform: scaleY(0.08); } }
+.entete nav { margin-left: auto; }
+.entete ul { display: flex; gap: clamp(14px, 3vw, 36px); list-style: none; margin: 0; padding: 0; }
+.entete nav a, .vers-immersif {
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.16em;
+  background: linear-gradient(currentColor, currentColor) left bottom / 0 1px no-repeat;
+  transition: background-size 0.3s;
+}
+.entete nav a:hover, .vers-immersif:hover { background-size: 100% 1px; }
+
+/* ---------- Intro : l'affiche en papier ---------- */
+.intro { position: relative; height: 220vh; }
+.intro-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+.papier {
+  position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
+  filter: drop-shadow(0 28px 36px rgba(17, 17, 17, 0.22));
+}
+
+/* Rangée d'infos sous le menu : métier, invitation à défiler */
+.intro-infos {
+  position: absolute; z-index: 3; left: var(--marge); right: var(--marge); top: 78px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  list-style: none; margin: 0; padding: 12px 0 0;
+  font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.14em; line-height: 1.5;
+}
+.intro-indice { text-align: right; }
+.intro-indice span { display: inline-block; color: var(--accent); animation: flotter 1.8s ease-in-out infinite; }
+@keyframes flotter { 50% { transform: translateY(4px); } }
+.intro-passer {
+  position: absolute; z-index: 3; right: var(--marge); bottom: var(--marge);
+  font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.14em; text-decoration: none; color: var(--gris);
+  transition: color 0.2s;
+}
+.intro-passer:hover { color: var(--accent); }
+
+/* ---------- Manifeste ---------- */
+.manifeste {
+  position: relative;
+  min-height: 160vh;
+  padding: 30vh var(--marge) 20vh;
+}
+.manifeste-texte {
+  position: sticky; top: 22vh; margin: 0; max-width: 18ch;
+  font-family: var(--titre); font-weight: 500;
+  font-size: clamp(2.2rem, 7vw, 6.4rem); line-height: 1.04; letter-spacing: -0.01em;
+}
+.manifeste-texte .mot { color: var(--gris-clair); transition: color 0.25s linear; }
+.manifeste-texte .mot.est-allume { color: var(--noir); }
+.manifeste-texte .mot.accent.est-allume { color: var(--accent); }
+
+/* ---------- Projets : billets ---------- */
+.projets { position: relative; height: var(--hauteur-projets, 500vh); }
+.projets-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+.billets { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; cursor: pointer; }
+
+/* Détails du projet actif, à gauche */
+.projet-infos {
+  position: absolute; z-index: 2; left: var(--marge); top: 50%; transform: translateY(-50%);
+  width: min(30vw, 340px);
+  display: grid; grid-template-columns: 5.5rem 1fr; gap: 14px 16px; margin: 0;
+  font-size: 0.82rem; line-height: 1.45;
+  transition: opacity 0.3s;
+}
+.projet-infos.est-change { opacity: 0; }
+.projet-infos dt { color: var(--gris); }
+.projet-infos dd { margin: 0; }
+
+/* Liste des projets, à droite : l'actif en noir, les autres estompés */
+.projets-liste {
+  position: absolute; z-index: 2; right: var(--marge); top: 50%;
+  width: min(26vw, 300px); list-style: none; margin: 0; padding: 0;
+  text-align: center;
+  transition: transform 0.6s var(--courbe);
+}
+.projets-liste li { height: 172px; }
+.projet-ligne {
+  width: 100%; border: 0; background: none; padding: 0; color: inherit; font: inherit; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  opacity: 0.22; filter: blur(0.6px);
+  transition: opacity 0.4s, filter 0.4s;
+}
+.projet-ligne:hover { opacity: 0.55; filter: none; }
+.est-actif .projet-ligne { opacity: 1; filter: none; }
+.projet-ligne-cat { font-size: 0.72rem; color: var(--gris); }
+.projet-ligne-titre { font-family: var(--titre); font-weight: 600; font-size: 1.25rem; line-height: 1.15; text-transform: uppercase; }
+.projet-ligne-tiret { width: 12px; height: 1px; background: currentColor; margin: 4px 0; }
+.est-actif .projet-ligne-tiret { background: var(--accent); width: 24px; }
+.projet-ligne-resume { font-size: 0.8rem; line-height: 1.4; }
+
+/* Grand numéro en bas à gauche, sur la pile */
+.projets-compteur {
+  position: absolute; z-index: 0; left: var(--marge); bottom: 6vh;
+  display: grid; grid-template-columns: auto auto; align-items: end; column-gap: 14px;
+  pointer-events: none;
+}
+.projets-compteur h2 {
+  grid-column: 1 / -1; margin: 0 0 6px; font-family: var(--police); font-weight: 500;
+  font-size: 0.8rem; text-transform: none; letter-spacing: 0;
+}
+.grand-num { display: block; overflow: hidden; font-family: var(--titre); font-weight: 500; font-size: clamp(5rem, 13vw, 12rem); line-height: 0.85; }
+.grand-num span { display: inline-block; }
+.grand-num span.roule { animation: rouler 0.5s var(--courbe); }
+@keyframes rouler { from { transform: translateY(60%); opacity: 0; } }
+.projets-compteur .total { font-size: 0.85rem; padding-bottom: 0.6em; }
+
+/* ---------- Fiche projet ---------- */
+.fiche {
+  width: min(92vw, 760px); max-height: 86vh; padding: clamp(24px, 4vw, 48px);
+  border: 1px solid var(--noir); border-radius: 0;
+  background: #fff; color: var(--noir);
+}
+.fiche::backdrop { background: rgba(246, 245, 242, 0.75); backdrop-filter: blur(6px); }
+.fiche[open] { animation: ficheEntre 0.5s var(--courbe); }
+@keyframes ficheEntre { from { opacity: 0; transform: translateY(30px) scale(0.98); } }
+.fiche-fermer {
+  position: absolute; right: 16px; top: 14px; width: 44px; height: 44px;
+  border: 0; background: none; color: inherit; font-size: 1.2rem; cursor: pointer;
+}
+.fiche-fermer:hover { color: var(--accent); }
+.fiche h3 { margin: 6px 0 14px; font-family: var(--titre); font-size: clamp(1.6rem, 4vw, 2.6rem); line-height: 1.05; }
+.fiche-cat { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--gris); }
+.fiche-resume { font-style: italic; color: var(--gris); }
+.fiche dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 22px; margin: 24px 0 0; font-size: 0.95rem; }
+.fiche dt { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.72rem; color: var(--gris); padding-top: 3px; }
+.fiche dd { margin: 0; }
+.fiche-liens a { margin-right: 18px; font-weight: 600; color: var(--accent); }
+
+/* ---------- À propos ---------- */
+.apropos { padding: clamp(80px, 12vw, 160px) 0 0; }
+.defilant { overflow: hidden; white-space: nowrap; padding: 6px 0; border-top: 1px solid var(--noir); }
+.defilant + .defilant { border-bottom: 1px solid var(--noir); }
+.defilant-piste {
+  display: inline-flex; gap: 0.5em; align-items: center;
+  font-family: var(--titre); font-weight: 600; text-transform: uppercase;
+  font-size: clamp(2.4rem, 8vw, 7rem); line-height: 1.1;
+  animation: defiler 40s linear infinite;
+}
+.defilant-piste span { color: var(--noir); }
+.defilant-inverse .defilant-piste span { color: var(--gris-clair); }
+.defilant-piste i { font-style: normal; font-size: 0.5em; color: var(--accent); }
+.defilant-inverse .defilant-piste { animation-direction: reverse; animation-duration: 48s; }
+@keyframes defiler { to { transform: translateX(-50%); } }
+
+.apropos-grille {
+  display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(28px, 6vw, 96px);
+  padding: clamp(56px, 8vw, 110px) var(--marge) 0;
+}
+.histoire p { margin: 0 0 16px; font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.55; max-width: 46ch; }
+.apropos h3 {
+  margin: 0 0 14px; font-size: 0.72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.18em; color: var(--gris);
+}
+.apropos h3:not(:first-child) { margin-top: 36px; }
+.etiquettes { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.etiquettes li {
+  border: 1px solid var(--noir); border-radius: 999px; padding: 4px 14px; font-size: 0.88rem;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+}
+.etiquettes li:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.parcours { list-style: none; margin: 0; padding: 0; }
+.parcours li {
+  display: grid; grid-template-columns: 4.5rem 1fr auto; gap: 12px;
+  padding: 12px 0; border-top: 1px solid var(--trait); font-size: 0.95rem;
+}
+.parcours .annee { font-variant-numeric: tabular-nums; color: var(--accent); }
+.parcours .lieu { color: var(--gris); text-align: right; }
+
+/* ---------- Contact ---------- */
+.contact { padding: clamp(110px, 16vw, 220px) var(--marge) clamp(80px, 10vw, 140px); }
+.contact h2 { font-size: clamp(2.8rem, 11vw, 11rem); line-height: 0.9; letter-spacing: -0.02em; }
+.contact h2 span { display: block; color: var(--gris-clair); }
+.contact h2 em { font-style: normal; color: var(--accent); display: block; }
+.contact-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 44px; }
+.email {
+  display: inline-block;
+  font-size: clamp(1.2rem, 3.2vw, 2.2rem); font-weight: 600; text-decoration: none; overflow-wrap: anywhere;
+  background: linear-gradient(var(--noir), var(--noir)) left bottom / 100% 2px no-repeat;
+  transition: color 0.25s;
+}
+.email:hover { color: var(--accent); }
+.copier {
+  border: 1px solid var(--noir); background: none; color: inherit; font: inherit; font-size: 0.85rem;
+  border-radius: 999px; padding: 7px 18px; cursor: pointer; transition: background 0.2s, color 0.2s;
+}
+.copier:hover { background: var(--noir); color: #fff; }
+.copie-ok { font-size: 0.85rem; color: var(--gris); }
+.liens { display: flex; flex-wrap: wrap; gap: 10px 36px; list-style: none; margin: 48px 0 0; padding: 0; }
+.liens a {
+  text-decoration: none; text-transform: uppercase; letter-spacing: 0.16em; font-size: 0.85rem;
+  background: linear-gradient(var(--accent), var(--accent)) left bottom / 0 2px no-repeat;
+  transition: background-size 0.3s;
+}
+.liens a:hover { background-size: 100% 2px; }
+
+/* ---------- Pied ---------- */
+.pied {
+  display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center;
+  padding: 22px var(--marge); border-top: 1px solid var(--noir); font-size: 0.85rem;
+}
+.pied a:first-of-type { margin-left: auto; }
+.pied a:hover { color: var(--accent); }
+
+/* ---------- Apparition au défilement ---------- */
+.revele { opacity: 0; transform: translateY(30px); transition: opacity 0.9s ease, transform 0.9s var(--courbe); }
+.revele.est-visible { opacity: 1; transform: none; }
+
+/* ---------- Moins d'animation : pas d'intro au défilement ---------- */
+@media (prefers-reduced-motion: reduce) {
+  body::after { animation: none; }
+  .intro { height: auto; }
+  .intro-scene { position: relative; }
+  .intro-indice span, .defilant-piste { animation: none; }
+  .revele { opacity: 1; transform: none; transition: none; }
+  .manifeste { min-height: 0; }
+  .manifeste-texte { position: static; }
+  .manifeste-texte .mot { color: var(--noir); }
+  .projets { height: auto; }
+  .projets-scene { position: static; height: auto; padding: 96px var(--marge) 40px; }
+  .billets, .projet-infos, .projets-compteur .grand-num { display: none; }
+  .projets-liste { position: static; width: auto; transform: none !important; text-align: left; }
+  .projets-liste li { height: auto; padding: 18px 0; border-top: 1px solid var(--trait); }
+  .projet-ligne { opacity: 1; filter: none; align-items: flex-start; }
+  .projets-compteur { position: static; }
+}
+
+/* ---------- Petits écrans ---------- */
+@media (max-width: 760px) {
+  .vers-immersif { display: none; }
+  .intro-infos { top: 66px; }
+  .apropos-grille { grid-template-columns: 1fr; }
+  .pied a:first-of-type { margin-left: 0; }
+  /* Projets : seul le projet actif, sous les billets */
+  .projet-infos { display: none; }
+  .projets-liste {
+    top: auto; bottom: 0; left: 0; right: 0; width: auto; transform: none !important;
+    padding: 56px var(--marge) 26px;
+    background: linear-gradient(transparent, var(--blanc) 45%);
+  }
+  .projets-liste li { height: auto; }
+  .projets-liste li:not(.est-actif) { display: none; }
+  .projets-compteur { top: 72px; bottom: auto; z-index: 2; }
+  .grand-num { font-size: 22vw; }
+}
