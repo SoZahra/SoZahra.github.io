@@ -10,7 +10,16 @@ police bitmap (DotGothic16), lignes CRT, ambiance demeure éclairée à la bougi
 - `main` = site public : ne fusionner que quand elle le décide.
 - Tout asset ajouté doit être crédité dans `CREDITS.md`.
 
-## Parcours
+## Deux versions, selon la saison
+
+- `index.html` = version classique (servie toute l'année).
+- `jeu.html` = version jeu, ouverte seulement du 24 octobre au 1er novembre
+  (`js/saison.js`, date locale). Pendant ce temps, `index.html` renvoie vers
+  le jeu, sauf `index.html?classique` (lien « Version rapide » du jeu).
+- Hors saison : liens vers le jeu cachés (classe `saison-fermee`), et
+  `jeu.html` renvoie vers `index.html`, sauf accès secret `jeu.html?halloween`.
+
+## Parcours (version jeu)
 
 1. Dialogues (`js/dialogues.js` : textes, thèmes, portes). Seuls des yeux
    brillants clignent dans l'arche.
@@ -39,25 +48,35 @@ police bitmap (DotGothic16), lignes CRT, ambiance demeure éclairée à la bougi
      s'envole ; café → copie l'adresse ; cadres sur la cheminée → LinkedIn,
      GitHub, CV. Adresse, Formspree, LinkedIn et CV sont des EXEMPLES.
 
-## Version rapide
+## Version classique
 
-`express.html` (`css/express.css`, `js/express.js`) : le portfolio en une
-page pour qui n'a pas le temps de faire l'intro. Lien « Version rapide » en
-haut de l'intro. Couleurs voulues par Fatima : surtout noir et blanc, une
-seule couleur vive en touches (corail `#ff4a3d`, préféré au bleu essayé),
-rien de trop sombre ; elle
-veut du simple (cartes de projet = carrés unis).
-Intro (`js/express-papier.js`, inspirée de l'identité Big Cartel) : une
-affiche corail avec « FATIMA ZAYANI » arrive froissée en boule, se déplie
-(elle reste un peu froissée), puis se refroisse et s'envole au défilement.
-Plis calculés dans le shader à partir de `PLIS` (tirés en JS et passés en
-uniformes : le même pliage sert en JS à recentrer la boule). Pas de buste
-3D ici. Ensuite : manifeste mot à mot, projets en carrés qui défilent en
-diagonale comme sur huyml.co (`js/express-billets.js` ; champ `image`
-facultatif dans `js/projets.js`), bandes défilantes, contact. En haut à gauche, ses yeux (frange
-arrondie, eye-liner) suivent la souris et clignent ; de temps en temps la
-carte pivote et montre « Fatima Zayani » (pas de monogramme « FZ »). Mêmes données
-que la version immersive. Éviter `-webkit-text-stroke` avec Cinzel.
+`index.html` (`css/express.css`, `js/express.js`) : le portfolio en une
+page (ex-`express.html`, d'où le nom des fichiers). Lien « Version rapide »
+en haut de l'intro du jeu. Refaite en octobre 2026 d'après ses références
+(portfolio Andy Lin) : fond gris clair `#c9c9c7`
+avec grain, police Archivo très large (Google Fonts), une seule couleur vive
+en touches (corail `#ff4a3d`), rien de trop sombre, du simple.
+- Structure (d'après sa maquette « Welcome page ») : une colonne de texte
+  vertical (« 2026 / Portfolio / Zayani Fatima / Designer UI/UX /
+  Développeuse ») qui l'accompagne pendant toute la visite. Centrée à
+  l'accueil, elle glisse à gauche au défilement et change de mots selon la
+  section (projet en cours, À propos, Contact). Navigation verticale à
+  droite, le mot roule au survol.
+- Projets : paquet de cartes carrées épaisses en éventail, en 3D
+  (`js/express-paquet.js`). Accueil et projets = une seule scène. À
+  l'accueil, ça doit être VIVANT (réfs : affiches OLMA, site Filayyyy) : les
+  cartes flottent et avancent vers nous en boucle, floues sauf à une distance
+  nette (profondeur de champ par planches de flou précalculées), avec des
+  étiquettes « • Titre ». Au défilement, une carte par projet se range dans
+  le paquet pendant que la colonne glisse à gauche, les échos filent ; puis
+  la carte du dessus s'envole à chaque projet. Carte = image du projet (champ `image` dans
+  `js/projets.js`) ou carré uni avec numéro et titre. Pas de boîtiers CD.
+- Puis « À propos » dans un panneau à coins marqués, et contact.
+- En haut à gauche, ses yeux (frange arrondie, eye-liner) suivent la souris
+  et clignent ; de temps en temps la carte pivote et montre « Fatima Zayani »
+  (pas de monogramme « FZ »). Éviter `-webkit-text-stroke` avec Cinzel.
+- Abandonnés (elle n'a pas aimé) : affiche froissée, billets en diagonale,
+  anamorphose, objets 3D en ouverture, anneau de cartes façon Manet.
 
 ## Le personnage
 

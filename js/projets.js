@@ -18,8 +18,8 @@
  *   effets     : ce que le projet a apporté, présenté comme les bonus d'un objet
  *   liens       : [{ libelle, url }] (vide = pas de bouton)
  *   image       : (facultatif) capture du projet, ex. "images/projets/resa.jpg",
- *                 affichée sur son billet dans la version rapide (express.html) ;
- *                 sans elle, une affiche en noir et blanc est dessinée
+ *                 affichée sur son carré dans l'anneau de la version classique (index.html) ;
+ *                 sans elle, un carré uni avec numéro et titre est dessiné
  *
  * ⚠ Les projets ci-dessous sont des EXEMPLES à remplacer par les tiens.
  */

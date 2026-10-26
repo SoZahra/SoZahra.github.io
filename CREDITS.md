@@ -10,7 +10,9 @@
 - **Cadres PC-98** (`assets/ui/pc98/`), fond généré (`js/fond-pixel.js`), police gravée
   (`js/police-pixel.js`), personnage (`js/personnage-pixel.js`), pièces (`js/piece-projets.js`,
   `js/piece-whoami.js`) et figurine 3D (`js/figurine-3d.js`) — réalisés pour ce site.
-- **Version rapide** (`express.html`, `css/express.css`, `js/express.js`, `js/express-papier.js`, `js/express-billets.js`) — réalisée pour ce site.
+- **Version classique** (`index.html`, `js/saison.js`, `css/express.css`, `js/express.js`, `js/express-paquet.js`) — réalisée pour ce site.
+- **Archivo** (police de la version classique, chargée depuis Google Fonts) — par Omnibus-Type,
+  sous [SIL Open Font License 1.1](https://openfontlicense.org).
 
 ## Bibliothèques
 

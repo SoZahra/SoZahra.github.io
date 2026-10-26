@@ -1,15 +1,15 @@
 /*
- * Version rapide du portfolio (express.html).
- * Remplit la page avec les mêmes données que la version immersive
+ * Version classique du portfolio (index.html).
+ * Remplit la page avec les mêmes données que la version jeu
  * (js/projets.js, js/whoami.js, js/contact.js), puis anime :
- *   - l'intro : une affiche en papier à son nom arrive froissée et se déplie ;
- *     au défilement, elle se froisse de nouveau et s'envole (js/express-papier.js) ;
- *   - le manifeste qui s'allume mot à mot ;
- *   - les projets en billets qui défilent en diagonale (js/express-billets.js) ;
- *   - le curseur personnalisé.
+ *   - la colonne : texte vertical qui accompagne toute la visite (centrée à
+ *     l'accueil, puis à gauche ; son texte change selon la section) ;
+ *   - le paquet de cartes des projets, en éventail : visible au loin dès
+ *     l'accueil, on s'en approche au défilement, puis la carte du dessus
+ *     s'envole à chaque projet (js/express-paquet.js) ;
+ *   - ses yeux en haut à gauche et le curseur personnalisé.
  */
-import { creerPapier } from "./express-papier.js";
-import { creerBillets } from "./express-billets.js";
+import { creerPaquet } from "./express-paquet.js";
 
 const P = window.PROJETS || { categories: {}, liste: [] };
 const W = window.WHOAMI || {};
@@ -26,36 +26,69 @@ function el(tag, classe, texte) {
 }
 const deux = (n) => String(n).padStart(2, "0");
 const borne = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-const lisse = (t) => t * t * (3 - 2 * t);
-const entreSort = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+const sansExemple = (t) => t.replace(/^Exemple\s*—\s*/, "");
 
-/* ---------- Textes ---------- */
-document.getElementById("classe").textContent = W.classe || "";
 const annee = new Date().getFullYear();
 document.getElementById("annee").textContent = annee;
+document.getElementById("classe").textContent = W.classe || "";
 
-// Manifeste : la devise, mot à mot ; ce qui suit les points de suspension en rouge
-const manifeste = document.getElementById("manifeste-texte");
-const [debutDevise, ...finDevise] = (W.devise || "").split("…");
-const mots = [];
-function ajouterMots(texte, accent) {
-  texte.split(/\s+/).filter(Boolean).forEach((m) => {
-    const s = el("span", accent ? "mot accent" : "mot", m);
-    mots.push(s);
-    manifeste.append(s, " ");
+/* ---------- La colonne ----------
+   Cinq mots posés sur deux lignes, puis tournés d'un quart de tour : la
+   ligne 1 devient la colonne de droite. Place = position le long de la
+   colonne (en % de sa longueur). Chaque section a ses mots. */
+const colonne = document.getElementById("colonne");
+const motsColonne = {};
+colonne.querySelectorAll("[data-place]").forEach((m) => { motsColonne[m.dataset.place] = m; });
+// la classe (« Designer UI/UX · Développeuse ») se partage en deux mots
+const [metier1, ...metier2] = (W.classe || "").split("·").map((s) => s.trim());
+const [prenom, ...resteNom] = (W.nom || "Fatima Zayani").split(" ");
+const nomInverse = `${resteNom.join(" ")} ${prenom}`.trim();
+const PRESENTATION = {
+  a: ["2026", 0], b: ["Portfolio", 6.5], c: [nomInverse, 29], d: [metier1 || "", 55], e: [metier2.join(" · "), 72],
+};
+PRESENTATION.a[0] = String(annee);
+
+function textesColonne(section) {
+  if (section === "projets" && actif >= 0) {
+    const { p, cat } = projets[actif];
+    return {
+      a: [`${deux(actif + 1)} / ${deux(projets.length)}`, 0],
+      b: ["Projets", 9],
+      c: [sansExemple(p.titre), 25],
+      d: [cat.libelle || "", 58],
+      e: [p.annee || "", 86],
+    };
+  }
+  if (section === "apropos") return { ...PRESENTATION, a: ["", 0], b: ["À propos", 6.5] };
+  if (section === "contact") return { a: [String(annee), 0], b: ["Contact", 6.5], c: [C.email || "", 29], d: ["Écris-moi", 62], e: ["", 80] };
+  return PRESENTATION;
+}
+
+let cleColonne = "";
+function majColonne(section) {
+  const textes = textesColonne(section);
+  const cle = JSON.stringify(textes);
+  if (cle === cleColonne) return;
+  cleColonne = cle;
+  Object.entries(textes).forEach(([place, [texte, pos]]) => {
+    const m = motsColonne[place];
+    if (m.textContent === texte && m.style.getPropertyValue("--pos") === `${pos}%`) return;
+    // le mot s'efface en glissant, change, puis revient
+    m.classList.add("change");
+    setTimeout(() => {
+      m.textContent = texte;
+      m.style.setProperty("--pos", `${pos}%`);
+      m.classList.remove("change");
+    }, reduit ? 0 : 220);
   });
 }
-ajouterMots(debutDevise + (finDevise.length ? "…" : ""), false);
-if (finDevise.length) ajouterMots(finDevise.join("…"), true);
 
-/* ---------- Projets : liste, détails, fiche ---------- */
+/* ---------- Fiche d'un projet ---------- */
 const fiche = document.getElementById("fiche");
 const ficheContenu = document.getElementById("fiche-contenu");
-document.getElementById("projet-total").textContent = `/${deux(P.liste.length)}`;
 
 function ouvrirFiche(p, cat) {
   ficheContenu.replaceChildren();
-  fiche.style.setProperty("--pastille", cat.couleur);
   const titre = el("h3", "", p.titre);
   titre.id = "fiche-titre";
   ficheContenu.append(el("span", "fiche-cat", `${cat.libelle} · ${p.annee || ""}`), titre);
@@ -83,76 +116,50 @@ document.getElementById("fiche-fermer").addEventListener("click", () => fiche.cl
 // Clic hors de la fiche (sur le fond) : on ferme
 fiche.addEventListener("click", (e) => { if (e.target === fiche) fiche.close(); });
 
-const projets = P.liste.map((p) => ({ p, cat: P.categories[p.categorie] || { libelle: "", couleur: "#8a8784" } }));
+/* ---------- Projets : liste et projet actif ---------- */
+const projets = P.liste.map((p) => ({ p, cat: P.categories[p.categorie] || { libelle: "" } }));
+// accueil et projets forment une seule scène
+const sectionProjets = document.getElementById("accueil");
+const basProjets = document.getElementById("projets-bas");
+const indiceAccueil = document.getElementById("accueil-indice");
 const listeProjets = document.getElementById("projets-liste");
-const infosProjet = document.getElementById("projet-infos");
-const grandNum = document.getElementById("grand-num");
+const projetActif = document.getElementById("projet-actif");
 
-// Liste à droite : un bouton par projet (ouvre sa fiche)
-const lignesProjets = projets.map(({ p, cat }, i) => {
+// Défilement (en px) qui amène le projet i sur le dessus du paquet
+// L'approche (de l'accueil jusque devant le paquet), puis un pas par projet
+const APPROCHE = () => innerHeight * 0.9;
+const PAR_PROJET = () => innerHeight * 0.7;
+function allerAuProjet(i) {
+  if (reduit) { cibleF = i; return; }
+  scrollTo({ top: sectionProjets.offsetTop + APPROCHE() + i * PAR_PROJET() + 2, behavior: "smooth" });
+}
+
+// Numéros en bas : un bouton par projet, qui feuillette le paquet jusqu'à lui
+const lignesProjets = projets.map(({ p }, i) => {
   const li = el("li");
-  const b = el("button", "projet-ligne");
+  const b = el("button", "projet-ligne", deux(i + 1));
   b.type = "button";
-  b.dataset.curseur = "Ouvrir";
-  b.append(
-    el("span", "projet-ligne-cat", cat.libelle),
-    el("span", "projet-ligne-titre", p.titre.replace(/^Exemple\s*—\s*/, "")),
-    el("span", "projet-ligne-tiret"),
-    el("span", "projet-ligne-resume", p.resume || ""),
-  );
-  b.addEventListener("click", () => ouvrirFiche(p, cat));
+  b.setAttribute("aria-label", sansExemple(p.titre));
+  b.addEventListener("click", () => allerAuProjet(i));
   li.append(b);
   listeProjets.append(li);
-  return li;
+  return b;
 });
-
-// Détails du projet actif, à gauche
-function afficherInfos(i) {
-  const { p, cat } = projets[i];
-  const lignes = [
-    ["Catégorie", cat.libelle],
-    ["Rôle", p.role],
-    ["Année", p.annee],
-    ["Outils", (p.outils || []).join("\n")],
-    ["Apports", (p.effets || []).map((e) => e.replace(/^\+\s*/, "")).join("\n")],
-  ];
-  infosProjet.replaceChildren();
-  lignes.forEach(([dt, dd]) => {
-    if (!dd) return;
-    const d = el("dd", "", "");
-    dd.split("\n").forEach((l, k) => { if (k) d.append(document.createElement("br")); d.append(l); });
-    infosProjet.append(el("dt", "", dt), d);
-  });
-}
 
 let actif = -1;
 function changerActif(i) {
-  if (i === actif) return;
+  if (i === actif || !projets[i]) return;
   actif = i;
-  lignesProjets.forEach((li, k) => li.classList.toggle("est-actif", k === i));
-  // la liste glisse pour garder le projet actif au milieu
-  const li = lignesProjets[i];
-  listeProjets.style.transform = `translateY(${-(li.offsetTop + li.offsetHeight / 2)}px)`;
-  grandNum.textContent = deux(i + 1);
-  grandNum.classList.remove("roule");
-  void grandNum.offsetWidth; // relance l'animation
-  grandNum.classList.add("roule");
-  infosProjet.classList.add("est-change");
-  setTimeout(() => { afficherInfos(i); infosProjet.classList.remove("est-change"); }, reduit ? 0 : 180);
+  const { p, cat } = projets[i];
+  lignesProjets.forEach((b, k) => b.setAttribute("aria-current", k === i ? "true" : "false"));
+  projetActif.textContent = `Projet ${i + 1} sur ${projets.length} : ${sansExemple(p.titre)}, ${[cat.libelle, p.annee].filter(Boolean).join(", ")}`;
 }
 changerActif(0);
+const ouvrirActif = () => { if (actif >= 0) ouvrirFiche(projets[actif].p, projets[actif].cat); };
+document.getElementById("projet-ouvrir").addEventListener("click", ouvrirActif);
 
 /* ---------- À propos ---------- */
-function remplirDefilant(id, mots) {
-  const piste = document.getElementById(id);
-  // deux fois la même suite : la boucle est invisible
-  for (let k = 0; k < 2; k++) {
-    mots.forEach((m) => piste.append(el("span", "", m), el("i", "", "✦")));
-  }
-}
-remplirDefilant("defilant-1", W.competences || []);
-remplirDefilant("defilant-2", (W.attributs || []).map((a) => a.libelle));
-
+document.getElementById("devise").textContent = W.devise || "";
 const histoire = document.getElementById("histoire");
 (W.histoire || []).forEach((h) => histoire.append(el("p", "", h)));
 const competences = document.getElementById("competences");
@@ -201,7 +208,7 @@ if ("IntersectionObserver" in window && !reduit) {
       obs.unobserve(e.target);
     });
   }, { rootMargin: "0px 0px -8% 0px" });
-  document.querySelectorAll(".apropos-grille > *, .contact h2, .contact-ligne, .liens").forEach((n, i) => {
+  document.querySelectorAll(".panneau > *, .apropos-grille > *, .contact h2, .contact-ligne, .liens").forEach((n, i) => {
     n.classList.add("revele");
     n.style.transitionDelay = `${(i % 2) * 120}ms`;
     obs.observe(n);
@@ -260,58 +267,35 @@ function majYeux() {
   iris.forEach((g) => g.setAttribute("transform", `translate(${regardYeux.x.toFixed(2)} ${regardYeux.y.toFixed(2)})`));
 }
 
-/* ---------- Intro : l'affiche en papier ---------- */
-const intro = document.getElementById("intro");
-const canvasPapier = document.getElementById("papier");
-const cotes = document.querySelectorAll(".intro-infos, .intro-passer");
-const [prenom, ...resteNom] = (W.nom || "Fatima Zayani").split(" ");
-let papier = null;
+/* ---------- Paquet de cartes ---------- */
+const canvasPaquet = document.getElementById("paquet");
+let paquet = null;
 try {
-  papier = creerPapier(canvasPapier, {
-    prenom: prenom.toUpperCase(),
-    nom: resteNom.join(" ").toUpperCase(),
-    lignes: [W.classe || ""],
-  });
+  paquet = creerPaquet(canvasPaquet, projets, document.getElementById("etiquettes"));
+  canvasPaquet.addEventListener("click", () => { if (proche > 0.9) ouvrirActif(); });
 } catch (e) {
-  canvasPapier.remove(); // pas de WebGL : la page reste lisible
+  canvasPaquet.remove(); // pas de WebGL : les numéros et la colonne suffisent
 }
-const DEPLIAGE = reduit ? 0 : 2.4; // durée du dépliage à l'arrivée (s)
-const debutDepliage = performance.now();
-const regard = { x: 0, y: 0 };
 
-/* ---------- Projets : les billets suivent le défilement ---------- */
-const sectionProjets = document.getElementById("projets");
-const canvasBillets = document.getElementById("billets");
-let billets = null;
-if (!reduit) {
-  try {
-    billets = creerBillets(canvasBillets, projets);
-  } catch (e) {
-    canvasBillets.remove(); // pas de WebGL : la liste à droite suffit
-  }
-  canvasBillets.addEventListener("click", () => { if (actif >= 0) ouvrirFiche(projets[actif].p, projets[actif].cat); });
-}
 function mesurerProjets() {
   if (reduit) return;
-  // ~80 % d'écran de défilement par projet
-  sectionProjets.style.setProperty("--hauteur-projets", `${(projets.length - 1) * innerHeight * 0.8 + innerHeight}px`);
-  if (billets) billets.redimensionner();
+  sectionProjets.style.setProperty("--approche", `${APPROCHE()}px`);
+  sectionProjets.style.setProperty("--hauteur-projets", `${APPROCHE() + (projets.length - 1) * PAR_PROJET() + innerHeight}px`);
 }
 window.addEventListener("resize", () => {
-  if (papier) papier.redimensionner();
+  if (paquet) paquet.redimensionner();
   mesurerProjets();
 });
 mesurerProjets();
 
 /* ---------- Boucle d'animation ---------- */
 let fProjets = 0;
+let cibleF = 0;
+let xColonne = null;
+let proche = reduit ? 1 : 0; // 0 = à l'accueil, cartes en vol ; 1 = devant le paquet
+const regard = { x: 0, y: 0 }; // souris adoucie, pour la caméra
+const sections = ["accueil", "apropos", "contact"].map((id) => document.getElementById(id));
 const t0 = performance.now();
-
-function progres(section) {
-  const r = section.getBoundingClientRect();
-  const max = section.offsetHeight - innerHeight;
-  return max > 0 ? borne(-r.top / max) : 0;
-}
 
 function image() {
   const t = (performance.now() - t0) / 1000;
@@ -322,52 +306,34 @@ function image() {
   curseur.style.transform = `translate(${pointeur.x}px, ${pointeur.y}px)`;
   majYeux();
 
-  // --- Intro : l'affiche se déplie, puis se froisse et s'envole au défilement ---
-  const rIntro = intro.getBoundingClientRect();
-  if (papier && rIntro.bottom > 0) {
-    const p = reduit ? 0 : progres(intro);
-    // arrivée : de la boule froissée à la feuille à plat
-    const a = DEPLIAGE ? borne((performance.now() - debutDepliage) / 1000 / DEPLIAGE) : 1;
-    const ouvert = 1 - (1 - a) ** 3;
-    // départ : froissée de nouveau, rapetisse, tourne et file vers le haut
-    const q = entreSort(borne(p));
-    // au repos, l'affiche reste un peu froissée, comme une vraie affiche
-    const REPOS = 0.12;
-    const froisse = Math.max(REPOS + (1 - REPOS) * (1 - ouvert), REPOS + (1 - REPOS) * q);
-    // la feuille s'incline un peu vers la souris (balancement lent sur tactile)
-    const sx = tactile ? Math.sin(t * 0.5) * 0.4 : souris.nx;
-    const sy = tactile ? 0 : souris.ny;
-    regard.x += (sx - regard.x) * 0.06;
-    regard.y += (sy - regard.y) * 0.06;
-    papier.maj({
-      froisse,
-      echelle: (0.6 + 0.4 * ouvert) * (1 - 0.6 * q),
-      x: 0.12 * p ** 2,
-      y: -0.02 + 0.75 * p ** 4 + (reduit ? 0 : Math.sin(t * 0.9) * 0.004), // s'envole à la fin
-      rx: regard.y * 0.18 * (1 - q) + 0.06,
-      ry: regard.x * 0.22 * (1 - q),
-      rz: -0.5 * (1 - ouvert) + 0.9 * q,
-    });
-    cotes.forEach((c) => { c.style.opacity = String(1 - borne(p * 6)); });
-  }
+  // --- Approche du paquet : de l'accueil jusque devant les cartes ---
+  const rp = sectionProjets.getBoundingClientRect();
+  const cibleProche = reduit ? 1 : borne(-rp.top / APPROCHE());
+  proche += (cibleProche - proche) * 0.12;
+  if (Math.abs(cibleProche - proche) < 0.001) proche = cibleProche;
 
-  // --- Manifeste : les mots s'allument au fil du défilement ---
-  const rm = manifeste.parentElement.getBoundingClientRect();
-  if (!reduit && rm.top < innerHeight && rm.bottom > 0) {
-    const q = borne((innerHeight * 0.75 - rm.top) / (rm.height * 0.55));
-    const n = Math.round(q * mots.length);
-    mots.forEach((m, i) => m.classList.toggle("est-allume", i < n));
-  }
+  // --- La colonne : du centre vers la gauche, au rythme de l'approche ---
+  const largeurColonne = colonne.offsetHeight; // ses deux lignes, une fois tournée
+  const marge = borne(innerWidth * 0.04, 16, 56); // comme --marge en CSS
+  const centre = innerWidth / 2 - largeurColonne / 2;
+  const cibleX = centre + (marge - centre) * (proche * proche * (3 - 2 * proche));
+  xColonne = cibleX;
+  colonne.style.setProperty("--x", `${xColonne.toFixed(1)}px`);
+  // section au milieu de l'écran : c'est elle qui donne ses mots à la colonne
+  const milieu = sections.find((sec) => { const r = sec.getBoundingClientRect(); return r.top <= innerHeight / 2 && r.bottom > innerHeight / 2; });
+  majColonne(!milieu || milieu === sectionProjets ? (proche < 0.5 ? "accueil" : "projets") : milieu.id);
+  indiceAccueil.style.opacity = String(1 - borne(proche * 3));
+  basProjets.toggleAttribute("data-loin", proche < 0.9);
+  canvasPaquet.classList.toggle("est-proche", proche > 0.9);
 
-  // --- Projets ---
-  if (!reduit) {
-    const rp = sectionProjets.getBoundingClientRect();
-    if (rp.top < innerHeight && rp.bottom > 0) {
-      const cible = progres(sectionProjets) * (projets.length - 1);
-      fProjets += (cible - fProjets) * 0.12; // défilement adouci
-      changerActif(Math.round(fProjets));
-      if (billets) billets.maj(fProjets, t);
-    }
+  // --- Projets : le paquet se feuillette avec le défilement ---
+  if (rp.top < innerHeight && rp.bottom > 0) {
+    if (!reduit) cibleF = borne((-rp.top - APPROCHE()) / PAR_PROJET(), 0, projets.length - 1);
+    fProjets += (cibleF - fProjets) * (reduit ? 1 : 0.1); // mouvement adouci
+    changerActif(Math.round(fProjets));
+    regard.x += ((tactile ? 0 : souris.nx) - regard.x) * 0.05;
+    regard.y += ((tactile ? 0 : souris.ny) - regard.y) * 0.05;
+    if (paquet) paquet.maj(fProjets, reduit ? 0 : t, proche, regard.x, regard.y);
   }
 
   requestAnimationFrame(image);

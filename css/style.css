@@ -836,7 +836,7 @@ a.btn-cadre {
 
 /* ============================================================
    Thème pc98 : police bitmap, cadres nets, lignes d'écran CRT
-   (attribut data-theme-ui posé dans le <head> de index.html)
+   (attribut data-theme-ui posé dans le <head> de jeu.html)
    ============================================================ */
 
 :root[data-theme-ui="pc98"] {

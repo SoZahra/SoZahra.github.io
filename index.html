@@ -2,263 +2,154 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <!-- Pendant Halloween, renvoie vers la version jeu (jeu.html) -->
+  <script src="js/saison.js" data-page="classique"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Fatima Zayani — Designer UI/UX & développeuse</title>
-  <meta name="description" content="Portfolio de Fatima Zayani, designer UI/UX et développeuse.">
-  <link rel="stylesheet" href="css/style.css">
+  <meta name="description" content="Portfolio de Fatima Zayani, designer UI/UX et développeuse : projets, parcours et contact, en une page.">
+  <meta name="theme-color" content="#c9c9c7">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+  <link rel="stylesheet" href="css/express.css">
 
-  <!-- Configuration (textes + chemins des assets) -->
-  <script src="js/dialogues.js"></script>
-  <script>
-    // Décide AVANT l'affichage si l'intro doit se jouer, pour éviter
-    // un flash du portfolio. On joue l'intro seulement si :
-    //  - aucune ancre dans l'URL (lien direct type /#projets → portfolio),
-    //  - et l'intro n'a jamais été vue (localStorage, peut être bloqué).
-    (function () {
-      var dejaVue = false;
-      try {
-        dejaVue = localStorage.getItem(window.INTRO_CONFIG.cleStockage) === "1";
-      } catch (e) { /* stockage indisponible : on considère "pas vue" */ }
-      if (!location.hash && !dejaVue) {
-        document.documentElement.classList.add("intro-active");
-      }
-      // Thème actif posé tout de suite : la police et les effets d'écran
-      // du thème s'appliquent aussi au portfolio, sans flash
-      document.documentElement.dataset.themeUi = window.INTRO_CONFIG.themeActif;
-    })();
-  </script>
-  <script src="js/police-pixel.js" defer></script>
-  <script src="js/personnage-pixel.js" defer></script>
-  <script src="js/son-neon.js" defer></script>
-  <script src="js/fond-pixel.js" defer></script>
+  <!-- Version classique du portfolio : une seule page, servie toute l'année
+       sauf à Halloween. Mêmes données que la version jeu (jeu.html). -->
   <script src="js/projets.js" defer></script>
-  <script src="js/piece-projets.js" defer></script>
   <script src="js/whoami.js" defer></script>
-  <script src="js/piece-whoami.js" defer></script>
   <script src="js/contact.js" defer></script>
-  <script src="js/piece-contact.js" defer></script>
-  <script src="js/intro.js" defer></script>
+  <script type="module" src="js/express.js"></script>
 </head>
 <body>
-  <!-- Le nom dessiné dans le décor est une image : vrai titre pour les
-       lecteurs d'écran et les moteurs de recherche -->
-  <h1 class="sr-only">Fatima Zayani — Portfolio</h1>
+  <a class="evitement" href="#projets">Aller aux projets</a>
 
-  <!-- ===================== INTRO ===================== -->
-  <section id="intro" class="intro" aria-label="Introduction" aria-describedby="intro-aide" tabindex="-1">
-    <p id="intro-aide" class="sr-only"></p>
+  <!-- Curseur personnalisé (souris seulement) -->
+  <div class="curseur" id="curseur" aria-hidden="true"><span id="curseur-texte"></span></div>
 
-    <!-- Décor : fond pixel art + portes. La « caméra » est zoomée sur la porte
-         du milieu pendant les dialogues, puis entre dans la porte et arrive
-         dans la salle aux trois portes -->
-    <div class="decor" id="decor">
-      <!-- Fond généré (js/fond-pixel.js), caché si une image est fournie -->
-      <canvas class="fond-pixel" id="fond-pixel" aria-hidden="true"></canvas>
-      <!-- Noir de l'entrée dans la porte -->
-      <div class="voile" aria-hidden="true"></div>
-      <!-- Une porte cliquable par destination (créées par js/intro.js) -->
-      <nav class="portes" id="portes" aria-label="Choisis une porte" hidden></nav>
-    </div>
+  <header class="entete">
+    <!-- Ses yeux (frange noire, eye-liner) : les pupilles suivent la souris -->
+    <a class="yeux" id="yeux" href="#haut" aria-label="Fatima Zayani, haut de page">
+      <span class="yeux-carte">
+      <span class="yeux-face yeux-recto">
+      <svg viewBox="0 0 72 34" aria-hidden="true" focusable="false">
+        <defs>
+          <clipPath id="oeil-g"><path d="M8 23 Q19 13 30 23 Q19 31 8 23 Z"/></clipPath>
+          <clipPath id="oeil-d"><path d="M42 23 Q53 13 64 23 Q53 31 42 23 Z"/></clipPath>
+        </defs>
+        <!-- frange : haut arrondi, mèches qui tombent juste au-dessus des yeux -->
+        <path d="M1 16 C1 5 15 0.5 36 0.5 C57 0.5 71 5 71 16 Q68.8 17.6 66.7 14.9 Q64.5 17.5 62.3 14.6 Q60.4 17.5 58.4 14.7 Q56.0 16.9 53.6 14.4 Q51.7 17.9 49.8 14.7 Q48.0 18.2 46.2 15.0 Q43.8 17.7 41.5 14.2 Q39.7 17.5 37.9 14.2 Q35.9 17.1 34.0 14.1 Q31.8 17.4 29.6 14.9 Q27.4 17.7 25.2 14.5 Q22.9 17.4 20.5 14.4 Q17.9 18.2 15.4 14.9 Q13.0 17.2 10.6 14.3 Q8.6 16.9 6.6 14.8 Q4.4 18.0 2.3 14.4 Q1.7 18.0 1.0 14.1 Z" fill="#111"/>
+        <g class="oeil">
+          <path d="M8 23 Q19 13 30 23 Q19 31 8 23 Z" fill="#fff"/>
+          <g clip-path="url(#oeil-g)"><g class="iris">
+            <circle cx="19" cy="23" r="5.2" fill="#3b2a22"/>
+            <circle cx="19" cy="23" r="2.4" fill="#111"/>
+            <circle cx="20.4" cy="21.6" r="1" fill="#fff"/>
+          </g></g>
+          <path d="M8 23 Q19 13 30 23 Q19 31 8 23 Z" fill="none" stroke="#111" stroke-width="1.6"/>
+        </g>
+        <g class="oeil">
+          <path d="M42 23 Q53 13 64 23 Q53 31 42 23 Z" fill="#fff"/>
+          <g clip-path="url(#oeil-d)"><g class="iris">
+            <circle cx="53" cy="23" r="5.2" fill="#3b2a22"/>
+            <circle cx="53" cy="23" r="2.4" fill="#111"/>
+            <circle cx="54.4" cy="21.6" r="1" fill="#fff"/>
+          </g></g>
+          <path d="M42 23 Q53 13 64 23 Q53 31 42 23 Z" fill="none" stroke="#111" stroke-width="1.6"/>
+        </g>
+        <!-- eye-liner : trait épais en haut, étiré vers l'extérieur -->
+        <path d="M30 23 Q19 13.2 8 23 L3 18.5 Q6 20 8.6 21.2" fill="none" stroke="#111" stroke-width="2.4" stroke-linejoin="round"/>
+        <path d="M42 23 Q53 13.2 64 23 L69 18.5 Q66 20 63.4 21.2" fill="none" stroke="#111" stroke-width="2.4" stroke-linejoin="round"/>
+      </svg>
+      </span>
+      <span class="yeux-face yeux-nom" aria-hidden="true">Fatima<br>Zayani</span>
+      </span>
+    </a>
+    <!-- Navigation verticale, à droite ; au survol, le mot roule -->
+    <nav class="nav-verticale" aria-label="Navigation principale">
+      <ul>
+        <li><a href="#projets"><span data-texte="Projets">Projets</span></a></li>
+        <li><a href="#apropos"><span data-texte="À propos">À propos</span></a></li>
+        <li><a href="#contact"><span data-texte="Contact">Contact</span></a></li>
+      </ul>
+    </nav>
+    <a class="vers-immersif lien-jeu" href="jeu.html"><span data-texte="Version immersive ↗">Version immersive ↗</span></a>
+  </header>
 
-    <!-- Pièce « Projets » (js/piece-projets.js) : un vieux bureau ; cliquer
-         dessus ouvre l'inventaire des projets (données : js/projets.js) -->
-    <div class="piece" id="piece-projets" role="region" aria-label="Le bureau des projets" tabindex="-1" hidden>
-      <div class="piece-scene" id="piece-scene">
-        <canvas class="piece-fond" id="piece-fond" aria-hidden="true"></canvas>
-        <button type="button" class="piece-objet" id="piece-bureau">
-          <span class="piece-etiquette" aria-hidden="true">Le bureau</span>
-        </button>
-      </div>
-      <p class="piece-consigne" id="piece-consigne"></p>
-      <button type="button" class="btn-cadre piece-retour" id="piece-retour">◁ Portes</button>
+  <!-- La colonne : texte vertical qui accompagne toute la visite. Centrée à
+       l'accueil, elle glisse à gauche au défilement et change de texte
+       selon la section (js/express.js). Décorative : le vrai texte est
+       dans les sections. -->
+  <div class="colonne" id="colonne" aria-hidden="true">
+    <span class="colonne-mot" data-place="a"></span>
+    <span class="colonne-mot" data-place="b"></span>
+    <span class="colonne-mot" data-place="c"></span>
+    <span class="colonne-mot" data-place="d"></span>
+    <span class="colonne-mot" data-place="e"></span>
+  </div>
 
-      <div class="inventaire" id="inventaire" role="dialog" aria-modal="true" aria-labelledby="inventaire-titre" hidden>
-        <!-- Fond peint (tramé en pixels par js/piece-projets.js) -->
-        <canvas class="inventaire-toile" id="inventaire-toile" aria-hidden="true"></canvas>
-        <div class="inventaire-ecran">
-          <header class="inventaire-haut">
-            <h2 class="inventaire-titre" id="inventaire-titre"></h2>
-            <div class="inventaire-onglets" id="inventaire-onglets" aria-label="Catégories"></div>
-          </header>
-          <section class="inventaire-sac" aria-labelledby="inventaire-rayon">
-            <p class="inventaire-compteurs" id="inventaire-compteurs"></p>
-            <h3 class="inventaire-rayon" id="inventaire-rayon"></h3>
-            <div class="inventaire-casier">
-              <ul class="inventaire-grille" id="inventaire-grille" aria-label="Documents"></ul>
-              <div class="inventaire-glissiere" aria-hidden="true"></div>
-            </div>
-            <p class="inventaire-pied"><span>Plus récents</span><span id="inventaire-total"></span></p>
-          </section>
-          <div class="inventaire-vitrine" id="inventaire-vitrine" aria-hidden="true"></div>
-          <section class="inventaire-detail" id="inventaire-detail" aria-live="polite"></section>
-          <footer class="inventaire-touches">
-            <span class="inventaire-aide" aria-hidden="true">
-              <span class="fiche-touche">←↑→↓</span> Choisir
-              <span class="fiche-touche">Q</span><span class="fiche-touche">E</span> Catégorie
-            </span>
-            <button type="button" class="inventaire-fermer" id="inventaire-fermer"><span class="fiche-touche" aria-hidden="true">Échap</span> Retour</button>
-          </footer>
+  <main id="haut">
+    <!-- ===================== ACCUEIL + PROJETS =====================
+         Une seule scène (js/express-paquet.js) : à l'accueil, les cartes des
+         projets flottent, floues, et avancent vers nous derrière la colonne.
+         Au défilement, elles se rangent en paquet pendant que la colonne
+         glisse à gauche, puis on feuillette : la carte du dessus s'envole. -->
+    <section class="projets" id="accueil" aria-labelledby="nom">
+      <!-- cible des liens « Projets » : la fin de l'approche -->
+      <span class="ancre-projets" id="projets" aria-hidden="true"></span>
+      <div class="projets-scene">
+        <h1 class="sr-only" id="nom">Fatima Zayani</h1>
+        <p class="sr-only" id="classe"></p>
+        <h2 class="sr-only" id="titre-projets">Projets</h2>
+        <canvas class="paquet" id="paquet" aria-hidden="true"></canvas>
+        <div class="etiquettes" id="etiquettes" aria-hidden="true"></div>
+        <p class="sr-only" id="projet-actif" aria-live="polite"></p>
+        <a class="accueil-indice" id="accueil-indice" href="#projets">Défile <span aria-hidden="true">↓</span></a>
+        <div class="projets-bas" id="projets-bas">
+          <ol class="projets-liste" id="projets-liste" aria-label="Aller au projet"></ol>
+          <button type="button" class="bouton" id="projet-ouvrir">Voir le projet</button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Pièce « whoami » (js/piece-whoami.js) : l'atelier. Elle peint, se
-         retourne et parle ; cliquer sur elle ouvre sa fiche de personnage
-         (figurine 3D js/figurine-3d.js + panneau ; données : js/whoami.js) -->
-    <div class="piece piece-whoami" id="piece-whoami" role="region" aria-label="L'atelier" tabindex="-1" hidden>
-      <div class="piece-scene">
-        <canvas class="piece-fond" id="whoami-fond" aria-hidden="true"></canvas>
-        <button type="button" class="piece-objet" id="whoami-perso">
-          <span class="piece-etiquette" id="whoami-etiquette" aria-hidden="true"></span>
-        </button>
-      </div>
-      <div class="eclair" aria-hidden="true"></div>
-      <p class="piece-consigne" id="whoami-consigne" hidden></p>
-      <div class="whoami-bulle" id="whoami-bulle" hidden>
-        <p class="whoami-replique" id="whoami-replique" aria-hidden="true"></p>
-        <p class="sr-only" id="whoami-replique-lue" aria-live="polite"></p>
-      </div>
-      <button type="button" class="btn-cadre piece-retour" id="whoami-retour">◁ Portes</button>
-
-      <div class="fiche" id="fiche" role="dialog" aria-modal="true" aria-labelledby="fiche-nom" hidden>
-        <canvas class="fiche-3d" id="fiche-3d" aria-hidden="true"></canvas>
-        <div class="fiche-repli" id="fiche-repli" aria-hidden="true"></div>
-        <div class="fiche-fondu" aria-hidden="true"></div>
-        <p class="fiche-aide" aria-hidden="true">Glisse pour la faire tourner</p>
-        <section class="fiche-panneau" id="fiche-panneau"></section>
-        <button type="button" class="btn-cadre fiche-fermer" id="fiche-fermer">✕ Fermer</button>
-      </div>
-    </div>
-
-    <!-- Pièce « Contact » (js/piece-contact.js) : le salon. Elle somnole
-         près du feu ; le secrétaire ouvre une lettre (formulaire), le café
-         copie l'adresse, les cadres sont les liens (données : js/contact.js).
-         Les boutons des objets sont ajoutés dans .piece-scene par le script -->
-    <div class="piece piece-contact" id="piece-contact" role="region" aria-label="Le salon" tabindex="-1" hidden>
-      <div class="piece-scene">
-        <canvas class="piece-fond" id="contact-fond" aria-hidden="true"></canvas>
-      </div>
-      <p class="piece-consigne" id="contact-consigne" hidden></p>
-      <div class="whoami-bulle" id="contact-bulle" hidden>
-        <p class="whoami-replique" id="contact-replique" aria-hidden="true"></p>
-        <p class="sr-only" id="contact-replique-lue" aria-live="polite"></p>
-      </div>
-      <button type="button" class="btn-cadre piece-retour" id="contact-retour">◁ Portes</button>
-
-      <div class="lettre" id="lettre" role="dialog" aria-modal="true" aria-labelledby="lettre-titre" hidden>
-        <div class="lettre-pile">
-        <div class="lettre-papier">
-          <form class="lettre-formulaire" id="lettre-formulaire" novalidate>
-            <h2 class="lettre-titre" id="lettre-titre"></h2>
-            <label class="lettre-ligne lettre-corps">
-              <span class="lettre-salutation"><span id="lettre-salutation"></span><span class="sr-only"> (ton message)</span></span>
-              <textarea name="message" rows="6" required></textarea>
-            </label>
-            <label class="lettre-ligne">
-              <span id="lettre-libelle-email"></span>
-              <input type="email" name="email" autocomplete="email" required>
-            </label>
-            <label class="lettre-ligne">
-              <span id="lettre-libelle-nom"></span>
-              <input type="text" name="nom" autocomplete="name" required>
-            </label>
-            <!-- Piège à robots (Formspree ignore les envois qui le remplissent) -->
-            <input type="text" name="_gotcha" class="lettre-piege" tabindex="-1" autocomplete="off" aria-hidden="true">
-            <input type="hidden" name="_subject" value="Une lettre depuis le portfolio">
-            <p class="lettre-erreur" id="lettre-erreur" role="alert"></p>
-            <button type="submit" class="btn-cadre lettre-envoyer">
-              <span id="lettre-envoyer-libelle"></span> ▷
-            </button>
-          </form>
-          <div class="lettre-fin" id="lettre-fin" hidden>
-            <div class="lettre-enveloppe" aria-hidden="true"><canvas></canvas></div>
-            <h2 class="lettre-titre" id="lettre-fin-titre" tabindex="-1"></h2>
-            <p id="lettre-fin-texte"></p>
-            <button type="button" class="btn-cadre" id="lettre-encore">Écrire une autre lettre</button>
+    <!-- ===================== À PROPOS ===================== -->
+    <section class="apropos" id="apropos" aria-labelledby="titre-apropos">
+      <div class="panneau">
+        <h2 id="titre-apropos">À propos</h2>
+        <p class="devise" id="devise"></p>
+        <div class="apropos-grille">
+          <div id="histoire" class="histoire"></div>
+          <div>
+            <h3>Outils</h3>
+            <ul class="etiquettes" id="competences"></ul>
+            <h3>Parcours</h3>
+            <ol class="parcours" id="parcours"></ol>
           </div>
         </div>
-        <!-- Le cachet de cire qui tombe sur la lettre pliée -->
-        <div class="lettre-cachet" id="lettre-cachet" aria-hidden="true"><canvas></canvas></div>
-        </div>
-        <button type="button" class="btn-cadre lettre-fermer" id="lettre-fermer">✕ Fermer</button>
       </div>
-    </div>
+    </section>
 
-    <!-- Encadré décoratif en haut à gauche (lignes dans js/dialogues.js) -->
-    <div class="hud" id="hud" aria-hidden="true" hidden></div>
-
-    <!-- Boutons toujours visibles en haut à droite -->
-    <div class="intro-controles">
-      <!-- Pour qui est pressé : la version en une page (express.html) -->
-      <a class="btn-cadre" href="express.html">Version rapide</a>
-      <button type="button" class="btn-cadre" id="btn-son" aria-pressed="false">
-        <svg class="icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/>
-          <path class="icone-son-off" d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path class="icone-son-on" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span class="sr-only" id="btn-son-libelle"></span>
-      </button>
-      <button type="button" class="btn-cadre" id="btn-passer">
-        <span id="btn-passer-libelle"></span> <kbd aria-hidden="true">Échap</kbd>
-      </button>
-    </div>
-
-    <div class="scene">
-      <!-- Personnage : 3 calques empilés (corps / yeux / pupilles).
-           Caché tant qu'aucune image n'est définie dans js/dialogues.js -->
-      <div class="personnage" id="personnage" aria-hidden="true" hidden>
-        <img class="calque calque-corps" id="calque-corps" alt="">
-        <img class="calque calque-yeux" id="calque-yeux" alt="">
-        <img class="calque calque-pupilles" id="calque-pupilles" alt="">
+    <!-- ===================== CONTACT ===================== -->
+    <section class="contact" id="contact" aria-labelledby="titre-contact">
+      <h2 id="titre-contact">Un projet ? <em>Écris-moi.</em></h2>
+      <div class="contact-ligne">
+        <a class="email" id="email" data-curseur="Écrire"></a>
+        <button type="button" class="bouton" id="copier">Copier l'adresse</button>
+        <span class="copie-ok" id="copie-ok" role="status"></span>
       </div>
+      <ul class="liens" id="liens"></ul>
+    </section>
+  </main>
 
-      <!-- Bulle de dialogue -->
-      <div class="bulle" id="bulle">
-        <div class="bulle-nom" id="bulle-nom"></div>
-        <!-- Texte visible, tapé lettre par lettre (masqué aux lecteurs d'écran) -->
-        <p class="bulle-texte" id="bulle-texte" aria-hidden="true"></p>
-        <!-- Texte complet annoncé d'un coup aux lecteurs d'écran -->
-        <p class="sr-only" id="bulle-live" aria-live="polite"></p>
-        <ul class="choix" id="choix" aria-label="Choix" hidden></ul>
-        <span class="bulle-fleche" id="bulle-fleche" aria-hidden="true"></span>
-      </div>
-    </div>
-  </section>
+  <footer class="pied">
+    <span>© <span id="annee"></span> Fatima Zayani</span>
+    <a class="lien-jeu" href="jeu.html">Revivre l'intro immersive <span aria-hidden="true">↗</span></a>
+    <a href="CREDITS.md">Crédits</a>
+  </footer>
 
-  <!-- ===================== PORTFOLIO (provisoire) ===================== -->
-  <div id="portfolio" class="portfolio">
-    <header class="site-entete">
-      <a class="site-nom" href="#haut" id="haut">Fatima Zayani</a>
-      <nav aria-label="Navigation principale">
-        <ul>
-          <li><a href="#projets">Projets</a></li>
-          <li><a href="#about">Qui suis-je ?</a></li>
-          <li><a href="#contact">Contact</a></li>
-        </ul>
-      </nav>
-    </header>
-
-    <main>
-      <section id="projets" class="section" aria-labelledby="titre-projets">
-        <h2 id="titre-projets" tabindex="-1">Mes projets</h2>
-        <p>Section provisoire — les études de cas arriveront ici.</p>
-      </section>
-
-      <section id="about" class="section" aria-labelledby="titre-about">
-        <h2 id="titre-about" tabindex="-1">Qui suis-je ?</h2>
-        <p>Section provisoire — présentation, parcours, outils.</p>
-      </section>
-
-      <section id="contact" class="section" aria-labelledby="titre-contact">
-        <h2 id="titre-contact" tabindex="-1">Me contacter</h2>
-        <p>Section provisoire — liens et formulaire de contact.</p>
-      </section>
-    </main>
-
-    <footer class="site-pied">
-      <button type="button" class="lien-bouton" id="btn-rejouer">Revoir l'intro</button>
-    </footer>
-  </div>
+  <!-- Fiche d'un projet -->
+  <dialog class="fiche" id="fiche" aria-labelledby="fiche-titre">
+    <button type="button" class="fiche-fermer" id="fiche-fermer" aria-label="Fermer">✕</button>
+    <div id="fiche-contenu"></div>
+  </dialog>
 </body>
 </html>

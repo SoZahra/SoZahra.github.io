@@ -1,7 +1,7 @@
 /*
- * Version rapide du portfolio (express.html) : noir et blanc, une seule
- * couleur vive (corail vermillon) en touches. Intro : une affiche en papier
- * corail à son nom, qui se déplie puis se froisse au défilement.
+ * Version classique du portfolio (index.html) : fond gris clair et grain,
+ * une colonne de texte vertical qui accompagne toute la visite, projets en
+ * paquet de cartes en éventail. Une seule couleur vive (corail) en touches.
  */
 @font-face {
   font-family: "Cinzel";
@@ -11,16 +11,17 @@
 }
 
 :root {
-  --blanc: #f6f5f2;
-  --blanc-2: #ecebe7;
-  --noir: #111;
-  --gris: #8a8784;
-  --gris-clair: #cfccc7;
+  --fond: #c9c9c7;
+  --panneau: #d6d6d4;
+  --blanc: #f4f4f2;
+  --noir: #161616;
+  --gris: #6b6966;
   --accent: #ff4a3d;
-  --trait: rgba(17, 17, 17, 0.14);
+  --trait: rgba(22, 22, 22, 0.16);
   --marge: clamp(16px, 4vw, 56px);
   --titre: "Cinzel", "Times New Roman", serif;
-  --police: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --large: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --police: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --courbe: cubic-bezier(0.2, 0.8, 0.2, 1);
   color-scheme: light;
 }
@@ -31,7 +32,7 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  background: var(--blanc);
+  background: var(--fond);
   color: var(--noir);
   font-family: var(--police);
   font-size: 1.0625rem;
@@ -39,11 +40,11 @@ body {
   overflow-x: clip;
 }
 
-/* Léger grain de papier sur toute la page */
+/* Grain sur toute la page, plus marqué que sur du blanc */
 body::after {
   content: ""; position: fixed; inset: -50%; z-index: 50; pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-  opacity: 0.05;
+  opacity: 0.11;
   animation: grain 0.9s steps(4) infinite;
 }
 @keyframes grain {
@@ -51,6 +52,7 @@ body::after {
   50% { transform: translate(2%, -3%); }
   75% { transform: translate(-1%, -2%); }
 }
+@media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
 
 a { color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -63,6 +65,17 @@ a { color: inherit; }
   background: var(--noir); color: var(--blanc); padding: 8px 14px;
 }
 .evitement:focus { top: 12px; }
+
+/* Petites capitales espacées, pour toutes les étiquettes */
+.accueil-indice, .projet-ligne, .apropos h3, .fiche-cat, .fiche dt, .nav-verticale a, .vers-immersif {
+  font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em;
+}
+
+.bouton {
+  border: 1px solid currentColor; background: none; color: inherit; font: inherit; font-size: 0.82rem;
+  border-radius: 999px; padding: 8px 20px; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.bouton:hover { background: var(--noir); border-color: var(--noir); color: var(--blanc); }
 
 /* ---------- Curseur ---------- */
 .curseur { display: none; }
@@ -86,9 +99,7 @@ a { color: inherit; }
 
 /* ---------- En-tête ---------- */
 .entete {
-  position: fixed; inset: 0 0 auto 0; z-index: 40;
-  display: flex; align-items: center; gap: 24px;
-  padding: 18px var(--marge);
+  position: fixed; left: var(--marge); top: 18px; z-index: 40;
   color: var(--noir);
 }
 .entete a { text-decoration: none; }
@@ -113,117 +124,82 @@ a { color: inherit; }
 .oeil { transform-box: fill-box; transform-origin: center; }
 .yeux.cligne .oeil { animation: cligner 0.18s ease-in-out; }
 @keyframes cligner { 50% { transform: scaleY(0.08); } }
-.entete nav { margin-left: auto; }
-.entete ul { display: flex; gap: clamp(14px, 3vw, 36px); list-style: none; margin: 0; padding: 0; }
-.entete nav a, .vers-immersif {
-  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.16em;
-  background: linear-gradient(currentColor, currentColor) left bottom / 0 1px no-repeat;
-  transition: background-size 0.3s;
+/* Navigation verticale à droite ; au survol, le mot roule (sa copie,
+   juste à côté, prend sa place) */
+.nav-verticale { position: fixed; right: var(--marge); top: 24px; z-index: 40; }
+.nav-verticale ul {
+  writing-mode: vertical-rl; display: flex; gap: 28px;
+  list-style: none; margin: 0; padding: 0;
 }
-.entete nav a:hover, .vers-immersif:hover { background-size: 100% 1px; }
+.nav-verticale a, .vers-immersif { display: block; overflow: hidden; }
+.nav-verticale span, .vers-immersif span { display: block; position: relative; transition: transform 0.45s var(--courbe); }
+.nav-verticale span::after, .vers-immersif span::after {
+  content: attr(data-texte); position: absolute; inset-block-start: 100%; inset-inline-start: 0;
+}
+.nav-verticale a:hover span, .vers-immersif:hover span { transform: translateX(100%); }
+.vers-immersif { position: fixed; right: var(--marge); bottom: 24px; z-index: 40; writing-mode: vertical-rl; }
 
-/* ---------- Intro : l'affiche en papier ---------- */
-.intro { position: relative; height: 220vh; }
-.intro-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
-.papier {
-  position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
-  filter: drop-shadow(0 28px 36px rgba(17, 17, 17, 0.22));
+/* ---------- La colonne : texte vertical qui accompagne la visite ----------
+   Posée à plat sur deux lignes, puis tournée d'un quart de tour autour de
+   son coin haut gauche ; --x (js/express.js) la fait glisser du centre
+   vers la gauche. */
+.colonne {
+  position: fixed; left: 0; top: 10vh; z-index: 30; pointer-events: none;
+  width: 80vh; height: 2.7em;
+  font-family: var(--large); font-weight: 500; font-stretch: 112%;
+  font-size: clamp(0.85rem, 2.1vh, 1.35rem); line-height: 1.35;
+  letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+  color: var(--blanc);
+  transform-origin: 0 0;
+  transform: translateX(calc(var(--x, 50vw) + 2.7em)) rotate(90deg);
 }
+.colonne-mot {
+  position: absolute; left: var(--pos, 0%);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+/* ligne 1 (à droite une fois tournée) : b et d ; ligne 2 : a, c, e */
+.colonne-mot[data-place="b"], .colonne-mot[data-place="d"] { top: 0; }
+.colonne-mot[data-place="a"], .colonne-mot[data-place="c"], .colonne-mot[data-place="e"] { top: 1.35em; }
+.colonne-mot.change { opacity: 0; transform: translateX(0.6em); }
 
-/* Rangée d'infos sous le menu : métier, invitation à défiler */
-.intro-infos {
-  position: absolute; z-index: 3; left: var(--marge); right: var(--marge); top: 78px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
-  list-style: none; margin: 0; padding: 12px 0 0;
-  font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.14em; line-height: 1.5;
-}
-.intro-indice { text-align: right; }
-.intro-indice span { display: inline-block; color: var(--accent); animation: flotter 1.8s ease-in-out infinite; }
-@keyframes flotter { 50% { transform: translateY(4px); } }
-.intro-passer {
-  position: absolute; z-index: 3; right: var(--marge); bottom: var(--marge);
-  font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.14em; text-decoration: none; color: var(--gris);
-  transition: color 0.2s;
-}
-.intro-passer:hover { color: var(--accent); }
+/* ---------- Accueil : la colonne au centre, le paquet au loin derrière ---------- */
+.accueil-indice { position: absolute; right: calc(var(--marge) + 48px); bottom: 28px; z-index: 2; text-decoration: none; }
 
-/* ---------- Manifeste ---------- */
-.manifeste {
-  position: relative;
-  min-height: 160vh;
-  padding: 30vh var(--marge) 20vh;
-}
-.manifeste-texte {
-  position: sticky; top: 22vh; margin: 0; max-width: 18ch;
-  font-family: var(--titre); font-weight: 500;
-  font-size: clamp(2.2rem, 7vw, 6.4rem); line-height: 1.04; letter-spacing: -0.01em;
-}
-.manifeste-texte .mot { color: var(--gris-clair); transition: color 0.25s linear; }
-.manifeste-texte .mot.est-allume { color: var(--noir); }
-.manifeste-texte .mot.accent.est-allume { color: var(--accent); }
-
-/* ---------- Projets : billets ---------- */
-.projets { position: relative; height: var(--hauteur-projets, 500vh); }
+/* ---------- Projets : le paquet de cartes ---------- */
+.projets { position: relative; height: var(--hauteur-projets, 600vh); }
+.ancre-projets { position: absolute; left: 0; top: var(--approche, 90vh); }
 .projets-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
-.billets { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; cursor: pointer; }
-
-/* Détails du projet actif, à gauche */
-.projet-infos {
-  position: absolute; z-index: 2; left: var(--marge); top: 50%; transform: translateY(-50%);
-  width: min(30vw, 340px);
-  display: grid; grid-template-columns: 5.5rem 1fr; gap: 14px 16px; margin: 0;
-  font-size: 0.82rem; line-height: 1.45;
+.paquet { position: absolute; inset: 0; width: 100%; height: 100%; }
+.paquet.est-proche { cursor: pointer; }
+/* « • Titre » à côté des cartes en vol (placées par js/express-paquet.js) */
+.etiquettes { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.etiquette {
+  position: absolute; left: 0; top: 0; white-space: nowrap; opacity: 0;
+  font-size: clamp(0.8rem, 1.1vw, 1rem); color: var(--noir);
+}
+.etiquette::before { content: "• "; }
+.projets-bas {
+  position: absolute; left: 50%; bottom: clamp(24px, 5vh, 48px); z-index: 2; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 28px;
   transition: opacity 0.3s;
 }
-.projet-infos.est-change { opacity: 0; }
-.projet-infos dt { color: var(--gris); }
-.projet-infos dd { margin: 0; }
-
-/* Liste des projets, à droite : l'actif en noir, les autres estompés */
-.projets-liste {
-  position: absolute; z-index: 2; right: var(--marge); top: 50%;
-  width: min(26vw, 300px); list-style: none; margin: 0; padding: 0;
-  text-align: center;
-  transition: transform 0.6s var(--courbe);
-}
-.projets-liste li { height: 172px; }
+/* les commandes n'apparaissent qu'une fois arrivé devant le paquet */
+.projets-bas[data-loin] { opacity: 0; pointer-events: none; }
+.projets-liste { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; }
 .projet-ligne {
-  width: 100%; border: 0; background: none; padding: 0; color: inherit; font: inherit; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  opacity: 0.22; filter: blur(0.6px);
-  transition: opacity 0.4s, filter 0.4s;
+  border: 0; background: none; color: var(--gris); padding: 6px 8px; cursor: pointer;
+  font-variant-numeric: tabular-nums; transition: color 0.25s;
 }
-.projet-ligne:hover { opacity: 0.55; filter: none; }
-.est-actif .projet-ligne { opacity: 1; filter: none; }
-.projet-ligne-cat { font-size: 0.72rem; color: var(--gris); }
-.projet-ligne-titre { font-family: var(--titre); font-weight: 600; font-size: 1.25rem; line-height: 1.15; text-transform: uppercase; }
-.projet-ligne-tiret { width: 12px; height: 1px; background: currentColor; margin: 4px 0; }
-.est-actif .projet-ligne-tiret { background: var(--accent); width: 24px; }
-.projet-ligne-resume { font-size: 0.8rem; line-height: 1.4; }
-
-/* Grand numéro en bas à gauche, sur la pile */
-.projets-compteur {
-  position: absolute; z-index: 0; left: var(--marge); bottom: 6vh;
-  display: grid; grid-template-columns: auto auto; align-items: end; column-gap: 14px;
-  pointer-events: none;
-}
-.projets-compteur h2 {
-  grid-column: 1 / -1; margin: 0 0 6px; font-family: var(--police); font-weight: 500;
-  font-size: 0.8rem; text-transform: none; letter-spacing: 0;
-}
-.grand-num { display: block; overflow: hidden; font-family: var(--titre); font-weight: 500; font-size: clamp(5rem, 13vw, 12rem); line-height: 0.85; }
-.grand-num span { display: inline-block; }
-.grand-num span.roule { animation: rouler 0.5s var(--courbe); }
-@keyframes rouler { from { transform: translateY(60%); opacity: 0; } }
-.projets-compteur .total { font-size: 0.85rem; padding-bottom: 0.6em; }
+.projet-ligne:hover { color: var(--noir); }
+.projet-ligne[aria-current="true"] { color: var(--accent); }
 
 /* ---------- Fiche projet ---------- */
 .fiche {
   width: min(92vw, 760px); max-height: 86vh; padding: clamp(24px, 4vw, 48px);
-  border: 1px solid var(--noir); border-radius: 0;
-  background: #fff; color: var(--noir);
+  border: 0; border-radius: 0;
+  background: var(--blanc); color: var(--noir);
 }
-.fiche::backdrop { background: rgba(246, 245, 242, 0.75); backdrop-filter: blur(6px); }
+.fiche::backdrop { background: rgba(201, 201, 199, 0.7); backdrop-filter: blur(6px); }
 .fiche[open] { animation: ficheEntre 0.5s var(--courbe); }
 @keyframes ficheEntre { from { opacity: 0; transform: translateY(30px) scale(0.98); } }
 .fiche-fermer {
@@ -231,39 +207,47 @@ a { color: inherit; }
   border: 0; background: none; color: inherit; font-size: 1.2rem; cursor: pointer;
 }
 .fiche-fermer:hover { color: var(--accent); }
-.fiche h3 { margin: 6px 0 14px; font-family: var(--titre); font-size: clamp(1.6rem, 4vw, 2.6rem); line-height: 1.05; }
-.fiche-cat { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--gris); }
+.fiche h3 {
+  margin: 6px 0 14px; font-family: var(--large); font-weight: 800; font-stretch: 112%;
+  font-size: clamp(1.6rem, 4vw, 2.6rem); line-height: 1.05; text-transform: uppercase;
+}
+.fiche-cat { color: var(--gris); }
 .fiche-resume { font-style: italic; color: var(--gris); }
 .fiche dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 22px; margin: 24px 0 0; font-size: 0.95rem; }
-.fiche dt { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.72rem; color: var(--gris); padding-top: 3px; }
+.fiche dt { color: var(--gris); padding-top: 3px; }
 .fiche dd { margin: 0; }
 .fiche-liens a { margin-right: 18px; font-weight: 600; color: var(--accent); }
 
-/* ---------- À propos ---------- */
-.apropos { padding: clamp(80px, 12vw, 160px) 0 0; }
-.defilant { overflow: hidden; white-space: nowrap; padding: 6px 0; border-top: 1px solid var(--noir); }
-.defilant + .defilant { border-bottom: 1px solid var(--noir); }
-.defilant-piste {
-  display: inline-flex; gap: 0.5em; align-items: center;
-  font-family: var(--titre); font-weight: 600; text-transform: uppercase;
-  font-size: clamp(2.4rem, 8vw, 7rem); line-height: 1.1;
-  animation: defiler 40s linear infinite;
+/* ---------- À propos : un panneau plus clair, coins marqués ---------- */
+.apropos { padding: clamp(80px, 12vw, 160px) calc(var(--marge) + 70px) 0 calc(var(--marge) + 90px); }
+.panneau {
+  position: relative; max-width: 1180px; margin: 0 auto;
+  padding: clamp(32px, 6vw, 80px);
+  background: var(--panneau);
 }
-.defilant-piste span { color: var(--noir); }
-.defilant-inverse .defilant-piste span { color: var(--gris-clair); }
-.defilant-piste i { font-style: normal; font-size: 0.5em; color: var(--accent); }
-.defilant-inverse .defilant-piste { animation-direction: reverse; animation-duration: 48s; }
-@keyframes defiler { to { transform: translateX(-50%); } }
-
+/* repères aux quatre coins, comme sur une planche imprimée */
+.panneau::before, .panneau::after {
+  content: ""; position: absolute; inset: -10px; pointer-events: none;
+  background:
+    linear-gradient(var(--gris), var(--gris)) left top / 14px 1px,
+    linear-gradient(var(--gris), var(--gris)) left top / 1px 14px,
+    linear-gradient(var(--gris), var(--gris)) right top / 14px 1px,
+    linear-gradient(var(--gris), var(--gris)) right top / 1px 14px;
+  background-repeat: no-repeat;
+}
+.panneau::after { transform: scaleY(-1); }
+.panneau h2 {
+  margin: 0; text-align: center;
+  font-family: var(--large); font-weight: 800; font-stretch: 125%;
+  font-size: clamp(1.8rem, 4vw, 3.2rem); text-transform: uppercase; line-height: 1;
+}
+.devise { margin: 14px 0 0; text-align: center; color: var(--gris); }
 .apropos-grille {
-  display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(28px, 6vw, 96px);
-  padding: clamp(56px, 8vw, 110px) var(--marge) 0;
+  display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(28px, 6vw, 80px);
+  margin-top: clamp(36px, 6vw, 70px);
 }
-.histoire p { margin: 0 0 16px; font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.55; max-width: 46ch; }
-.apropos h3 {
-  margin: 0 0 14px; font-size: 0.72rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.18em; color: var(--gris);
-}
+.histoire p { margin: 0 0 16px; font-size: clamp(1.05rem, 1.4vw, 1.2rem); line-height: 1.55; max-width: 46ch; }
+.apropos h3 { margin: 0 0 14px; color: var(--gris); }
 .apropos h3:not(:first-child) { margin-top: 36px; }
 .etiquettes { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
 .etiquettes li {
@@ -280,78 +264,59 @@ a { color: inherit; }
 .parcours .lieu { color: var(--gris); text-align: right; }
 
 /* ---------- Contact ---------- */
-.contact { padding: clamp(110px, 16vw, 220px) var(--marge) clamp(80px, 10vw, 140px); }
-.contact h2 { font-size: clamp(2.8rem, 11vw, 11rem); line-height: 0.9; letter-spacing: -0.02em; }
-.contact h2 span { display: block; color: var(--gris-clair); }
-.contact h2 em { font-style: normal; color: var(--accent); display: block; }
-.contact-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 44px; }
+.contact { padding: clamp(110px, 16vw, 200px) calc(var(--marge) + 70px) clamp(80px, 10vw, 140px) calc(var(--marge) + 90px); text-align: center; }
+.contact h2 {
+  margin: 0;
+  font-family: var(--large); font-weight: 800; font-stretch: 125%;
+  font-size: clamp(2.2rem, 7vw, 6.5rem); line-height: 0.95; text-transform: uppercase;
+}
+.contact h2 em { font-style: normal; color: var(--blanc); display: block; }
+.contact-ligne { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 22px; margin-top: 44px; }
 .email {
   display: inline-block;
-  font-size: clamp(1.2rem, 3.2vw, 2.2rem); font-weight: 600; text-decoration: none; overflow-wrap: anywhere;
+  font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 600; text-decoration: none; overflow-wrap: anywhere;
   background: linear-gradient(var(--noir), var(--noir)) left bottom / 100% 2px no-repeat;
   transition: color 0.25s;
 }
 .email:hover { color: var(--accent); }
-.copier {
-  border: 1px solid var(--noir); background: none; color: inherit; font: inherit; font-size: 0.85rem;
-  border-radius: 999px; padding: 7px 18px; cursor: pointer; transition: background 0.2s, color 0.2s;
-}
-.copier:hover { background: var(--noir); color: #fff; }
 .copie-ok { font-size: 0.85rem; color: var(--gris); }
-.liens { display: flex; flex-wrap: wrap; gap: 10px 36px; list-style: none; margin: 48px 0 0; padding: 0; }
+.liens { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 32px; list-style: none; margin: 36px 0 0; padding: 0; }
 .liens a {
-  text-decoration: none; text-transform: uppercase; letter-spacing: 0.16em; font-size: 0.85rem;
-  background: linear-gradient(var(--accent), var(--accent)) left bottom / 0 2px no-repeat;
+  text-decoration: none; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.14em;
+  background: linear-gradient(currentColor, currentColor) left bottom / 0 1px no-repeat;
   transition: background-size 0.3s;
 }
-.liens a:hover { background-size: 100% 2px; }
+.liens a:hover { background-size: 100% 1px; }
 
 /* ---------- Pied ---------- */
 .pied {
+  position: relative; z-index: 31; background: var(--fond);
   display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center;
-  padding: 22px var(--marge); border-top: 1px solid var(--noir); font-size: 0.85rem;
+  padding: 22px calc(var(--marge) + 40px) 22px var(--marge); border-top: 1px solid var(--trait); font-size: 0.85rem;
 }
-.pied a:first-of-type { margin-left: auto; }
+.pied > span:first-child { margin-right: auto; }
 .pied a:hover { color: var(--accent); }
+
+/* Hors Halloween, la version jeu est cachée : plus de lien vers elle
+   (js/saison.js pose la classe sur <html>) */
+.saison-fermee .lien-jeu { display: none; }
 
 /* ---------- Apparition au défilement ---------- */
 .revele { opacity: 0; transform: translateY(30px); transition: opacity 0.9s ease, transform 0.9s var(--courbe); }
 .revele.est-visible { opacity: 1; transform: none; }
 
-/* ---------- Moins d'animation : pas d'intro au défilement ---------- */
+/* ---------- Mouvements réduits : pas de défilement piloté ---------- */
 @media (prefers-reduced-motion: reduce) {
-  body::after { animation: none; }
-  .intro { height: auto; }
-  .intro-scene { position: relative; }
-  .intro-indice span, .defilant-piste { animation: none; }
-  .revele { opacity: 1; transform: none; transition: none; }
-  .manifeste { min-height: 0; }
-  .manifeste-texte { position: static; }
-  .manifeste-texte .mot { color: var(--noir); }
   .projets { height: auto; }
-  .projets-scene { position: static; height: auto; padding: 96px var(--marge) 40px; }
-  .billets, .projet-infos, .projets-compteur .grand-num { display: none; }
-  .projets-liste { position: static; width: auto; transform: none !important; text-align: left; }
-  .projets-liste li { height: auto; padding: 18px 0; border-top: 1px solid var(--trait); }
-  .projet-ligne { opacity: 1; filter: none; align-items: flex-start; }
-  .projets-compteur { position: static; }
+  .projets-scene { position: relative; }
 }
 
 /* ---------- Petits écrans ---------- */
 @media (max-width: 760px) {
   .vers-immersif { display: none; }
-  .intro-infos { top: 66px; }
+  .colonne { font-size: 0.78rem; }
+  .apropos, .contact { padding-left: calc(var(--marge) + 44px); padding-right: calc(var(--marge) + 36px); }
   .apropos-grille { grid-template-columns: 1fr; }
-  .pied a:first-of-type { margin-left: 0; }
-  /* Projets : seul le projet actif, sous les billets */
-  .projet-infos { display: none; }
-  .projets-liste {
-    top: auto; bottom: 0; left: 0; right: 0; width: auto; transform: none !important;
-    padding: 56px var(--marge) 26px;
-    background: linear-gradient(transparent, var(--blanc) 45%);
-  }
-  .projets-liste li { height: auto; }
-  .projets-liste li:not(.est-actif) { display: none; }
-  .projets-compteur { top: 72px; bottom: auto; z-index: 2; }
-  .grand-num { font-size: 22vw; }
+  .pied > span:first-child { margin-right: 0; }
+  .projets-bas { flex-direction: column; gap: 10px; }
 }
