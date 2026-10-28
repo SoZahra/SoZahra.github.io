@@ -1,7 +1,8 @@
 /*
  * Version classique du portfolio (index.html) : fond gris clair et grain,
- * une colonne de texte vertical qui accompagne toute la visite, projets en
- * paquet de cartes en éventail. Une seule couleur vive (corail) en touches.
+ * une colonne de texte vertical qui accompagne toute la visite. L'accueil :
+ * un trousseau suspendu, dont chaque porte-clé mène à une page.
+ * Une seule couleur vive (corail) en touches.
  */
 @font-face {
   font-family: "Cinzel";
@@ -15,8 +16,9 @@
   --panneau: #d6d6d4;
   --blanc: #f4f4f2;
   --noir: #161616;
-  --gris: #6b6966;
+  --gris: #55534f;            /* 4,6:1 sur le fond : lisible en petit */
   --accent: #ff4a3d;
+  --accent-texte: #a30b00;    /* corail foncé, pour le texte en petit (4,8:1) */
   --trait: rgba(22, 22, 22, 0.16);
   --marge: clamp(16px, 4vw, 56px);
   --titre: "Cinzel", "Times New Roman", serif;
@@ -55,7 +57,7 @@ body::after {
 @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
 
 a { color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--noir); outline-offset: 3px; }
 .sr-only {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip: rect(0 0 0 0); white-space: nowrap;
@@ -67,40 +69,22 @@ a { color: inherit; }
 .evitement:focus { top: 12px; }
 
 /* Petites capitales espacées, pour toutes les étiquettes */
-.accueil-indice, .projet-ligne, .apropos h3, .fiche-cat, .fiche dt, .nav-verticale a, .vers-immersif {
+.accueil-indice, .apropos h3, .fiche-cat, .fiche dt, .nav-verticale a, .vers-immersif {
   font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em;
 }
 
 .bouton {
   border: 1px solid currentColor; background: none; color: inherit; font: inherit; font-size: 0.82rem;
-  border-radius: 999px; padding: 8px 20px; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s;
+  border-radius: 999px; padding: 8px 20px; min-height: 44px; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 .bouton:hover { background: var(--noir); border-color: var(--noir); color: var(--blanc); }
 
-/* ---------- Curseur ---------- */
-.curseur { display: none; }
-@media (hover: hover) and (pointer: fine) {
-  body.a-curseur, body.a-curseur a, body.a-curseur button { cursor: none; }
-  .curseur {
-    display: grid; place-items: center;
-    position: fixed; left: 0; top: 0; z-index: 55; pointer-events: none;
-    width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
-    background: var(--accent);
-    transition: width 0.35s var(--courbe), height 0.35s var(--courbe), margin 0.35s var(--courbe), background 0.3s;
-  }
-  .curseur span {
-    font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #fff;
-    opacity: 0; transition: opacity 0.2s;
-  }
-  .curseur.est-grand { width: 86px; height: 86px; margin: -43px 0 0 -43px; }
-  .curseur.est-grand span { opacity: 1; }
-  .curseur.est-lien { width: 40px; height: 40px; margin: -20px 0 0 -20px; background: rgba(255, 74, 61, 0.25); }
-}
-
-/* ---------- En-tête ---------- */
+/* ---------- En-tête ----------
+   Sur la vue d'un projet, le menu prend l'encre du projet (js/express.js
+   règle --encre-fixe) ; sur fond sombre, le petit logo passe en négatif. */
 .entete {
   position: fixed; left: var(--marge); top: 18px; z-index: 40;
-  color: var(--noir);
+  color: var(--encre-fixe, var(--noir)); transition: color 0.4s;
 }
 .entete a { text-decoration: none; }
 /* Ses yeux à la place du monogramme : frange, eye-liner, pupilles qui
@@ -131,13 +115,17 @@ a { color: inherit; }
   writing-mode: vertical-rl; display: flex; gap: 28px;
   list-style: none; margin: 0; padding: 0;
 }
-.nav-verticale a, .vers-immersif { display: block; overflow: hidden; }
-.nav-verticale span, .vers-immersif span { display: block; position: relative; transition: transform 0.45s var(--courbe); }
-.nav-verticale span::after, .vers-immersif span::after {
+/* le lien déborde de 13px tout autour (zone de clic de 44px), le mot
+   roule à l'intérieur de .roule, seule partie qui coupe */
+.nav-verticale a, .vers-immersif { display: block; padding: 13px; margin: -13px; }
+.roule { display: block; overflow: hidden; }
+.roule > span { display: block; position: relative; transition: transform 0.45s var(--courbe); }
+.roule > span::after {
   content: attr(data-texte); position: absolute; inset-block-start: 100%; inset-inline-start: 0;
 }
-.nav-verticale a:hover span, .vers-immersif:hover span { transform: translateX(100%); }
+.nav-verticale a:hover .roule > span, .vers-immersif:hover .roule > span { transform: translateX(100%); }
 .vers-immersif { position: fixed; right: var(--marge); bottom: 24px; z-index: 40; writing-mode: vertical-rl; }
+.nav-verticale, .vers-immersif { color: var(--encre-fixe, var(--noir)); transition: color 0.4s; }
 
 /* ---------- La colonne : texte vertical qui accompagne la visite ----------
    Posée à plat sur deux lignes, puis tournée d'un quart de tour autour de
@@ -151,7 +139,8 @@ a { color: inherit; }
   letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
   color: var(--blanc);
   transform-origin: 0 0;
-  transform: translateX(calc(var(--x, 50vw) + 2.7em)) rotate(90deg);
+  transform: translateX(calc(var(--marge) + 2.7em)) rotate(90deg);
+  transition: color 0.4s;
 }
 .colonne-mot {
   position: absolute; left: var(--pos, 0%);
@@ -162,36 +151,74 @@ a { color: inherit; }
 .colonne-mot[data-place="a"], .colonne-mot[data-place="c"], .colonne-mot[data-place="e"] { top: 1.35em; }
 .colonne-mot.change { opacity: 0; transform: translateX(0.6em); }
 
-/* ---------- Accueil : la colonne au centre, le paquet au loin derrière ---------- */
-.accueil-indice { position: absolute; right: calc(var(--marge) + 48px); bottom: 28px; z-index: 2; text-decoration: none; }
+/* ---------- Accueil : le trousseau ----------
+   Le crochet est vissé au mur, l'anneau y pend, les porte-clés pendent à
+   l'anneau (js/express-trousseau.js place et fait balancer le tout ; --u =
+   1 % de la hauteur de la scène). Sous le trousseau : la légende du
+   porte-clé survolé, et le sommaire des projets. */
+.trousseau { position: relative; height: 100vh; height: 100svh; min-height: 560px; overflow: hidden; }
+.trousseau-scene { position: absolute; inset: 0 0 13% 0; }
+.trousseau-crochet {
+  position: absolute; z-index: 1; height: calc(var(--u) * 17); width: auto; pointer-events: none;
+  transform: translate(-58.4%, -79%); /* point d'appui : le fond du creux (images/porte-cles/crochet.webp) */
+  filter: drop-shadow(2px 4px 3px rgba(0, 0, 0, 0.22));
+}
+/* le bout recourbé et le fond du creux, par-dessus l'anneau */
+.trousseau-crochet.devant { z-index: 41; clip-path: polygon(58% 55%, 100% 55%, 100% 100%, 0 100%, 0 82%, 58% 82%); }
+.trousseau-chaines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+.trousseau-anneau { position: absolute; left: 0; top: 0; z-index: 40; will-change: transform; pointer-events: none; }
+.anneau-metal {
+  position: absolute; pointer-events: none; height: auto;
+  filter: drop-shadow(2px 5px 4px rgba(0, 0, 0, 0.2));
+}
+.breloques { list-style: none; margin: 0; padding: 0; }
+.breloque { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+.breloque.tenue { z-index: 50 !important; } /* celui qu'on tient passe devant l'anneau */
+.breloque-objet {
+  position: absolute; left: 0; top: 0; display: block; padding: 0; border: 0; background: none;
+  transform-origin: 0 0; will-change: transform; cursor: grab; touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+}
+.breloque.tenue .breloque-objet { cursor: grabbing; }
+.breloque-objet img {
+  display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none;
+  filter: drop-shadow(calc(var(--u) * 0.6) calc(var(--u) * 1.6) calc(var(--u) * 1.2) rgba(40, 36, 30, 0.28));
+  transform-origin: 50% 0; transition: transform 0.35s var(--courbe), filter 0.35s;
+}
+.breloque-objet:hover img, .breloque-objet:focus-visible img {
+  transform: scale(1.06);
+  filter: drop-shadow(calc(var(--u) * 0.9) calc(var(--u) * 2.4) calc(var(--u) * 1.6) rgba(40, 36, 30, 0.3)) brightness(1.04);
+}
+.breloque-objet:focus-visible { outline: 2px dashed var(--noir); outline-offset: 6px; border-radius: 12px; }
 
-/* ---------- Projets : le paquet de cartes ---------- */
-.projets { position: relative; height: var(--hauteur-projets, 600vh); }
-.ancre-projets { position: absolute; left: 0; top: var(--approche, 90vh); }
-.projets-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
-.paquet { position: absolute; inset: 0; width: 100%; height: 100%; }
-.paquet.est-proche { cursor: pointer; }
-/* « • Titre » à côté des cartes en vol (placées par js/express-paquet.js) */
-.etiquettes { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
-.etiquette {
-  position: absolute; left: 0; top: 0; white-space: nowrap; opacity: 0;
-  font-size: clamp(0.8rem, 1.1vw, 1rem); color: var(--noir);
+/* la légende : où mène le porte-clé survolé */
+.trousseau-legende {
+  position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); margin: 0;
+  width: min(90vw, 900px); text-align: center; pointer-events: none;
 }
-.etiquette::before { content: "• "; }
-.projets-bas {
-  position: absolute; left: 50%; bottom: clamp(24px, 5vh, 48px); z-index: 2; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 28px;
-  transition: opacity 0.3s;
+.legende-sur {
+  display: block; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gris);
 }
-/* les commandes n'apparaissent qu'une fois arrivé devant le paquet */
-.projets-bas[data-loin] { opacity: 0; pointer-events: none; }
-.projets-liste { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; }
-.projet-ligne {
-  border: 0; background: none; color: var(--gris); padding: 6px 8px; cursor: pointer;
-  font-variant-numeric: tabular-nums; transition: color 0.25s;
+.legende-titre {
+  display: block; min-height: 1em;
+  font-family: var(--large); font-weight: 800; font-stretch: 125%; text-transform: uppercase;
+  font-size: clamp(1.6rem, 4.6vw, 3.6rem); line-height: 1; color: var(--noir);
 }
-.projet-ligne:hover { color: var(--noir); }
-.projet-ligne[aria-current="true"] { color: var(--accent); }
+.legende-titre:not(:empty) { animation: legende 0.45s var(--courbe); }
+@keyframes legende { from { opacity: 0; transform: translateY(0.25em); } }
+
+/* le sommaire des projets, en bas à gauche */
+.trousseau-sommaire { position: absolute; left: calc(var(--marge) + 90px); bottom: 22px; display: flex; align-items: center; gap: 22px; }
+.trousseau-sommaire-titre { margin: 0; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gris); }
+.trousseau-sommaire ol { display: flex; flex-wrap: wrap; gap: 0 22px; list-style: none; margin: 0; padding: 0; }
+.trousseau-sommaire button {
+  min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 0.9rem; color: var(--noir);
+  background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat;
+  background-position: left 70%; background-size: 0 2px; transition: background-size 0.3s;
+}
+.trousseau-sommaire button:hover, .trousseau-sommaire button:focus-visible { background-size: 100% 2px; }
+.trousseau .accueil-indice { position: absolute; right: calc(var(--marge) + 48px); bottom: 32px; text-decoration: none; }
 
 /* ---------- Fiche projet ---------- */
 .fiche {
@@ -216,7 +243,10 @@ a { color: inherit; }
 .fiche dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 22px; margin: 24px 0 0; font-size: 0.95rem; }
 .fiche dt { color: var(--gris); padding-top: 3px; }
 .fiche dd { margin: 0; }
-.fiche-liens a { margin-right: 18px; font-weight: 600; color: var(--accent); }
+.fiche-liens a { margin-right: 18px; font-weight: 600; color: var(--accent-texte); }
+.fiche-ecrans { display: grid; gap: 12px; margin: 26px 0 0; }
+.fiche-ecrans img { display: block; width: 100%; height: auto; }
+.fiche-ecrans img.est-telephone { width: min(60%, 280px); justify-self: center; }
 
 /* ---------- À propos : un panneau plus clair, coins marqués ---------- */
 .apropos { padding: clamp(80px, 12vw, 160px) calc(var(--marge) + 70px) 0 calc(var(--marge) + 90px); }
@@ -254,13 +284,13 @@ a { color: inherit; }
   border: 1px solid var(--noir); border-radius: 999px; padding: 4px 14px; font-size: 0.88rem;
   transition: background 0.25s, color 0.25s, border-color 0.25s;
 }
-.etiquettes li:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.etiquettes li:hover { background: var(--accent); border-color: var(--accent); color: var(--noir); }
 .parcours { list-style: none; margin: 0; padding: 0; }
 .parcours li {
   display: grid; grid-template-columns: 4.5rem 1fr auto; gap: 12px;
   padding: 12px 0; border-top: 1px solid var(--trait); font-size: 0.95rem;
 }
-.parcours .annee { font-variant-numeric: tabular-nums; color: var(--accent); }
+.parcours .annee { font-variant-numeric: tabular-nums; color: var(--accent-texte); }
 .parcours .lieu { color: var(--gris); text-align: right; }
 
 /* ---------- Contact ---------- */
@@ -270,7 +300,7 @@ a { color: inherit; }
   font-family: var(--large); font-weight: 800; font-stretch: 125%;
   font-size: clamp(2.2rem, 7vw, 6.5rem); line-height: 0.95; text-transform: uppercase;
 }
-.contact h2 em { font-style: normal; color: var(--blanc); display: block; }
+.contact h2 em { font-style: normal; display: block; }
 .contact-ligne { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 22px; margin-top: 44px; }
 .email {
   display: inline-block;
@@ -301,16 +331,6 @@ a { color: inherit; }
    (js/saison.js pose la classe sur <html>) */
 .saison-fermee .lien-jeu { display: none; }
 
-/* ---------- Apparition au défilement ---------- */
-.revele { opacity: 0; transform: translateY(30px); transition: opacity 0.9s ease, transform 0.9s var(--courbe); }
-.revele.est-visible { opacity: 1; transform: none; }
-
-/* ---------- Mouvements réduits : pas de défilement piloté ---------- */
-@media (prefers-reduced-motion: reduce) {
-  .projets { height: auto; }
-  .projets-scene { position: relative; }
-}
-
 /* ---------- Petits écrans ---------- */
 @media (max-width: 760px) {
   .vers-immersif { display: none; }
@@ -318,5 +338,11 @@ a { color: inherit; }
   .apropos, .contact { padding-left: calc(var(--marge) + 44px); padding-right: calc(var(--marge) + 36px); }
   .apropos-grille { grid-template-columns: 1fr; }
   .pied > span:first-child { margin-right: 0; }
-  .projets-bas { flex-direction: column; gap: 10px; }
+  /* trousseau : le sommaire passe sous la légende, « Défile » caché */
+  .trousseau-scene { bottom: 22%; }
+  .trousseau-legende { bottom: 13%; }
+  .trousseau-sommaire { left: calc(var(--marge) + 44px); right: var(--marge); bottom: 12px; flex-wrap: wrap; gap: 0 16px; }
+  .trousseau .accueil-indice { display: none; }
 }
+
+

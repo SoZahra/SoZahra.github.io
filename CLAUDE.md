@@ -58,25 +58,55 @@ avec grain, police Archivo très large (Google Fonts), une seule couleur vive
 en touches (corail `#ff4a3d`), rien de trop sombre, du simple.
 - Structure (d'après sa maquette « Welcome page ») : une colonne de texte
   vertical (« 2026 / Portfolio / Zayani Fatima / Designer UI/UX /
-  Développeuse ») qui l'accompagne pendant toute la visite. Centrée à
-  l'accueil, elle glisse à gauche au défilement et change de mots selon la
-  section (projet en cours, À propos, Contact). Navigation verticale à
-  droite, le mot roule au survol.
-- Projets : paquet de cartes carrées épaisses en éventail, en 3D
-  (`js/express-paquet.js`). Accueil et projets = une seule scène. À
-  l'accueil, ça doit être VIVANT (réfs : affiches OLMA, site Filayyyy) : les
-  cartes flottent et avancent vers nous en boucle, floues sauf à une distance
-  nette (profondeur de champ par planches de flou précalculées), avec des
-  étiquettes « • Titre ». Au défilement, une carte par projet se range dans
-  le paquet pendant que la colonne glisse à gauche, les échos filent ; puis
-  la carte du dessus s'envole à chaque projet. Carte = image du projet (champ `image` dans
-  `js/projets.js`) ou carré uni avec numéro et titre. Pas de boîtiers CD.
+  Développeuse ») qui l'accompagne pendant toute la visite, à gauche, et
+  change de mots (et de couleur) selon la section (projet en cours, À
+  propos, Contact). Navigation verticale à droite, le mot roule au survol.
+- Accueil = un TROUSSEAU suspendu à un crochet (`js/express-trousseau.js`,
+  octobre 2026, a remplacé la galerie) : elle en porte-clé au milieu, autour
+  des porte-clés qui mènent chacun à une page (projet → fiche, palette → À
+  propos, enveloppe → Contact, étiquette → CV). Style « art toy » en
+  porcelaine brillante (joues rosées, paupières mi-closes), images générées
+  par IA et détourées (rembg) dans `images/porte-cles/`. Physique Verlet :
+  chaînes souples (dessinées dans un canevas), porte-clés rigides qu'on
+  attrape à la souris, soulève et lance (un glisser n'ouvre pas le lien ;
+  au doigt, pas de prise pour laisser défiler) ; l'anneau tourne autour du
+  crochet, retenu par le poids des porte-clés. La souris qui passe les
+  pousse, le défilement les secoue. Le porte-clé
+  d'un projet se déclare dans `js/projets-classique.js` (`porteCle`) ;
+  manquent ceux de ft_transcendence (manette) et Michael Jackson (gant à
+  paillettes). L'anneau et le crochet dorés sont aussi des images détourées
+  (`anneau.webp`, `crochet.webp`). 2D voulue (pas de .glb) : plus léger, le
+  brillant reste.
+- Avant : une GALERIE DANS LE NOIR, en 3D (`js/express-galerie.js`, plus
+  chargé mais gardé), choisie par elle (« plus impactant, 3D, profondeur, mouvement,
+  intriguer »). La souris est une lampe torche (s'allume en grésillant) ;
+  cartel de musée avec son nom à l'entrée ; ses projets accrochés comme des
+  tableaux, un mur sur deux, avec plaques ; au défilement on avance de halte
+  en halte (pause face à chaque tableau) jusqu'à une porte ouverte sur le
+  gris de la page (« À propos »). Sommaire des projets et bouton « Voir le
+  projet » en HTML (clavier, lecteurs d'écran) ; sans souris, la lampe vise
+  seule. Données : `js/projets-classique.js` (ses 3 vrais projets ; textes
+  encore provisoires), images dans `images/projets/` exportées de ses Figma.
+  `js/projets.js` reste celui du jeu.
+- Refusé aussi : la version « regard » (ses yeux en très grand, iris en
+  verre, vues plein écran par projet avec clignement de paupières).
+- Pistes d'accueil essayées puis REFUSÉES (octobre 2026, fichiers
+  supprimés) : bulle de verre liquide qui déforme la devise (elle la
+  préférait aux yeux, mais « juste une bulle ») ; devise en lettres de
+  verre sur fond liquide ; prénom en lettres-ballons (2D puis 3D avec
+  ficelles) ; peinture (pinceau qui peint autour des lettres, puis
+  « colorier pour révéler la phrase » en corail qui sèche en noir). Autres
+  pistes proposées, jamais faites : gelée, particules, tissu. Retenu de ces
+  essais : un index des projets (noms en très grand, une goutte de verre
+  montre l'écran au survol) lui plaisait plutôt.
 - Puis « À propos » dans un panneau à coins marqués, et contact.
 - En haut à gauche, ses yeux (frange arrondie, eye-liner) suivent la souris
   et clignent ; de temps en temps la carte pivote et montre « Fatima Zayani »
   (pas de monogramme « FZ »). Éviter `-webkit-text-stroke` avec Cinzel.
 - Abandonnés (elle n'a pas aimé) : affiche froissée, billets en diagonale,
-  anamorphose, objets 3D en ouverture, anneau de cartes façon Manet.
+  anamorphose, objets 3D en ouverture, anneau de cartes façon Manet,
+  paquet de cartes en éventail (« effet cartes »), son nom répété en
+  filigrane partout, projets en « planches » décalées sur fond gris.
 
 ## Le personnage
 

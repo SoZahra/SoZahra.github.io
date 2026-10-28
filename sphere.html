@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fatima Zayani — Projets</title>
+  <!-- ESSAI (octobre 2026) : la sphère de projets, page vierge sur fond noir.
+       Ne remplace pas encore index.html. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&display=swap">
+  <style>
+    /* fond noir, ou blanc au choix (bouton en haut à droite, js/sphere.js) */
+    :root { --fond: #000; --texte: #f3f1ed; }
+    :root[data-fond="blanc"] { --fond: #f7f7f5; --texte: #161616; }
+    html, body { margin: 0; background: var(--fond); color: var(--texte); transition: background-color .4s, color .4s; }
+    /* une seule vue à la fois, sans défilement de page : la sphère, puis le
+       projet (qui défile dans son propre calque) */
+    body { font-family: "Archivo", system-ui, sans-serif; overflow: hidden; }
+    #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+    .sur-carte #scene, .sur-carte .projet { cursor: pointer; }
+
+    .etiquettes { position: fixed; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+    .etiquette {
+      position: absolute; left: 0; top: 0;
+      font-size: 13px; letter-spacing: .01em; white-space: nowrap;
+      will-change: transform, opacity;
+    }
+    .etiquette::before { content: "• "; }
+    /* le choix du fond ; la pastille montre celui qu'on aura en cliquant */
+    .choix-fond {
+      position: fixed; right: 24px; top: 20px; z-index: 2;
+      display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+      border: 0; background: none; color: inherit; cursor: pointer;
+    }
+    .choix-fond:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+    .pastille { width: 14px; height: 14px; transition: transform .2s; border: 1px solid currentColor; border-radius: 50%; background: #f7f7f5; }
+    .choix-fond:hover .pastille { transform: scale(1.25); }
+    :root[data-fond="blanc"] .pastille { background: #000; }
+
+    /* Le projet affiché : un calque par-dessus la scène, qui défile seul ;
+       la roue reste à gauche (dans la scène, derrière). Un clic hors du
+       contenu vaut un clic sur la roue (js/sphere.js). Mise en page d'après
+       sa maquette, en EB Garamond. */
+    .projet {
+      position: fixed; inset: 0; z-index: 1; overflow-y: auto; overscroll-behavior: contain;
+      visibility: hidden; transition: visibility 0s .6s;
+    }
+    .vue-projet .projet { visibility: visible; transition: none; }
+    /* La roue visible (--roue) et le contenu (--contenu) forment un seul
+       bloc, centré dans l'écran ; js/sphere.js accroche la roue au bord
+       gauche du contenu (à --ecart). La roue grandit avec la hauteur de
+       l'écran, d'où une largeur en vh. Le contenu est centré en hauteur :
+       son milieu tombe en face du trou de la roue. */
+    .projet { --roue: 30vh; --ecart: 64px; --contenu: min(1120px, 100vw - var(--roue) - var(--ecart) - 96px); }
+    .projet-panneau {
+      box-sizing: border-box; min-height: 100vh; min-height: 100svh;
+      display: flex; flex-direction: column; justify-content: center;
+      width: var(--contenu);
+      margin-left: calc((100vw - var(--contenu) - var(--roue) - var(--ecart)) / 2 + var(--roue) + var(--ecart));
+      padding: 9vh 0;
+      font-family: "EB Garamond", Garamond, "Times New Roman", serif;
+    }
+    /* .attend : le contenu attend que la carte qui vole se pose. Alors la
+       grande image s'ouvre depuis le carré (au centre, à sa hauteur), le
+       reste monte en fondu */
+    #projet-contenu :is(.projet-entete, .projet-petit, .projet-court, .projet-texte, .projet-large, .projet-liens) {
+      transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2, .8, .2, 1);
+    }
+    #projet-contenu.attend :is(.projet-entete, .projet-petit, .projet-court, .projet-texte, .projet-large, .projet-liens) {
+      opacity: 0; transform: translateY(16px); transition-duration: .2s; transition-delay: 0s;
+    }
+    .projet-grand { clip-path: inset(0); transition: clip-path .7s cubic-bezier(.2, .8, .2, 1), opacity .15s; }
+    /* un carré au milieu d'une image en 8:5 : 18,75 % de chaque côté */
+    #projet-contenu.attend .projet-grand { opacity: 0; clip-path: inset(0 18.75%); transition: opacity .2s; }
+    .projet-titre:focus { outline: none; }
+    .projet-entete { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+    .projet-titre { margin: 0; font-size: clamp(30px, 3vw, 54px); font-weight: 600; line-height: 1.05; }
+    .projet-sous-titre { margin: 4px 0 0; font-size: clamp(17px, 1.1vw, 20px); opacity: .85; }
+    .projet-role { margin: 4px 0 0; text-align: right; font-size: clamp(17px, 1.1vw, 20px); font-weight: 600; line-height: 1.3; }
+    /* une grande image, deux petites, et sous les petites une phrase */
+    .projet-haut {
+      display: grid; grid-template-columns: 2.6fr 1fr 1fr; grid-template-rows: auto 1fr;
+      gap: 14px; margin-top: 18px;
+    }
+    .projet-haut figure { margin: 0; overflow: hidden; }
+    .projet-grand { grid-row: 1 / 3; aspect-ratio: 8 / 5; }
+    .projet-petit { aspect-ratio: 5 / 6; }
+    .projet-court { grid-column: 2 / 4; align-self: start; margin: 8px 0 0; font-size: clamp(17px, 1.1vw, 20px); font-weight: 600; line-height: 1.3; }
+    .projet-haut.sans-petits { grid-template-columns: 2.6fr 2fr; }
+    .projet-haut.sans-petits .projet-court { grid-column: 2; grid-row: 1; align-self: end; }
+    .projet-haut img, .projet-large img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    /* les écrans de téléphone en entier, sur un fond à peine marqué */
+    figure.est-telephone { background: color-mix(in srgb, currentColor 7%, transparent); }
+    figure.est-telephone img { object-fit: contain; }
+    .projet-texte { margin-top: 28px; max-width: 68ch; font-size: clamp(17px, 1.1vw, 20px); font-weight: 500; line-height: 1.45; }
+    .projet-texte p { margin: 0 0 12px; }
+    .projet-large { margin: 14px 0 0; aspect-ratio: 12 / 5; overflow: hidden; }
+    .projet-liens { font-size: 17px; }
+    .projet-liens a { margin-right: 18px; font-weight: 600; color: inherit; }
+    @media (max-width: 760px) {
+      .projet-panneau { width: auto; margin-left: 0; padding: 42vh 20px 10vh; }
+      #projet-contenu { background: var(--fond); }
+      .projet-haut { grid-template-columns: 1fr 1fr; }
+      .projet-grand { grid-row: auto; grid-column: 1 / 3; }
+      .projet-court { grid-column: 1 / 3; }
+      .projet-entete { flex-direction: column; gap: 6px; }
+      .projet-role { text-align: left; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #projet-contenu *, .projet-grand { transition: none !important; }
+    }
+
+    /* accès au clavier : la liste des projets, visible seulement au focus */
+    .acces { position: fixed; left: 24px; bottom: 20px; z-index: 2; }
+    .acces ul { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; padding: 0; list-style: none; }
+    .acces button { min-height: 44px; border: 0; background: none; color: inherit; font: inherit; font-size: 14px; cursor: pointer; }
+    .acces:not(:focus-within) {
+      position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
+    :focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+    /* retour à la sphère, en haut à droite à côté du point de couleur,
+       seulement sur un projet */
+    .vers-sphere {
+      position: fixed; right: 72px; top: 20px; z-index: 3;
+      display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+      border: 0; background: none; color: inherit; cursor: pointer;
+      opacity: 0; visibility: hidden; transition: opacity .4s, visibility 0s .4s;
+    }
+    .vue-projet .vers-sphere { opacity: 1; visibility: visible; transition: opacity .4s .6s; }
+    .vers-sphere svg { width: 22px; height: 22px; transition: transform .4s; }
+    .vers-sphere:hover svg { transform: rotate(-90deg); }
+  </style>
+  <!-- le fond choisi la dernière fois, posé avant l'affichage -->
+  <script>
+    try { if (localStorage.getItem("sphere-fond") === "blanc") document.documentElement.dataset.fond = "blanc"; } catch (e) {}
+  </script>
+  <script src="js/projets-classique.js" defer></script>
+  <script type="module" src="js/sphere.js"></script>
+</head>
+<body>
+  <canvas id="scene" aria-label="Projets de Fatima Zayani, en sphère"></canvas>
+  <div class="etiquettes" aria-hidden="true"></div>
+  <button type="button" class="choix-fond" id="choix-fond" aria-label="Fond blanc"><span class="pastille" aria-hidden="true"></span></button>
+  <button type="button" class="vers-sphere" id="vers-sphere" aria-label="Revenir à la sphère">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="4" ry="10"/>
+    </svg>
+  </button>
+  <nav class="acces" aria-label="Projets"><ul id="acces-projets"></ul></nav>
+
+  <!-- Le projet affiché, choisi sur la sphère puis sur la roue (rempli par
+       js/sphere.js) -->
+  <section class="projet" id="projet" aria-labelledby="projet-titre">
+    <div class="projet-panneau"><div id="projet-contenu" class="attend"></div></div>
+  </section>
+</body>
+</html>

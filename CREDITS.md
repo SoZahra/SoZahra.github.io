@@ -10,14 +10,27 @@
 - **Cadres PC-98** (`assets/ui/pc98/`), fond généré (`js/fond-pixel.js`), police gravée
   (`js/police-pixel.js`), personnage (`js/personnage-pixel.js`), pièces (`js/piece-projets.js`,
   `js/piece-whoami.js`) et figurine 3D (`js/figurine-3d.js`) — réalisés pour ce site.
-- **Version classique** (`index.html`, `js/saison.js`, `css/express.css`, `js/express.js`, `js/express-paquet.js`) — réalisée pour ce site.
+- **Version classique** (`index.html`, `js/saison.js`, `css/express.css`, `js/express.js`,
+  `js/express-galerie.js`, `js/projets-classique.js`, essai `sphere.html` + `js/sphere.js`) — réalisée pour ce site.
+
+## Projets
+
+- **Captures des projets** (`images/projets/`) — maquettes de Fatima (Matcha,
+  ft_transcendence, application Michael Jackson), exportées de ses fichiers Figma.
+  - Matcha : la pièce ancienne (`matcha-piece.webp`) est une image générée avec Gemini ;
+    source de la photo du verre de matcha (`matcha-affiche.webp`) à préciser.
+  - Application Michael Jackson (`mj-accueil.webp`) : les pochettes d'albums et photos
+    de Michael Jackson appartiennent à leurs ayants droit.
 - **Archivo** (police de la version classique, chargée depuis Google Fonts) — par Omnibus-Type,
   sous [SIL Open Font License 1.1](https://openfontlicense.org).
+- **EB Garamond** (fiche d'un projet dans l'essai `sphere.html`, chargée depuis Google Fonts) —
+  par Georg Duffner et Octavio Pardo, sous [SIL Open Font License 1.1](https://openfontlicense.org).
 
 ## Bibliothèques
 
 - **three.js** r170 (`js/vendor/three.module.min.js`) — three.js authors,
-  [licence MIT](js/vendor/three-LICENSE.txt). Utilisée pour la figurine 3D de la page « whoami ».
+  [licence MIT](js/vendor/three-LICENSE.txt). Utilisée pour la figurine 3D de la page « whoami »
+  et pour la galerie 3D de la version classique.
   Le chargeur de modèles (`js/vendor/GLTFLoader.js`, `js/vendor/BufferGeometryUtils.js`)
   vient du même dépôt, sous la même licence.
 
@@ -45,6 +58,12 @@
 - `models/fatima-levres.png` — masque des lèvres sur la texture de ce modèle (lèvres en couleur
   sur le buste en noir et blanc de la version rapide) — réalisé pour ce site.
 - `images/tenues/` — vignettes des tenues, recadrées depuis ces illustrations.
+- `images/porte-cles/` — porte-clés du trousseau (elle, matcha, palette,
+  enveloppe, étiquette) : images générées par IA (Gemini / Nano Banana) à
+  partir de sa photo et de prompts écrits pour ce site, détourées avec rembg
+  (modèles IS-Net et BiRefNet). Réduites pour le web. L'anneau et le
+  crochet (`anneau.webp`, `crochet.webp`) : images générées par IA, fournies
+  par elle, détourées avec ImageMagick (fond gris retiré par la saturation).
 
 ## Polices
 

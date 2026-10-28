@@ -15,16 +15,13 @@
 
   <!-- Version classique du portfolio : une seule page, servie toute l'année
        sauf à Halloween. Mêmes données que la version jeu (jeu.html). -->
-  <script src="js/projets.js" defer></script>
+  <script src="js/projets-classique.js" defer></script>
   <script src="js/whoami.js" defer></script>
   <script src="js/contact.js" defer></script>
   <script type="module" src="js/express.js"></script>
 </head>
 <body>
   <a class="evitement" href="#projets">Aller aux projets</a>
-
-  <!-- Curseur personnalisé (souris seulement) -->
-  <div class="curseur" id="curseur" aria-hidden="true"><span id="curseur-texte"></span></div>
 
   <header class="entete">
     <!-- Ses yeux (frange noire, eye-liner) : les pupilles suivent la souris -->
@@ -67,12 +64,12 @@
     <!-- Navigation verticale, à droite ; au survol, le mot roule -->
     <nav class="nav-verticale" aria-label="Navigation principale">
       <ul>
-        <li><a href="#projets"><span data-texte="Projets">Projets</span></a></li>
-        <li><a href="#apropos"><span data-texte="À propos">À propos</span></a></li>
-        <li><a href="#contact"><span data-texte="Contact">Contact</span></a></li>
+        <li><a href="#projets"><span class="roule"><span data-texte="Projets">Projets</span></span></a></li>
+        <li><a href="#apropos"><span class="roule"><span data-texte="À propos">À propos</span></span></a></li>
+        <li><a href="#contact"><span class="roule"><span data-texte="Contact">Contact</span></span></a></li>
       </ul>
     </nav>
-    <a class="vers-immersif lien-jeu" href="jeu.html"><span data-texte="Version immersive ↗">Version immersive ↗</span></a>
+    <a class="vers-immersif lien-jeu" href="jeu.html"><span class="roule"><span data-texte="Version immersive ↗">Version immersive ↗</span></span></a>
   </header>
 
   <!-- La colonne : texte vertical qui accompagne toute la visite. Centrée à
@@ -88,27 +85,30 @@
   </div>
 
   <main id="haut">
-    <!-- ===================== ACCUEIL + PROJETS =====================
-         Une seule scène (js/express-paquet.js) : à l'accueil, les cartes des
-         projets flottent, floues, et avancent vers nous derrière la colonne.
-         Au défilement, elles se rangent en paquet pendant que la colonne
-         glisse à gauche, puis on feuillette : la carte du dessus s'envole. -->
-    <section class="projets" id="accueil" aria-labelledby="nom">
-      <!-- cible des liens « Projets » : la fin de l'approche -->
-      <span class="ancre-projets" id="projets" aria-hidden="true"></span>
-      <div class="projets-scene">
-        <h1 class="sr-only" id="nom">Fatima Zayani</h1>
-        <p class="sr-only" id="classe"></p>
-        <h2 class="sr-only" id="titre-projets">Projets</h2>
-        <canvas class="paquet" id="paquet" aria-hidden="true"></canvas>
-        <div class="etiquettes" id="etiquettes" aria-hidden="true"></div>
-        <p class="sr-only" id="projet-actif" aria-live="polite"></p>
-        <a class="accueil-indice" id="accueil-indice" href="#projets">Défile <span aria-hidden="true">↓</span></a>
-        <div class="projets-bas" id="projets-bas">
-          <ol class="projets-liste" id="projets-liste" aria-label="Aller au projet"></ol>
-          <button type="button" class="bouton" id="projet-ouvrir">Voir le projet</button>
-        </div>
+    <!-- ===================== ACCUEIL : LE TROUSSEAU =====================
+         Un trousseau suspendu à un crochet (js/express-trousseau.js) : elle
+         au milieu, et autour des porte-clés qui mènent chacun à une page
+         (un projet, À propos, Contact, CV). Ils se balancent quand la souris
+         passe. Le sommaire des projets reste en HTML (clavier, lecteurs
+         d'écran, et projets qui n'ont pas encore leur porte-clé). -->
+    <section class="trousseau" id="accueil" aria-labelledby="nom">
+      <h1 class="sr-only" id="nom">Fatima Zayani</h1>
+      <p class="sr-only" id="classe"></p>
+      <p class="sr-only" id="accueil-devise"></p>
+      <div class="trousseau-scene" id="trousseau">
+        <!-- deux fois le crochet : la tige derrière l'anneau, le bout recourbé devant -->
+        <img class="trousseau-crochet" src="images/porte-cles/crochet.webp" alt="" draggable="false">
+        <img class="trousseau-crochet devant" src="images/porte-cles/crochet.webp" alt="" draggable="false">
       </div>
+      <p class="trousseau-legende" id="legende" aria-hidden="true">
+        <span class="legende-sur" id="legende-sur">Touche un porte-clé</span>
+        <span class="legende-titre" id="legende-titre"></span>
+      </p>
+      <nav class="trousseau-sommaire" id="projets" aria-labelledby="titre-projets">
+        <h2 class="trousseau-sommaire-titre" id="titre-projets">Projets</h2>
+        <ol id="sommaire"></ol>
+      </nav>
+      <a class="accueil-indice" id="accueil-indice" href="#apropos">Défile <span aria-hidden="true">↓</span></a>
     </section>
 
     <!-- ===================== À PROPOS ===================== -->
@@ -132,7 +132,7 @@
     <section class="contact" id="contact" aria-labelledby="titre-contact">
       <h2 id="titre-contact">Un projet ? <em>Écris-moi.</em></h2>
       <div class="contact-ligne">
-        <a class="email" id="email" data-curseur="Écrire"></a>
+        <a class="email" id="email"></a>
         <button type="button" class="bouton" id="copier">Copier l'adresse</button>
         <span class="copie-ok" id="copie-ok" role="status"></span>
       </div>
