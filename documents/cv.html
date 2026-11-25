@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>CV — Fatima Zayani</title>
+  <!--
+    Page imprimable de son CV : elle sert à fabriquer le PDF téléchargeable
+    (documents/cv-fatima-zayani.pdf). Mêmes données que le volet CV du site
+    (js/cv.js) et même mise en page (js/cv-rendu.js, css/cv.css).
+
+    Pour régénérer le PDF après une modification de js/cv.js, depuis la
+    racine du site, avec un serveur local lancé (python3 -m http.server 8765) :
+      chromium-browser --headless=new --user-data-dir=/tmp/cv-profil \
+        --no-pdf-header-footer --virtual-time-budget=5000 \
+        --print-to-pdf=documents/cv-fatima-zayani.pdf \
+        http://localhost:8765/documents/cv.html
+    (ou ouvrir la page dans un navigateur et « Imprimer → Enregistrer en PDF »).
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+  <link rel="stylesheet" href="../css/cv.css">
+  <style>
+    :root {
+      --noir: #161616; --gris: #55534f; --trait: rgba(22, 22, 22, 0.16);
+      --accent: #ff4a3d; --accent-texte: #c2271b;
+      --large: "Archivo", system-ui, sans-serif;
+    }
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    html { background: #9a9a98; }
+    body {
+      margin: 24px auto; width: 210mm; min-height: 297mm; padding: 16mm 16mm 12mm;
+      background: #fff; color: var(--noir);
+      font-family: var(--large); font-size: 9.6pt; line-height: 1.45;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    @media print { html { background: none; } body { margin: 0; } }
+    .tete { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding-bottom: 12px; margin-bottom: 18px; border-bottom: 2px solid var(--noir); }
+    h1 { margin: 0; font-weight: 800; font-stretch: 125%; font-size: 26pt; line-height: 1; text-transform: uppercase; letter-spacing: 0.01em; }
+    .titre { margin: 6px 0 0; font-weight: 600; font-stretch: 112%; font-size: 10.5pt; color: var(--gris); text-transform: uppercase; letter-spacing: 0.08em; }
+    .coordonnees { list-style: none; margin: 0; padding: 0; text-align: right; font-size: 8.6pt; line-height: 1.6; }
+    .coordonnees a { color: inherit; text-decoration: none; }
+    /* toujours deux colonnes sur la feuille (l'aperçu d'impression est étroit) */
+    .cv-grille { grid-template-columns: 1.45fr 1fr !important; gap: 0 9mm; }
+    .cv-bloc { margin-bottom: 16px; }
+    .cv-liste > li + li { margin-top: 10px; }
+    .pied { margin-top: 10px; font-size: 7.6pt; color: var(--gris); text-align: center; }
+    .pied a { color: inherit; }
+  </style>
+  <script src="../js/cv.js"></script>
+</head>
+<body>
+  <header class="tete">
+    <div>
+      <h1 id="nom"></h1>
+      <p class="titre" id="titre"></p>
+    </div>
+    <ul class="coordonnees" id="coordonnees"></ul>
+  </header>
+  <main id="contenu"></main>
+  <script type="module">
+    import { rendreCV } from "../js/cv-rendu.js";
+    const CV = window.CV;
+    document.getElementById("nom").textContent = CV.nom;
+    document.getElementById("titre").textContent = CV.titre;
+    const coord = document.getElementById("coordonnees");
+    const ligne = (texte, url) => {
+      const li = document.createElement("li");
+      if (url) { const a = document.createElement("a"); a.href = url; a.textContent = texte; li.append(a); }
+      else li.textContent = texte;
+      coord.append(li);
+    };
+    ligne(CV.ville);
+    ligne(CV.email, `mailto:${CV.email}`);
+    CV.liens.forEach((l) => ligne(`${l.libelle} : ${l.url.replace(/^https?:\/\/(www\.)?/, "")}`, l.url));
+    rendreCV(document.getElementById("contenu"), CV);
+  </script>
+</body>
+</html>

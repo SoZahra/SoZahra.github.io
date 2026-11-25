@@ -32,12 +32,21 @@ const POIDS_ANNEAU = 0.1; // inverse de la masse de l'anneau, vu d'un point d'at
 const MAIN = 0.25;        // souplesse de la main qui tient un porte-clé (1 : collé à la souris)
 const ELAN = 0.4;         // part de l'élan gardée au lâcher
 const VITESSE_LACHER = 700; // vitesse maximale au lâcher (px/s)
+const FROLE = 0.03;       // part de la vitesse de la souris donnée au porte-clé qu'elle frôle
+const FROLE_MAX = 110;    // poussée maximale au frôlement (px/s)
+const ACCELERE = 1.7;     // pendant la chute, la pesanteur est plus forte (tombe plus vite)
+const REBOND = 0.18;       // à l'arrivée sur le crochet, l'anneau rebondit un peu (part de sa vitesse)
+const DEFILE = 0.03;      // part de la vitesse du défilement donnée aux porte-clés
+const DEFILE_MAX = 60;    // poussée maximale au défilement (px/s)
 const PHI_MAX = 1.3;      // l'anneau peut tourner jusque-là autour du crochet (rad)
 // images/porte-cles/anneau.webp : rayon du milieu du tube, et épaisseur du tube,
 // en fraction de la largeur de l'image (le centre est au milieu de l'image)
 const ANNEAU_RAYON = 174.5 / 418, ANNEAU_TUBE = 66 / 418;
 
-export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
+export function creerTrousseau(scene, { breloques, reduit, auSurvol, tomber, enAttente }) {
+  // enAttente : tout est placé au-dessus de la scène, immobile, jusqu'à
+  // lacher() (l'intro de js/express-intro.js se joue pendant ce temps)
+  let gele = Boolean(enAttente && !reduit);
   const crochets = scene.querySelectorAll(".trousseau-crochet");
   const toile = document.createElement("canvas");
   toile.className = "trousseau-chaines";
@@ -54,6 +63,9 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
 
   // l'anneau : un pendule autour du crochet (angle et angle au pas d'avant)
   const A = { phi: 0, ophi: 0 };
+  // la chute de la première visite : l'anneau tombe d'en haut sur le crochet
+  // (y : sa hauteur au-dessus du crochet, négative ; vy : sa vitesse)
+  let chute = null;
 
   /* ---------- Les porte-clés ---------- */
   const items = breloques.map((b, i) => {
@@ -68,6 +80,7 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
       objet = document.createElement("a");
       objet.href = b.lien;
       if (b.telecharger) objet.setAttribute("download", "");
+      else if (b.externe) { objet.target = "_blank"; objet.rel = "noopener"; }
     } else if (b.clic) {
       objet = document.createElement("button");
       objet.type = "button";
@@ -85,7 +98,7 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
     liste.append(li);
 
     const it = {
-      b, li, objet, alpha, i,
+      b, li, objet, alpha, alpha0: alpha, alphaCible: alpha, i, libre: false, parti: false,
       repos: Math.sign(alpha) * (b.penche ?? Math.min(Math.abs(alpha) * ECARTEMENT, PENCHE_MAX)),
       pts: [], L: 1, c: 1, w: 1, h: 1, dAB: 1, angleRepos: 0, sansClic: false,
     };
@@ -96,7 +109,7 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
       e.stopImmediatePropagation();
     });
     if (b.clic) objet.addEventListener("click", b.clic);
-    const survol = () => { auSurvol && auSurvol(i); lancer(it, (Math.random() - 0.5) * 120, 0); };
+    const survol = () => { auSurvol && auSurvol(i); };
     const quitte = () => { auSurvol && auSurvol(-1); };
     objet.addEventListener("pointerenter", survol);
     objet.addEventListener("focus", survol);
@@ -165,9 +178,9 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
 
   // point d'attache d'un porte-clé sur l'anneau (repère de la scène)
   function attache(it) {
-    const a = A.phi;
+    const a = A.phi, dy = chute ? chute.y : 0;
     const lx = -R * Math.sin(it.alpha), ly = R + R * Math.cos(it.alpha);
-    return { x: hx + lx * Math.cos(a) - ly * Math.sin(a), y: hy + lx * Math.sin(a) + ly * Math.cos(a) };
+    return { x: hx + lx * Math.cos(a) - ly * Math.sin(a), y: hy + dy + lx * Math.sin(a) + ly * Math.cos(a) };
   }
   // tirer sur l'anneau au point d'attache a : il tourne autour du crochet
   function tirerAnneau(a, ex, ey, part) {
@@ -179,7 +192,7 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
   let prise = null; // { it, t (où on le tient, de l'œillet 0 au milieu 1), x, y, x0, y0, bouge }
 
   function lancer(it, vx, vy) {
-    if (reduit) return;
+    if (reduit || it.parti) return;
     const p = milieu(it);
     p.ox -= vx * H;
     p.oy -= vy * H;
@@ -191,15 +204,35 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
     const vphi = (A.phi - A.ophi) * AMORTI_ANNEAU;
     A.ophi = A.phi;
     A.phi += vphi - (G / (R * 2.2)) * Math.sin(A.phi) * H * H;
+    const g = chute ? G * ACCELERE : G;
+    if (chute) {
+      chute.vy += g * H;
+      chute.y += chute.vy * H;
+      if (chute.y >= 0) {
+        // il touche le crochet : un petit rebond, puis il y reste
+        if (!chute.rebondi) {
+          chute.rebondi = true;
+          chute.y = 0;
+          chute.vy *= -REBOND;
+          A.ophi -= (Math.random() < 0.5 ? -1 : 1) * 0.5 * H; // et se met à tourner
+        } else chute = null;
+      }
+    }
+    const seul = items.some((it) => it.libre);
+    // le point d'attache glisse doucement le long de l'anneau vers sa cible
+    // (seul, le porte-clé gardé descend en bas de l'anneau, sous le crochet)
+    items.forEach((it) => { it.alpha += (it.alphaCible - it.alpha) * 0.012; });
     // les points : pesanteur, et l'éventail (chaque porte-clé est poussé
     // de côté, comme repoussé par ses voisins, sauf celui qu'on tient)
     items.forEach((it) => {
-      const deCote = prise && prise.it === it ? 0 : -G * Math.tan(it.repos); // repos > 0 : vers la gauche
+      if (it.parti) return;
+      // (seul sur l'anneau, quand les autres sont décrochés : il pend droit)
+      const deCote = (prise && prise.it === it) || seul ? 0 : -G * Math.tan(it.repos); // repos > 0 : vers la gauche
       it.pts.forEach((p) => {
         const vx = (p.x - p.ox) * AMORTI, vy = (p.y - p.oy) * AMORTI;
         p.ox = p.x; p.oy = p.y;
         p.x += vx + deCote * H * H;
-        p.y += vy + G * H * H;
+        p.y += vy + g * H * H;
       });
     });
     for (let n = 0; n < ITERATIONS; n++) contraintes();
@@ -216,6 +249,7 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
       m.x += dx * t * s; m.y += dy * t * s;
     }
     items.forEach((it) => {
+      if (it.parti) return;
       const P = it.pts, n = P.length - 2; // P[n] : l'œillet, P[n + 1] : le milieu
       // les maillons ne s'écartent pas (mais se tassent)
       for (let k = 0; k < n; k++) {
@@ -232,6 +266,7 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
       const f = (d - it.dAB) / d / 2;
       o.x += dx * f; o.y += dy * f;
       m.x -= dx * f; m.y -= dy * f;
+      if (it.libre) return; // décroché : plus rien ne le retient à l'anneau
       // la chaîne entière ne s'allonge pas : chaque point reste à portée de
       // l'anneau ; ce qui tire au-delà fait tourner l'anneau, d'autant plus
       // que le porte-clé est lourd (ou tenu : la main ne cède pas)
@@ -255,9 +290,10 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
 
   /* ---------- Dessin ---------- */
   function dessiner() {
-    anneau.style.transform = `translate(${hx}px, ${hy}px) rotate(${A.phi}rad)`;
+    anneau.style.transform = `translate(${hx}px, ${hy + (chute ? chute.y : 0)}px) rotate(${A.phi}rad)`;
     ctx.clearRect(0, 0, W, Hs);
     items.forEach((it) => {
+      if (it.parti) return;
       const o = oeillet(it), m = milieu(it);
       const rot = Math.atan2(m.y - o.y, m.x - o.x) - it.angleRepos;
       const [fx, fy] = it.b.anneau;
@@ -344,6 +380,7 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
   });
 
   let souris = null;
+  const frole = new Set(); // les porte-clés sous la souris : poussés une fois en entrant, pas à chaque mouvement
   scene.addEventListener("pointermove", (e) => {
     if (reduit || e.pointerType === "touch") return;
     const { x, y } = position(e);
@@ -359,29 +396,34 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
     const t = performance.now();
     if (souris && t > souris.t) {
       const vx = ((x - souris.x) / (t - souris.t)) * 1000;
-      // la souris qui passe sur un porte-clé le pousse
+      // la souris qui entre sur un porte-clé le pousse doucement
       items.forEach((it) => {
         const r = it.objet.getBoundingClientRect();
-        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
-          lancer(it, Math.max(-450, Math.min(450, vx * 0.08)), 0);
-        }
+        const dessus = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+        if (dessus && !frole.has(it)) lancer(it, Math.max(-FROLE_MAX, Math.min(FROLE_MAX, vx * FROLE)), 0);
+        if (dessus) frole.add(it); else frole.delete(it);
       });
       // en frôlant l'anneau, on le fait tourner un peu
       const centre = { x: hx - R * Math.sin(A.phi), y: hy + R * Math.cos(A.phi) };
       const d = Math.hypot(x - centre.x, y - centre.y);
-      if (Math.abs(d - R) < 2 * u) { A.ophi += vx * 0.0003 * H; reveiller(); }
+      if (Math.abs(d - R) < 2 * u) { A.ophi += vx * 0.0001 * H; reveiller(); }
     }
     souris = { x, y, t };
   }, { passive: true });
-  scene.addEventListener("pointerleave", () => { souris = null; });
+  scene.addEventListener("pointerleave", () => { souris = null; frole.clear(); });
 
-  let dernierY = scrollY;
+  // le défilement : une petite poussée, proportionnelle à sa vitesse et
+  // plafonnée, donnée au plus une fois toutes les 120 ms (sinon les
+  // événements, très nombreux, s'additionnent et tout s'affole)
+  let dernierY = scrollY, dernierT = performance.now();
   window.addEventListener("scroll", () => {
-    const dy = scrollY - dernierY;
-    dernierY = scrollY;
+    const t = performance.now();
+    if (t - dernierT < 120) return;
+    const v = (scrollY - dernierY) / ((t - dernierT) / 1000); // px/s
+    dernierY = scrollY; dernierT = t;
     if (reduit || scrollY > scene.offsetHeight) return;
-    const f = Math.max(-60, Math.min(60, dy)) * 12;
-    items.forEach((it, i) => lancer(it, f * (i % 2 ? -1 : 1) * (0.6 + Math.random() * 0.6), -Math.abs(f) * 0.3));
+    const f = Math.max(-DEFILE_MAX, Math.min(DEFILE_MAX, v * DEFILE));
+    items.forEach((it, i) => lancer(it, f * 0.35 * (i % 2 ? -1 : 1), f));
   }, { passive: true });
 
   /* ---------- Boucle ----------
@@ -390,7 +432,7 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
   let visible = true, enCours = false, avant = 0, cumul = 0;
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) reveiller(); }).observe(scene);
   function reveiller() {
-    if (enCours || reduit || !visible) return;
+    if (enCours || reduit || !visible || gele) return;
     enCours = true;
     avant = performance.now();
     cumul = 0;
@@ -404,8 +446,15 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
       pas();
       cumul -= H;
     }
+    // les porte-clés décrochés qui sont sortis par le bas ne comptent plus
+    items.forEach((it) => {
+      if (it.libre && !it.parti && it.pts.every((p) => p.y > Hs + 40 * u)) {
+        it.parti = true;
+        it.li.classList.add("partie");
+      }
+    });
     dessiner();
-    items.forEach((it) => it.pts.forEach((p) => { bouge = Math.max(bouge, Math.abs(p.x - p.ox) + Math.abs(p.y - p.oy)); }));
+    items.filter((it) => !it.parti).forEach((it) => it.pts.forEach((p) => { bouge = Math.max(bouge, Math.abs(p.x - p.ox) + Math.abs(p.y - p.oy)); }));
     bouge = Math.max(bouge, Math.abs(A.phi - A.ophi) * R);
     if (visible && (prise || bouge > 0.01)) requestAnimationFrame(image);
     else enCours = false;
@@ -419,11 +468,77 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol }) {
     setTimeout(courantDAir, 2500);
   }
 
+  // tout part d'au-dessus de la scène ; les porte-clés un peu plus haut
+  // encore que leur place (chaînes lâches), pour qu'ils retombent l'un
+  // après l'autre en tirant sur l'anneau
+  function preparerChute() {
+    const D = hy + 85 * u;
+    chute = { y: -D, vy: 0, rebondi: false };
+    items.forEach((it) => {
+      const plus = (2 + Math.random() * 5) * u, dx = (Math.random() - 0.5) * 4 * u;
+      it.pts.forEach((p, k) => {
+        const f = Math.min(1, k / (it.pts.length - 2));
+        p.y -= D + plus * f; p.x += dx * f;
+        p.ox = p.x; p.oy = p.y;
+      });
+    });
+    dessiner();
+  }
+
   mesurer();
-  dessiner();
-  if (!reduit) items.forEach((it) => lancer(it, (Math.random() - 0.5) * 500, 0));
+  if ((tomber || gele) && !reduit) {
+    preparerChute();
+    reveiller();
+  } else {
+    dessiner();
+    if (!reduit) items.forEach((it) => lancer(it, (Math.random() - 0.5) * 500, 0));
+  }
 
   return {
-    redimensionner() { prise = null; mesurer(); dessiner(); },
+    redimensionner() { if (gele) return; prise = null; chute = null; mesurer(); dessiner(); },
+    lacher() { if (!gele) return; gele = false; reveiller(); },
+    // on garde le porte-clé n° garde : les autres se décrochent de l'anneau
+    // un à un, sautent un peu et tombent hors de la scène
+    decrocher(garde) {
+      if (reduit) return;
+      prise = null;
+      let k = 0;
+      items.forEach((it, i) => {
+        if (i === garde) { it.alphaCible = 0; return; }
+        if (it.libre) return;
+        setTimeout(() => {
+          it.libre = true;
+          it.li.classList.add("decroche");
+          const cote = Math.sign(it.alpha) || (Math.random() < 0.5 ? -1 : 1);
+          const vx = -cote * (180 + Math.random() * 220), vy = -(380 + Math.random() * 260);
+          it.pts.forEach((p) => { p.ox = p.x - vx * H; p.oy = p.y - vy * H; });
+          A.ophi -= cote * 0.25 * H; // l'anneau, soulagé, se balance
+          reveiller();
+        }, 70 * k++);
+      });
+    },
+    // pour les objets d'À propos (js/express-objets.js) : où est le
+    // porte-clé n° i à l'écran (centre, angle, taille), et le pousser
+    boite(i) {
+      const it = items[i];
+      if (!it || it.parti || gele || reduit) return null;
+      const r = scene.getBoundingClientRect(), o = oeillet(it), m = milieu(it);
+      return { x: r.left + m.x, y: r.top + m.y, angle: Math.atan2(m.y - o.y, m.x - o.x) - it.angleRepos, l: it.w, h: it.h };
+    },
+    pousser(i, vx, vy) { if (items[i]) lancer(items[i], vx, vy); },
+    // tout revient : l'anneau et ses porte-clés retombent sur le crochet
+    raccrocher() {
+      if (!items.some((it) => it.libre)) return;
+      prise = null;
+      items.forEach((it) => {
+        it.libre = false; it.parti = false;
+        it.alpha = it.alphaCible = it.alpha0;
+        it.li.classList.remove("decroche", "partie");
+      });
+      mesurer();
+      if (reduit) { dessiner(); return; }
+      preparerChute();
+      reveiller();
+    },
   };
 }

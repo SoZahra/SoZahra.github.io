@@ -51,9 +51,29 @@ window.WHOAMI = {
 
   competences: ["Figma", "HTML", "CSS", "JavaScript", "React", "Accessibilité", "Prototypage", "Pixel art"],
 
+  // ⚠ Brouillon (novembre 2026), écrit d'après son CV : à corriger par elle
   histoire: [
-    "Exemple — Raconte ici ton histoire en quelques lignes : d'où tu viens, ce qui t'a menée au design et au code, ce que tu aimes construire.",
-    "Exemple — Un deuxième paragraphe pour ce qui te rend unique : ta façon de travailler, tes sujets de prédilection.",
+    "J'ai commencé par l'image : un BTS Design Graphique, un Master en direction artistique, puis TF1, où je créais des vidéos et du motion design pour les réseaux sociaux.",
+    "En 2024, je suis entrée à l'École 42 pour passer de l'autre côté de l'écran. Aujourd'hui, je dessine dans Figma et je développe ce que j'ai dessiné, en faisant attention à ce que la personne ressent en l'utilisant.",
+    "Ce qui me plaît : les interfaces qui ont du caractère, les petites animations qui donnent vie à une page (comme ce trousseau), et les projets où le design et le code se parlent.",
+  ],
+
+  // version classique (volet À propos) : ce qu'elle fait, et ce qu'elle cherche
+  faire: [
+    { titre: "Design", texte: "Interfaces, identité visuelle, prototypes dans Figma." },
+    { titre: "Code", texte: "Sites et applications web, du front au back." },
+    { titre: "Motion", texte: "Animation, vidéo, interactions qui donnent vie à une page." },
+  ],
+  enCeMoment: "Je cherche un CDI, un stage ou une alternance qui mène à un CDI, dès que possible.",
+
+  // version classique : ses objets, qui tombent dans le volet À propos
+  // (js/express-objets.js). taille = hauteur en % de l'écran. Une image
+  // absente est simplement ignorée.
+  objets: [
+    { src: "images/objets/cafe.webp", nom: "Café", texte: "toujours un verre à côté du clavier", taille: 17 },
+    { src: "images/objets/camera.webp", nom: "Caméra", texte: "la vidéo et le motion, depuis TF1", taille: 14 },
+    { src: "images/objets/console.webp", nom: "Console", texte: "je joue (beaucoup)", taille: 11 },
+    { src: "images/objets/dessin.webp", nom: "Dessin", texte: "tout commence par un croquis", taille: 13 },
   ],
 
   quetes: [

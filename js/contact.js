@@ -39,7 +39,7 @@ window.CONTACT = {
   consigneTactile: "Touche le secrétaire, le café ou les cadres.",
   etiquette: "Fatima",
 
-  email: "exemple@exemple.com",   // Exemple
+  email: "zayani.fatima.z@gmail.com",
   formspree: "",                  // Exemple : "xyzabcde"
 
   lettre: {
@@ -56,8 +56,8 @@ window.CONTACT = {
   },
 
   cadres: [
-    { libelle: "LinkedIn", url: "https://www.linkedin.com/in/exemple", icone: "linkedin" }, // Exemple
+    // { libelle: "LinkedIn", url: "https://www.linkedin.com/in/…", icone: "linkedin" }, // à ajouter (son lien)
     { libelle: "GitHub", url: "https://github.com/SoZahra", icone: "github" },
-    { libelle: "CV", url: "documents/cv.pdf", icone: "cv", telecharger: true },          // Exemple
+    { libelle: "CV", url: "documents/cv-fatima-zayani.pdf", icone: "cv", telecharger: true },
   ],
 };

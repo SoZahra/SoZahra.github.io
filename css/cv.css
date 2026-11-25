@@ -1,0 +1,33 @@
+/*
+ * Son CV mis en page (js/cv-rendu.js) : commun au volet CV de index.html
+ * et à la page imprimable documents/cv.html. Les couleurs viennent de la
+ * page qui l'accueille (--noir, --gris, --trait, --large). Pas de rouge
+ * (son choix) : noir et gris seulement.
+ */
+.cv-grille { display: grid; grid-template-columns: 1.35fr 1fr; gap: 0 clamp(28px, 4vw, 56px); }
+.cv-bloc { margin: 0 0 26px; }
+.cv-titre {
+  margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--trait);
+  font-family: var(--large); font-weight: 700; font-stretch: 118%;
+  font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--noir);
+}
+.cv-profil { margin: 0; line-height: 1.55; }
+.cv-dispo { margin: 8px 0 0; font-weight: 600; }
+.cv-liste { list-style: none; margin: 0; padding: 0; }
+.cv-liste > li + li { margin-top: 14px; }
+.cv-ligne { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; }
+.cv-intitule { font-weight: 600; }
+.cv-lieu { font-weight: 400; color: var(--gris); }
+.cv-dates { flex: none; font-size: 0.82em; color: var(--gris); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cv-points { margin: 6px 0 0; padding-left: 1.1em; color: var(--gris); font-size: 0.92em; line-height: 1.5; }
+.cv-points li::marker { color: var(--gris); }
+.cv-projets { list-style: none; margin: 0; padding: 0; line-height: 1.7; }
+.cv-groupe { margin: 12px 0 6px; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gris); }
+.cv-groupe:first-of-type { margin-top: 0; }
+.cv-etiquettes { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.cv-etiquettes li { border: 1px solid currentColor; border-radius: 999px; padding: 2px 11px; font-size: 0.82em; }
+.cv-langues { margin: 0; }
+
+@media (max-width: 760px) {
+  .cv-grille { grid-template-columns: 1fr; }
+}

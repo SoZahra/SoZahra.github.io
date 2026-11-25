@@ -58,12 +58,19 @@
 - `models/fatima-levres.png` — masque des lèvres sur la texture de ce modèle (lèvres en couleur
   sur le buste en noir et blanc de la version rapide) — réalisé pour ce site.
 - `images/tenues/` — vignettes des tenues, recadrées depuis ces illustrations.
-- `images/porte-cles/` — porte-clés du trousseau (elle, matcha, palette,
-  enveloppe, étiquette) : images générées par IA (Gemini / Nano Banana) à
+- `images/porte-cles/` — porte-clés du trousseau (elle, dossier,
+  enveloppe, CV, ordinateur ; anciens : matcha, palette, étiquette) : images générées par IA
+  (Gemini / Nano Banana ; novembre 2026 : style art toy mat) à
   partir de sa photo et de prompts écrits pour ce site, détourées avec rembg
   (modèles IS-Net et BiRefNet). Réduites pour le web. L'anneau et le
   crochet (`anneau.webp`, `crochet.webp`) : images générées par IA, fournies
   par elle, détourées avec ImageMagick (fond gris retiré par la saturation).
+
+- `images/objets/` — ses objets du volet À propos (café, caméra, console) :
+  images générées par IA (Gemini / Nano Banana) dans le style des
+  porte-clés, détourées avec rembg (IS-Net), réduites pour le web.
+- `js/vendor/matter.min.js` — Matter.js 0.20.0 (moteur physique 2D),
+  par Liam Brummitt, licence MIT : https://github.com/liabru/matter-js
 
 ## Polices
 

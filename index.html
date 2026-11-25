@@ -12,12 +12,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
   <link rel="stylesheet" href="css/express.css">
+  <link rel="stylesheet" href="css/cv.css">
 
   <!-- Version classique du portfolio : une seule page, servie toute l'année
        sauf à Halloween. Mêmes données que la version jeu (jeu.html). -->
   <script src="js/projets-classique.js" defer></script>
   <script src="js/whoami.js" defer></script>
   <script src="js/contact.js" defer></script>
+  <script src="js/github.js" defer></script>
+  <script src="js/cv.js" defer></script>
   <script type="module" src="js/express.js"></script>
 </head>
 <body>
@@ -61,7 +64,7 @@
       <span class="yeux-face yeux-nom" aria-hidden="true">Fatima<br>Zayani</span>
       </span>
     </a>
-    <!-- Navigation verticale, à droite ; au survol, le mot roule -->
+    <!-- Navigation verticale, en bas à gauche sous la colonne ; au survol, le mot roule -->
     <nav class="nav-verticale" aria-label="Navigation principale">
       <ul>
         <li><a href="#projets"><span class="roule"><span data-texte="Projets">Projets</span></span></a></li>
@@ -69,7 +72,6 @@
         <li><a href="#contact"><span class="roule"><span data-texte="Contact">Contact</span></span></a></li>
       </ul>
     </nav>
-    <a class="vers-immersif lien-jeu" href="jeu.html"><span class="roule"><span data-texte="Version immersive ↗">Version immersive ↗</span></span></a>
   </header>
 
   <!-- La colonne : texte vertical qui accompagne toute la visite. Centrée à
@@ -88,7 +90,7 @@
     <!-- ===================== ACCUEIL : LE TROUSSEAU =====================
          Un trousseau suspendu à un crochet (js/express-trousseau.js) : elle
          au milieu, et autour des porte-clés qui mènent chacun à une page
-         (un projet, À propos, Contact, CV). Ils se balancent quand la souris
+         (elle → À propos, dossier → projets, Contact, CV). Ils se balancent quand la souris
          passe. Le sommaire des projets reste en HTML (clavier, lecteurs
          d'écran, et projets qui n'ont pas encore leur porte-clé). -->
     <section class="trousseau" id="accueil" aria-labelledby="nom">
@@ -101,35 +103,61 @@
         <img class="trousseau-crochet devant" src="images/porte-cles/crochet.webp" alt="" draggable="false">
       </div>
       <p class="trousseau-legende" id="legende" aria-hidden="true">
-        <span class="legende-sur" id="legende-sur">Touche un porte-clé</span>
+        <span class="legende-sur" id="legende-sur"></span>
         <span class="legende-titre" id="legende-titre"></span>
       </p>
       <nav class="trousseau-sommaire" id="projets" aria-labelledby="titre-projets">
         <h2 class="trousseau-sommaire-titre" id="titre-projets">Projets</h2>
         <ol id="sommaire"></ol>
       </nav>
-      <a class="accueil-indice" id="accueil-indice" href="#apropos">Défile <span aria-hidden="true">↓</span></a>
     </section>
 
     <!-- ===================== À PROPOS ===================== -->
-    <section class="apropos" id="apropos" aria-labelledby="titre-apropos">
-      <div class="panneau">
-        <h2 id="titre-apropos">À propos</h2>
-        <p class="devise" id="devise"></p>
-        <div class="apropos-grille">
-          <div id="histoire" class="histoire"></div>
-          <div>
-            <h3>Outils</h3>
-            <ul class="etiquettes" id="competences"></ul>
-            <h3>Parcours</h3>
-            <ol class="parcours" id="parcours"></ol>
-          </div>
-        </div>
+    <!-- La page ne défile pas : À propos et Contact sont des volets qui
+         s'ouvrent par-dessus l'accueil (js/express.js), fermés par ✕ ou Échap -->
+    <section class="apropos volet volet-cote" id="apropos" aria-labelledby="titre-apropos" inert>
+      <button type="button" class="volet-fermer" data-fermer aria-label="Fermer">✕</button>
+      <h2 id="titre-apropos">À propos</h2>
+      <p class="devise" id="devise"></p>
+      <div class="histoire" id="histoire"></div>
+      <h3 class="apropos-rubrique">Ce que je fais</h3>
+      <ul class="faire" id="faire"></ul>
+      <p class="en-ce-moment" id="en-ce-moment"></p>
+    </section>
+
+    <!-- ===================== GITHUB =====================
+         Ouvert par le porte-clé ordinateur : les autres porte-clés se
+         décrochent, le trousseau se range à gauche, le volet prend la droite. -->
+    <section class="github volet volet-cote" id="github" aria-labelledby="titre-github" inert>
+      <button type="button" class="volet-fermer" data-fermer aria-label="Fermer">✕</button>
+      <div class="github-tete">
+        <h2 id="titre-github">GitHub</h2>
+        <dl class="github-chiffres" id="github-chiffres"></dl>
       </div>
+      <p class="github-intro" id="github-intro"></p>
+      <div class="github-langages" id="github-langages" aria-hidden="true"></div>
+      <ol class="github-depots" id="github-depots"></ol>
+      <a class="github-tout" id="github-tout" target="_blank" rel="noopener">Tout voir sur GitHub <span aria-hidden="true">↗</span></a>
+    </section>
+
+    <!-- ===================== CV =====================
+         Ouvert par le porte-clé CV, de côté comme GitHub : son CV en page web
+         (js/cv.js, mis en page par js/cv-rendu.js) et le PDF à télécharger. -->
+    <section class="cv volet volet-cote" id="cv" aria-labelledby="titre-cv" inert>
+      <button type="button" class="volet-fermer" data-fermer aria-label="Fermer">✕</button>
+      <div class="cv-entete">
+        <div>
+          <h2 id="titre-cv">CV</h2>
+          <p class="cv-sous-titre" id="cv-sous-titre"></p>
+        </div>
+        <a class="bouton cv-telecharger" id="cv-telecharger" download>Télécharger le PDF <span aria-hidden="true">↓</span></a>
+      </div>
+      <div id="cv-contenu"></div>
     </section>
 
     <!-- ===================== CONTACT ===================== -->
-    <section class="contact" id="contact" aria-labelledby="titre-contact">
+    <section class="contact volet" id="contact" aria-labelledby="titre-contact" inert>
+      <button type="button" class="volet-fermer" data-fermer aria-label="Fermer">✕</button>
       <h2 id="titre-contact">Un projet ? <em>Écris-moi.</em></h2>
       <div class="contact-ligne">
         <a class="email" id="email"></a>
@@ -137,14 +165,14 @@
         <span class="copie-ok" id="copie-ok" role="status"></span>
       </div>
       <ul class="liens" id="liens"></ul>
+      <!-- l'ancien pied de page, en bas du volet Contact -->
+      <footer class="pied">
+        <span>© <span id="annee"></span> Fatima Zayani</span>
+        <a class="lien-jeu" href="jeu.html">Revivre l'intro immersive <span aria-hidden="true">↗</span></a>
+        <a href="CREDITS.md">Crédits</a>
+      </footer>
     </section>
   </main>
-
-  <footer class="pied">
-    <span>© <span id="annee"></span> Fatima Zayani</span>
-    <a class="lien-jeu" href="jeu.html">Revivre l'intro immersive <span aria-hidden="true">↗</span></a>
-    <a href="CREDITS.md">Crédits</a>
-  </footer>
 
   <!-- Fiche d'un projet -->
   <dialog class="fiche" id="fiche" aria-labelledby="fiche-titre">

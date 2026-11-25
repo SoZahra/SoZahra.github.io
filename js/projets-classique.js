@@ -33,7 +33,7 @@ window.PROJETS_CLASSIQUE = {
       annee: "2025",
       resume: "Le premier site de rencontre où le terrain d'entente, c'est la culture.",
       description: [
-        "Texte provisoire : on parle livres et films autour d'une tasse de thé. Affiche typographique « Take a sip and let's talk », inscription, puis un profil relié à Letterboxd et Apple Music pour rapprocher les gens par leurs goûts.",
+        "On parle livres et films autour d'une tasse de thé. Affiche typographique « Take a sip and let's talk », inscription, puis un profil relié à Letterboxd et Apple Music pour rapprocher les gens par leurs goûts.",
       ],
       role: "Design UI/UX",
       outils: ["Figma"],
@@ -52,7 +52,7 @@ window.PROJETS_CLASSIQUE = {
       annee: "2025",
       resume: "Pong et Snake en ligne, avec profils, amis, classement et statistiques.",
       description: [
-        "Texte provisoire : une plateforme de jeux en ligne. Tableau de bord en blocs (profil, parties jouées, taux de victoire, amis), puis des statistiques détaillées par jeu.",
+        "Une plateforme de jeux en ligne. Tableau de bord en blocs (profil, parties jouées, taux de victoire, amis), puis des statistiques détaillées par jeu.",
       ],
       role: "Design UI/UX",
       outils: ["Figma"],
@@ -70,7 +70,7 @@ window.PROJETS_CLASSIQUE = {
       annee: "2025",
       resume: "Un compte à rebours jusqu'au 24 avril, et ses albums à faire défiler.",
       description: [
-        "Texte provisoire : écran d'accueil d'une application mobile, « His Story Begins ». Un compte à rebours en heures, minutes et secondes, puis un carrousel d'albums.",
+        "Écran d'accueil d'une application mobile, « His Story Begins ». Un compte à rebours en heures, minutes et secondes, puis un carrousel d'albums.",
       ],
       role: "Design UI",
       outils: ["Figma"],

@@ -46,7 +46,7 @@ police bitmap (DotGothic16), lignes CRT, ambiance demeure éclairée à la bougi
      sur elle = réplique suivante. Secrétaire → lettre (formulaire Formspree,
      ou `mailto:` si `formspree` est vide) qui se plie, se scelle et
      s'envole ; café → copie l'adresse ; cadres sur la cheminée → LinkedIn,
-     GitHub, CV. Adresse, Formspree, LinkedIn et CV sont des EXEMPLES.
+     GitHub, CV. Adresse réelle (zayani.fatima.z@gmail.com) ; Formspree, LinkedIn et CV sont des EXEMPLES.
 
 ## Version classique
 
@@ -60,7 +60,49 @@ en touches (corail `#ff4a3d`), rien de trop sombre, du simple.
   vertical (« 2026 / Portfolio / Zayani Fatima / Designer UI/UX /
   Développeuse ») qui l'accompagne pendant toute la visite, à gauche, et
   change de mots (et de couleur) selon la section (projet en cours, À
-  propos, Contact). Navigation verticale à droite, le mot roule au survol.
+  propos, Contact). Navigation verticale, le mot roule au survol.
+  Novembre 2026 : TOUT À GAUCHE et À L'HORIZONTALE (plus de texte
+  vertical) : logo, dessous nom + métier, menu empilé en bas à gauche ;
+  rien à droite. Au téléphone, nom et menu restent sur l'accueil (pas
+  fixés). Colonne réduite à nom + métier (le reste est dans À
+  propos / Contact), plus de lien fixe « Version immersive » (reste au
+  pied de page). Le sommaire des projets sous le trousseau est caché, il
+  n'apparaît qu'en ouvrant le dossier (ou « Projets » du menu).
+- Novembre 2026 : porte-clés refaits en style art toy MAT (vinyle, vrais
+  tissus, d'après ses références Pinterest), elle avec son grain de beauté
+  (signe distinctif, à garder) et la tenue jupe. Trousseau = elle (→ À propos,
+  la palette est retirée), dossier (→ sommaire des projets, remplace les
+  porte-clés par projet), enveloppe (Contact), CV, ordinateur `</>`
+  (→ GitHub, son côté développeuse).
+- PAS DE DÉFILEMENT (novembre 2026) : tout se passe sur l'accueil.
+  À propos et Contact sont des volets (`.volet`) qui s'ouvrent par-dessus
+  (liens #apropos / #contact, porte-clés, menu), fermés par ✕, Échap ou
+  le logo ; l'ancien pied de page est en bas du volet Contact.
+- Porte-clé ordinateur → volet GitHub DE CÔTÉ (`.volet-cote`, données
+  `js/github.js` : dépôts choisis, résumés provisoires ; chiffres et
+  langages en direct par l'API publique GitHub). Au clic, les autres
+  porte-clés se DÉCROCHENT (`decrocher()` dans express-trousseau.js) et
+  tombent, le trousseau se range à gauche ; à la fermeture tout retombe
+  sur le crochet (`raccrocher()`). Dès qu'un volet est ouvert (classe
+  `volet-ouvert`), il ne reste que le logo : nom, métier et menu s'effacent. Mécanisme à étendre aux autres
+  porte-clés si elle le valide.
+- Son porte-clé → volet À propos de côté (même mécanisme) : devise,
+  histoire (BROUILLON tiré du CV, `histoire` dans js/whoami.js), « Ce que
+  je fais » (`faire`), « En ce moment » (`enCeMoment`). Outils et parcours
+  n'y sont plus (ils sont dans le CV). Ses OBJETS (café, caméra, console ; `objets`
+  dans whoami.js, images dans `images/objets/`) tombent à l'ouverture, en
+  bas à gauche, on les attrape et les lance PARTOUT sur la page (murs = bords de l'écran) (Matter.js,
+  `js/express-objets.js`) ; à la fermeture ils tombent hors de l'écran.
+- Porte-clé CV → volet CV de côté (même mécanisme que GitHub) : son CV
+  en page web. Source unique `js/cv.js` (version GÉNÉRALE tirée de ses CV
+  TF1, SANS téléphone : choix de Fatima), mise en page `js/cv-rendu.js` +
+  `css/cv.css`, aussi utilisée par `documents/cv.html` qui sert à
+  imprimer `documents/cv-fatima-zayani.pdf` (commande dans ce fichier :
+  le régénérer après chaque modif de js/cv.js). LinkedIn encore EXEMPLE.
+- Intro (`js/express-intro.js`, novembre 2026) : ses yeux en grand au
+  milieu regardent à gauche/droite, clignent 3 fois, filent à la place du
+  logo, puis le trousseau tombe. Une fois par session ; `?intro` pour la
+  rejouer ; clic/touche/molette la passent.
 - Accueil = un TROUSSEAU suspendu à un crochet (`js/express-trousseau.js`,
   octobre 2026, a remplacé la galerie) : elle en porte-clé au milieu, autour
   des porte-clés qui mènent chacun à une page (projet → fiche, palette → À
@@ -101,7 +143,7 @@ en touches (corail `#ff4a3d`), rien de trop sombre, du simple.
   montre l'écran au survol) lui plaisait plutôt.
 - Puis « À propos » dans un panneau à coins marqués, et contact.
 - En haut à gauche, ses yeux (frange arrondie, eye-liner) suivent la souris
-  et clignent ; de temps en temps la carte pivote et montre « Fatima Zayani »
+  et clignent ; AU SURVOL SEULEMENT (pas tout seul) la carte pivote et montre « Fatima Zayani »
   (pas de monogramme « FZ »). Éviter `-webkit-text-stroke` avec Cinzel.
 - Abandonnés (elle n'a pas aimé) : affiche froissée, billets en diagonale,
   anamorphose, objets 3D en ouverture, anneau de cartes façon Manet,
