@@ -15,7 +15,7 @@ window.CV = {
   email: "zayani.fatima.z@gmail.com",
   pdf: "documents/cv-fatima-zayani.pdf",
   liens: [
-    // LinkedIn : à ajouter quand elle donne son lien (pas de faux lien en ligne)
+    { libelle: "LinkedIn", url: "https://www.linkedin.com/in/fatima-zayani-4362a9109" },
     { libelle: "GitHub", url: "https://github.com/SoZahra" },
     { libelle: "Portfolio", url: "https://fatimazayani.com" },
   ],

@@ -56,7 +56,7 @@ window.CONTACT = {
   },
 
   cadres: [
-    // { libelle: "LinkedIn", url: "https://www.linkedin.com/in/…", icone: "linkedin" }, // à ajouter (son lien)
+    { libelle: "LinkedIn", url: "https://www.linkedin.com/in/fatima-zayani-4362a9109", icone: "linkedin" },
     { libelle: "GitHub", url: "https://github.com/SoZahra", icone: "github" },
     { libelle: "CV", url: "documents/cv-fatima-zayani.pdf", icone: "cv", telecharger: true },
   ],

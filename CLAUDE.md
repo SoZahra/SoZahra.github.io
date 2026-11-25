@@ -46,7 +46,7 @@ police bitmap (DotGothic16), lignes CRT, ambiance demeure éclairée à la bougi
      sur elle = réplique suivante. Secrétaire → lettre (formulaire Formspree,
      ou `mailto:` si `formspree` est vide) qui se plie, se scelle et
      s'envole ; café → copie l'adresse ; cadres sur la cheminée → LinkedIn,
-     GitHub, CV. Adresse réelle (zayani.fatima.z@gmail.com) ; Formspree, LinkedIn et CV sont des EXEMPLES.
+     GitHub, CV. Adresse, LinkedIn et CV réels ; Formspree vide (lettre par mailto:).
 
 ## Version classique
 
@@ -98,7 +98,7 @@ en touches (corail `#ff4a3d`), rien de trop sombre, du simple.
   TF1, SANS téléphone : choix de Fatima), mise en page `js/cv-rendu.js` +
   `css/cv.css`, aussi utilisée par `documents/cv.html` qui sert à
   imprimer `documents/cv-fatima-zayani.pdf` (commande dans ce fichier :
-  le régénérer après chaque modif de js/cv.js). LinkedIn encore EXEMPLE.
+  le régénérer après chaque modif de js/cv.js).
 - Intro (`js/express-intro.js`, novembre 2026) : ses yeux en grand au
   milieu regardent à gauche/droite, clignent 3 fois, filent à la place du
   logo, puis le trousseau tombe. Une fois par session ; `?intro` pour la
