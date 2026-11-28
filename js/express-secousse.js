@@ -44,13 +44,23 @@ export function ecouterSecousses(rappel) {
 
   const ecouter = () => addEventListener("devicemotion", mouvement);
   if (typeof DeviceMotionEvent.requestPermission === "function") {
-    // iPhone / iPad : permission au premier toucher
-    const demander = () => {
-      DeviceMotionEvent.requestPermission()
-        .then((r) => { if (r === "granted") ecouter(); })
-        .catch(() => {});
+    // iPhone / iPad : permission au premier vrai toucher (un tap, pas un
+    // défilement : Safari refuse alors sans rien afficher). Tant qu'elle
+    // n'a pas répondu, on redemande au toucher suivant.
+    let enCours = false;
+    const fini = () => {
+      removeEventListener("click", demander, true);
+      removeEventListener("touchend", demander, true);
     };
-    addEventListener("touchend", demander, { once: true });
+    function demander() {
+      if (enCours) return;
+      enCours = true;
+      DeviceMotionEvent.requestPermission()
+        .then((r) => { fini(); if (r === "granted") ecouter(); })
+        .catch(() => { enCours = false; }); // pas pris pour un geste : on réessaiera
+    }
+    addEventListener("click", demander, true);
+    addEventListener("touchend", demander, true);
   } else {
     ecouter();
   }
