@@ -10,6 +10,12 @@
  *   resume      : une phrase, sous le titre de sa planche
  *   description : un ou deux paragraphes, dans la fiche (tableau de chaînes)
  *   role, outils, effets, liens : comme dans js/projets.js
+ *   texte       : à la place de description, des paragraphes titrés
+ *                 [{ titre, texte }] (le problème, la réponse…)
+ *   infos       : à la place de role/outils/effets, des lignes libres
+ *                 [[nom, valeur]] (cadre, équipe, durée…)
+ *   parcours    : le parcours principal, écrans dans l'ordre, chacun avec
+ *                 titre et legende ; ecrans devient alors « Les autres écrans »
  *   ecrans      : [{ src, alt, taille, l, h }] — taille "grand", "moyen" ou
  *                 "telephone" ; l × h = taille de l'image en pixels (réserve
  *                 sa place avant le chargement). Ils servent aussi au collage
@@ -64,20 +70,35 @@ window.PROJETS_CLASSIQUE = {
       ],
     },
     {
-      titre: "Michael Jackson",
-      fond: "#0e0e0e", encre: "#f4f4f2", sombre: true, serif: true,
+      titre: "Spotflow",
+      fond: "#c0d9ff", encre: "#111111",
       type: "Application mobile",
-      annee: "2025",
-      resume: "Un compte à rebours jusqu'au 24 avril, et ses albums à faire défiler.",
-      description: [
-        "Écran d'accueil d'une application mobile, « His Story Begins ». Un compte à rebours en heures, minutes et secondes, puis un carrousel d'albums.",
+      annee: "2026",
+      resume: "Rejoindre la file d'attente de son café avant d'y arriver.",
+      texte: [
+        { titre: "Le problème", texte: "Les coffee shops à la mode ont des files qui débordent sur le trottoir. On y va sans savoir combien de temps on va attendre, et on repart parfois sans rien. C'est parti de ce que je vivais avec mes amis." },
+        { titre: "La réponse", texte: "Spotflow affiche combien de personnes attendent dans les cafés, bars et restaurants autour de soi. On rejoint la file à distance, on suit son tour en direct, et on peut demander plus de temps si on est en retard." },
+        { titre: "Pensée pour les commerçants aussi", texte: "Chaque établissement personnalise l'app à son image, couleurs et langue comprises. Ces maquettes en montrent une version « coffee shop pop » en pastel, avec des écrans en anglais et en français." },
       ],
-      role: "Design UI",
-      outils: ["Figma"],
-      effets: ["Mobile", "Carrousel"],
+      infos: [
+        ["Cadre", "Projet personnel"],
+        ["Équipe", "Seule"],
+        ["Durée", "3 semaines"],
+        ["Rôle", "Recherche, wireframes, design UI/UX"],
+        ["Outils", "Figma, papier"],
+        ["Statut", "Prototype en cours"],
+      ],
       liens: [],
+      // le parcours principal, dans l'ordre, chaque écran avec sa légende
+      // (manquent « rejoindre » et « en attente » : exports de Fatima à venir)
+      parcours: [
+        { src: "images/projets/spotflow-accueil.webp", titre: "Autour de moi", legende: "Mes files en cours en haut, puis les adresses proches. Le gros chiffre : le nombre de personnes devant moi.", alt: "Accueil de Spotflow : files en cours (1 personne avant vous au Cafe Soul, 6 à Off coffee), puis cafés, bars et restaurants proches avec le nombre de personnes qui attendent.", l: 880, h: 1912 },
+        { src: "images/projets/spotflow-cafe.webp", titre: "Le café", legende: "Sa fiche : offres du moment, heures calmes, réserver ou rejoindre la file.", alt: "Fiche du café Ponciano Ponzano sur fond bleu : photo de la devanture, note, horaires calmes, offres (10 %, boisson offerte), réservation et bouton pour rejoindre la file.", l: 880, h: 1912 },
+      ],
+      // les autres écrans, en vignettes
       ecrans: [
-        { src: "images/projets/mj-accueil.webp", alt: "Écran mobile « Michael Jackson, His Story Begins » : compte à rebours et carrousel de pochettes d'albums.", taille: "telephone", l: 780, h: 1688 },
+        { src: "images/projets/spotflow-menu.webp", alt: "Carte du café : catégories à gauche (Froid, Signature, Chaud, Cookie…), boissons glacées avec prix et bouton d'ajout.", taille: "telephone", l: 440, h: 956 },
+        { src: "images/projets/spotflow-favoris.webp", alt: "Favoris : onglets Lieux, Boissons, Collections ; en tête, l'adresse où la file est la plus courte en ce moment.", taille: "telephone", l: 880, h: 1912 },
       ],
     },
   ],

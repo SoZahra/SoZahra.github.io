@@ -179,6 +179,17 @@ export function creerObjets({ objets, reduit, perso }) {
   calque.addEventListener("pointercancel", lacher);
 
   return {
+    // téléphone (ou tablette) secoué : ax, ay en m/s², les objets partent à l'opposé
+    secouer(ax, ay) {
+      if (etat !== "la" || reduit) return;
+      const borne = (v) => Math.max(-25, Math.min(25, v));
+      corps.forEach((x) => {
+        if (prise && prise.x === x) return;
+        const v = x.corps.velocity, k = 0.6 + Math.random() * 0.4;
+        M.Body.setVelocity(x.corps, { x: v.x + borne(-ax * k), y: v.y + borne(-ay * k) });
+        M.Body.setAngularVelocity(x.corps, x.corps.angularVelocity + (Math.random() - 0.5) * 0.2);
+      });
+    },
     async montrer() {
       if (!objets?.length || matchMedia("(max-width: 760px)").matches) return;
       if (etat === "part") arreter();

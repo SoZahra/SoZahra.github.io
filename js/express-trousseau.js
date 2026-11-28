@@ -38,6 +38,8 @@ const ACCELERE = 1.7;     // pendant la chute, la pesanteur est plus forte (tomb
 const REBOND = 0.18;       // à l'arrivée sur le crochet, l'anneau rebondit un peu (part de sa vitesse)
 const DEFILE = 0.03;      // part de la vitesse du défilement donnée aux porte-clés
 const DEFILE_MAX = 60;    // poussée maximale au défilement (px/s)
+const SECOUE = 28;        // poussée par m/s² quand on secoue le téléphone (px/s)
+const SECOUE_MAX = 650;   // poussée maximale d'une secousse (px/s)
 const PHI_MAX = 1.3;      // l'anneau peut tourner jusque-là autour du crochet (rad)
 // images/porte-cles/anneau.webp : rayon du milieu du tube, et épaisseur du tube,
 // en fraction de la largeur de l'image (le centre est au milieu de l'image)
@@ -526,6 +528,18 @@ export function creerTrousseau(scene, { breloques, reduit, auSurvol, tomber, enA
       return { x: r.left + m.x, y: r.top + m.y, angle: Math.atan2(m.y - o.y, m.x - o.x) - it.angleRepos, l: it.w, h: it.h };
     },
     pousser(i, vx, vy) { if (items[i]) lancer(items[i], vx, vy); },
+    // téléphone secoué (js/express-secousse.js) : ax, ay en m/s² ; les
+    // porte-clés partent à l'opposé, chacun un peu différemment
+    secouer(ax, ay) {
+      if (reduit || gele) return;
+      const borne = (v) => Math.max(-SECOUE_MAX, Math.min(SECOUE_MAX, v));
+      items.forEach((it) => {
+        const k = SECOUE * (0.7 + Math.random() * 0.6);
+        lancer(it, borne(-ax * k), borne(-ay * k));
+      });
+      A.ophi += Math.max(-0.3, Math.min(0.3, ax * 0.012)) * H; // l'anneau tourne un peu
+      reveiller();
+    },
     // tout revient : l'anneau et ses porte-clés retombent sur le crochet
     raccrocher() {
       if (!items.some((it) => it.libre)) return;

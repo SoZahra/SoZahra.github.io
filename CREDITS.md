@@ -16,11 +16,11 @@
 ## Projets
 
 - **Captures des projets** (`images/projets/`) — maquettes de Fatima (Matcha,
-  ft_transcendence, application Michael Jackson), exportées de ses fichiers Figma.
+  ft_transcendence, Spotflow), exportées de ses fichiers Figma.
   - Matcha : la pièce ancienne (`matcha-piece.webp`) est une image générée avec Gemini ;
     source de la photo du verre de matcha (`matcha-affiche.webp`) à préciser.
-  - Application Michael Jackson (`mj-accueil.webp`) : les pochettes d'albums et photos
-    de Michael Jackson appartiennent à leurs ayants droit.
+  - Spotflow (`spotflow-*.webp`) : photos des cafés et des boissons dans les maquettes,
+    source à préciser.
 - **Archivo** (police de la version classique, chargée depuis Google Fonts) — par Omnibus-Type,
   sous [SIL Open Font License 1.1](https://openfontlicense.org).
 - **EB Garamond** (fiche d'un projet dans l'essai `sphere.html`, chargée depuis Google Fonts) —
@@ -66,7 +66,7 @@
   crochet (`anneau.webp`, `crochet.webp`) : images générées par IA, fournies
   par elle, détourées avec ImageMagick (fond gris retiré par la saturation).
 
-- `images/objets/` — ses objets du volet À propos (café, caméra, console) :
+- `images/objets/` — ses objets du volet À propos (café, caméra, console, carnet à dessin) :
   images générées par IA (Gemini / Nano Banana) dans le style des
   porte-clés, détourées avec rembg (IS-Net), réduites pour le web.
 - `js/vendor/matter.min.js` — Matter.js 0.20.0 (moteur physique 2D),

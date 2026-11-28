@@ -13,6 +13,7 @@ import { creerTrousseau } from "./express-trousseau.js";
 import { introAJouer, jouerIntro } from "./express-intro.js";
 import { rendreCV } from "./cv-rendu.js";
 import { creerObjets } from "./express-objets.js";
+import { ecouterSecousses } from "./express-secousse.js";
 
 const P = window.PROJETS_CLASSIQUE || { liste: [] };
 const W = window.WHOAMI || {};
@@ -58,6 +59,7 @@ function textesColonne(section) {
     const p = P.liste[section];
     return { c: [p.titre, 0], b: [p.type || "", 0], d: ["", 0], a: ["", 0], e: ["", 0] };
   }
+  if (section === "projet") return textesColonne(projetCourant);
   if (section === "apropos") return { ...PRESENTATION, b: ["À propos", 0], d: ["", 0] };
   if (section === "cv") return { ...PRESENTATION, c: ["CV", 0], b: ["Mon parcours", 0], d: ["", 0] };
   if (section === "github") return { ...PRESENTATION, c: ["GitHub", 0], b: ["Le code", 0], d: ["", 0] };
@@ -84,33 +86,61 @@ function majColonne(section) {
   });
 }
 
-/* ---------- Fiche d'un projet ---------- */
-const fiche = document.getElementById("fiche");
-const ficheContenu = document.getElementById("fiche-contenu");
+/* ---------- Un projet : volet de côté ----------
+   Comme GitHub et le CV : grand titre, ce que c'est, puis rôle, outils et
+   apports en liste à pointillés, et ses écrans. En haut, tous les projets
+   pour passer de l'un à l'autre sans revenir au trousseau. */
+const projetNav = document.getElementById("projet-nav");
+const projetContenu = document.getElementById("projet-contenu");
+let projetCourant = 0;
 
-function ouvrirFiche(p) {
-  ficheContenu.replaceChildren();
-  const titre = el("h3", "", p.titre);
-  titre.id = "fiche-titre";
-  ficheContenu.append(el("span", "fiche-cat", typeEtAnnee(p)), titre);
-  if (p.resume) ficheContenu.append(el("p", "fiche-resume", p.resume));
-  (p.description || []).forEach((d) => ficheContenu.append(el("p", "", d)));
-  const infos = el("dl");
-  if (p.role) infos.append(el("dt", "", "Rôle"), el("dd", "", p.role));
-  if (p.outils && p.outils.length) infos.append(el("dt", "", "Outils"), el("dd", "", p.outils.join(", ")));
-  if (p.effets && p.effets.length) infos.append(el("dt", "", "Apports"), el("dd", "", p.effets.join(", ")));
-  ficheContenu.append(infos);
-  if (p.ecrans && p.ecrans.length) {
-    const ecrans = el("div", "fiche-ecrans");
-    p.ecrans.forEach((e) => {
-      const img = el("img", e.taille === "telephone" ? "est-telephone" : "");
-      Object.assign(img, { src: e.src, alt: e.alt, width: e.l, height: e.h, decoding: "async" });
-      ecrans.append(img);
-    });
-    ficheContenu.append(ecrans);
-  }
+P.liste.forEach((p, i) => {
+  const b = el("button");
+  b.type = "button";
+  b.append(el("span", "num", deux(i + 1)), el("span", "", p.titre));
+  b.addEventListener("click", () => ouvrirProjet(i));
+  const li = el("li");
+  li.append(b);
+  projetNav.append(li);
+});
+
+function remplirProjet(i) {
+  const p = P.liste[i];
+  projetCourant = i;
+  projetNav.querySelectorAll("button").forEach((b, k) => {
+    if (k === i) b.setAttribute("aria-current", "true");
+    else b.removeAttribute("aria-current");
+  });
+  projetContenu.replaceChildren();
+  const tete = el("div", "projet-tete");
+  const titre = el("h2", "", p.titre);
+  titre.id = "projet-titre";
+  tete.append(titre, el("p", "projet-cat", typeEtAnnee(p)));
+  projetContenu.append(tete);
+  if (p.resume) projetContenu.append(el("p", "projet-resume", p.resume));
+  const texte = el("div", "projet-texte");
+  (p.description || []).forEach((d) => texte.append(el("p", "", d)));
+  // ou des paragraphes titrés : le problème, la réponse…
+  (p.texte || []).forEach((t) => {
+    const bloc = el("div", "projet-bloc");
+    bloc.append(el("h3", "", t.titre), el("p", "", t.texte));
+    texte.append(bloc);
+  });
+  projetContenu.append(texte);
+  // rôle, outils, apports : nom … valeur, comme les langages de GitHub
+  const infos = el("dl", "projet-infos");
+  const ligne = (nom, valeur) => {
+    const d = el("div");
+    d.append(el("dt", "", nom), el("span", "points"), el("dd", "", valeur));
+    infos.append(d);
+  };
+  (p.infos || []).forEach(([nom, valeur]) => ligne(nom, valeur));
+  if (p.role) ligne("Rôle", p.role);
+  if (p.outils && p.outils.length) ligne("Outils", p.outils.join(", "));
+  if (p.effets && p.effets.length) ligne("Apports", p.effets.join(", "));
+  projetContenu.append(infos);
   if (p.liens && p.liens.length) {
-    const liens = el("p", "fiche-liens");
+    const liens = el("p", "projet-liens");
     p.liens.forEach((l) => {
       const a = el("a", "", `${l.libelle} ↗`);
       a.href = l.url;
@@ -118,13 +148,54 @@ function ouvrirFiche(p) {
       a.rel = "noopener";
       liens.append(a);
     });
-    ficheContenu.append(liens);
+    projetContenu.append(liens);
   }
-  fiche.showModal();
+  // le parcours : écrans numérotés dans l'ordre, chacun avec sa légende
+  if (p.parcours && p.parcours.length) {
+    projetContenu.append(el("h3", "apropos-rubrique", "Le parcours"));
+    const ol = el("ol", "projet-parcours");
+    p.parcours.forEach((e, k) => {
+      const li = el("li");
+      const img = el("img");
+      Object.assign(img, { src: e.src, alt: e.alt, width: e.l, height: e.h, decoding: "async", loading: "lazy" });
+      const legende = el("div", "legende");
+      legende.append(el("span", "num", deux(k + 1)), el("strong", "", e.titre || ""), el("p", "", e.legende || ""));
+      li.append(img, legende);
+      ol.append(li);
+    });
+    projetContenu.append(ol);
+  }
+  if (p.ecrans && p.ecrans.length) {
+    projetContenu.append(el("h3", "apropos-rubrique", p.parcours ? "Les autres écrans" : "Maquettes"));
+    // que des écrans de téléphone : côte à côte plutôt qu'empilés
+    const queTelephones = p.ecrans.every((e) => e.taille === "telephone");
+    const ecrans = el("div", queTelephones ? "projet-ecrans telephones" : "projet-ecrans");
+    p.ecrans.forEach((e) => {
+      const img = el("img", e.taille === "telephone" ? "est-telephone" : "");
+      Object.assign(img, { src: e.src, alt: e.alt, width: e.l, height: e.h, decoding: "async", loading: "lazy" });
+      ecrans.append(img);
+    });
+    projetContenu.append(ecrans);
+  }
+  // suivant : on enchaîne sans remonter
+  if (P.liste.length > 1) {
+    const n = (i + 1) % P.liste.length;
+    const suivant = el("button", "projet-suivant");
+    suivant.type = "button";
+    suivant.append(el("span", "", "Projet suivant"), el("strong", "", `${P.liste[n].titre} →`));
+    suivant.addEventListener("click", () => ouvrirProjet(n));
+    projetContenu.append(suivant);
+  }
 }
-document.getElementById("fiche-fermer").addEventListener("click", () => fiche.close());
-// Clic hors de la fiche (sur le fond) : on ferme
-fiche.addEventListener("click", (e) => { if (e.target === fiche) fiche.close(); });
+
+function ouvrirProjet(i) {
+  remplirProjet(i);
+  if (voletOuvert === "projet") {
+    volets.projet.scrollTop = 0;
+    volets.projet.querySelector("[data-fermer]").focus({ preventScroll: true });
+    reveiller();
+  } else ouvrirVolet("projet");
+}
 
 /* ---------- À propos ---------- */
 document.getElementById("devise").textContent = W.devise || "";
@@ -179,8 +250,8 @@ const vus = new Set();
 const CV = window.CV || null;
 const PAGES = [
   { src: "images/porte-cles/dossier.webp", ratio: 842 / 900, hauteur: 21, chaine: 4, anneau: [0.481, 0.024], penche: 0.5,
-    etiquette: "Projets", section: "accueil", sur: `${P.liste.length} projets`, titre: "Projets",
-    clic: () => montrerSommaire() },
+    etiquette: "Projets", section: "accueil", sur: `${P.liste.length} projets`, titre: "Projets", volet: "projet",
+    clic: () => (voletOuvert === "projet" ? fermerVolet() : montrerSommaire()) },
   { src: "images/porte-cles/enveloppe.webp", ratio: 810 / 900, hauteur: 19, chaine: 4, anneau: [0.499, 0.024], penche: 0.5,
     etiquette: "Contact", section: "contact", sur: "Écris-moi", titre: "Contact", lien: "#contact" },
 ];
@@ -254,7 +325,7 @@ P.liste.forEach((p) => {
   const li = el("li");
   const b = el("button", "", p.titre);
   b.type = "button";
-  b.addEventListener("click", () => ouvrirFiche(p));
+  b.addEventListener("click", () => ouvrirProjet(P.liste.indexOf(p)));
   li.append(b);
   document.getElementById("sommaire").append(li);
 });
@@ -296,7 +367,7 @@ window.addEventListener("resize", () => { if (trousseau) trousseau.redimensionne
    ouvrent un volet par-dessus l'accueil ; ✕, Échap ou le logo le ferment. */
 const volets = {
   apropos: document.getElementById("apropos"), contact: document.getElementById("contact"), github: document.getElementById("github"),
-  cv: document.getElementById("cv"),
+  cv: document.getElementById("cv"), projet: document.getElementById("projet"),
 };
 let voletOuvert = null, avantVolet = null;
 // ses objets (café, caméra, console…) tombent avec le volet À propos
@@ -305,6 +376,8 @@ const objets = creerObjets({
   // son porte-clé (le n° 0 du trousseau) : les objets s'y cognent et le poussent
   perso: { boite: () => trousseau?.boite(0) ?? null, pousser: (vx, vy) => trousseau?.pousser(0, vx, vy) },
 });
+// secouer le téléphone : le trousseau (et les objets, s'ils sont là) bougent
+if (!reduit) ecouterSecousses((ax, ay) => { trousseau?.secouer(ax, ay); objets.secouer(ax, ay); });
 function ouvrirVolet(id) {
   if (!volets[id] || voletOuvert === id) return;
   if (voletOuvert) fermerVolet(true);
@@ -357,7 +430,7 @@ document.addEventListener("click", (e) => {
   else if (id === "haut") { e.preventDefault(); fermerVolet(); }
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && voletOuvert && !fiche.open) fermerVolet();
+  if (e.key === "Escape" && voletOuvert) fermerVolet();
 });
 
 /* ---------- Le volet GitHub ----------
@@ -447,5 +520,6 @@ function image() {
 }
 reveiller();
 
-// arrivée directe sur #apropos ou #contact : le volet est déjà ouvert
-if (volets[location.hash.slice(1)]) ouvrirVolet(location.hash.slice(1));
+// arrivée directe sur #apropos, #contact… : le volet est déjà ouvert
+if (location.hash === "#projet") ouvrirProjet(0);
+else if (volets[location.hash.slice(1)]) ouvrirVolet(location.hash.slice(1));

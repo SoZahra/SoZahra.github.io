@@ -70,7 +70,7 @@ a { color: inherit; }
 .evitement:focus { top: 12px; }
 
 /* Petites capitales espacées, pour toutes les étiquettes */
-.fiche-cat, .fiche dt, .nav-verticale a {
+.projet-cat, .projet-infos dt, .nav-verticale a {
   font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em;
 }
 
@@ -247,34 +247,6 @@ a { color: inherit; }
   100% { background-size: 0 2px; }
 }
 
-/* ---------- Fiche projet ---------- */
-.fiche {
-  width: min(92vw, 760px); max-height: 86vh; padding: clamp(24px, 4vw, 48px);
-  border: 0; border-radius: 0;
-  background: var(--blanc); color: var(--noir);
-}
-.fiche::backdrop { background: rgba(201, 201, 199, 0.7); backdrop-filter: blur(6px); }
-.fiche[open] { animation: ficheEntre 0.5s var(--courbe); }
-@keyframes ficheEntre { from { opacity: 0; transform: translateY(30px) scale(0.98); } }
-.fiche-fermer {
-  position: absolute; right: 16px; top: 14px; width: 44px; height: 44px;
-  border: 0; background: none; color: inherit; font-size: 1.2rem; cursor: pointer;
-}
-.fiche-fermer:hover { color: var(--accent); }
-.fiche h3 {
-  margin: 6px 0 14px; font-family: var(--large); font-weight: 800; font-stretch: 112%;
-  font-size: clamp(1.6rem, 4vw, 2.6rem); line-height: 1.05; text-transform: uppercase;
-}
-.fiche-cat { color: var(--gris); }
-.fiche-resume { font-style: italic; color: var(--gris); }
-.fiche dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 22px; margin: 24px 0 0; font-size: 0.95rem; }
-.fiche dt { color: var(--gris); padding-top: 3px; }
-.fiche dd { margin: 0; }
-.fiche-liens a { margin-right: 18px; font-weight: 600; color: var(--accent-texte); }
-.fiche-ecrans { display: grid; gap: 12px; margin: 26px 0 0; }
-.fiche-ecrans img { display: block; width: 100%; height: auto; }
-.fiche-ecrans img.est-telephone { width: min(60%, 280px); justify-self: center; }
-
 /* ---------- Les volets (À propos, Contact) ----------
    Fixés par-dessus l'accueil, sous le logo, la colonne et le menu ; si le
    contenu dépasse (petit écran), il défile à l'intérieur du volet. */
@@ -408,6 +380,69 @@ a { color: inherit; }
 .en-ce-moment { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; margin: 36px 0 0; padding-top: 16px; border-top: 1px solid var(--trait); font-weight: 600; }
 .en-ce-moment-titre { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gris); }
 
+/* ---------- Un projet : volet de côté, comme GitHub et le CV ---------- */
+.projet { padding: clamp(60px, 10vh, 120px) calc(var(--marge) + 50px) 48px 0; }
+/* les projets, en haut : le courant en corail */
+.projet-nav ol { display: flex; flex-wrap: wrap; gap: 6px 26px; list-style: none; margin: 0 0 clamp(26px, 5vh, 48px); padding: 0; }
+.projet-nav button {
+  display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border: 0; background: none; color: var(--gris); cursor: pointer;
+  font: inherit; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
+  background: linear-gradient(currentColor, currentColor) left bottom / 0 1px no-repeat; transition: color 0.2s, background-size 0.3s;
+}
+.projet-nav .num { font-variant-numeric: tabular-nums; opacity: 0.6; }
+.projet-nav button:hover { color: var(--noir); background-size: 100% 1px; }
+.projet-nav button[aria-current] { color: var(--accent); background-size: 100% 1px; }
+.projet-tete { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px clamp(20px, 3vw, 40px); }
+.projet h2 {
+  margin: 0; font-family: var(--large); font-weight: 800; font-stretch: 125%;
+  font-size: clamp(2rem, 5vw, 4.2rem); line-height: 1; text-transform: uppercase; overflow-wrap: anywhere;
+}
+.projet-cat { margin: 0; color: var(--gris); }
+.projet-resume { margin: 14px 0 0; color: var(--gris); }
+.projet-texte { margin-top: 26px; max-width: 62ch; }
+.projet-texte p { margin: 0 0 14px; font-size: clamp(1rem, 1.25vw, 1.12rem); line-height: 1.6; }
+.projet-bloc h3 {
+  margin: 0 0 4px; font-family: var(--large); font-weight: 700; font-stretch: 118%;
+  font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.projet-bloc + .projet-bloc { margin-top: 18px; }
+/* le parcours : les écrans côte à côte, numérotés, légende dessous */
+.projet-parcours {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px;
+  list-style: none; margin: 18px 0 0; padding: 0;
+}
+.projet-parcours img { display: block; width: 100%; height: auto; border-radius: 14px; }
+.projet-parcours .legende { margin-top: 10px; }
+.projet-parcours .num { display: block; font-size: 0.72rem; letter-spacing: 0.16em; color: var(--accent); }
+.projet-parcours strong {
+  display: block; margin: 2px 0 4px; font-family: var(--large); font-weight: 700; font-stretch: 118%;
+  font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.projet-parcours p { margin: 0; font-size: 0.85rem; line-height: 1.45; color: var(--gris); }
+/* rôle … valeur, en pointillés comme les langages de GitHub */
+.projet-infos { margin: 18px 0 0; max-width: 560px; }
+.projet-infos div { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; }
+.projet-infos dt { flex: none; font-size: 0.72rem; letter-spacing: 0.16em; color: var(--gris); }
+.projet-infos .points { flex: 1; min-width: 20px; border-bottom: 1.5px dotted currentColor; opacity: 0.45; transform: translateY(-4px); }
+.projet-infos dd { margin: 0; text-align: right; font-weight: 600; }
+.projet-liens { margin: 18px 0 0; }
+.projet-liens a { margin-right: 18px; font-weight: 600; color: var(--accent-texte); }
+.projet-ecrans { display: grid; gap: 14px; margin: 18px 0 0; }
+.projet-ecrans img { display: block; width: 100%; height: auto; }
+.projet-ecrans img.est-telephone { width: min(60%, 280px); justify-self: center; }
+.projet-ecrans.telephones { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.projet-ecrans.telephones img.est-telephone { width: 100%; border-radius: 14px; }
+.projet-suivant {
+  display: flex; flex-direction: column; gap: 4px; margin: 40px 0 0; padding: 16px 0 0; width: 100%;
+  border: 0; border-top: 1px solid var(--trait); background: none; color: inherit; text-align: left; cursor: pointer; font: inherit;
+}
+.projet-suivant span { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gris); }
+.projet-suivant strong {
+  font-family: var(--large); font-weight: 800; font-stretch: 118%; font-size: clamp(1.2rem, 2.4vw, 1.8rem);
+  text-transform: uppercase; transition: color 0.2s;
+}
+.projet-suivant:hover strong { color: var(--accent); }
+
 /* ---------- Contact ---------- */
 .contact {
   display: flex; flex-direction: column; justify-content: center;
@@ -463,6 +498,9 @@ a { color: inherit; }
   .github-intro { white-space: normal; }
   .cv { padding: 70px var(--marge) 40px; }
   .apropos { padding: 70px var(--marge) 40px; }
+  .projet { padding: 70px var(--marge) 40px; }
+  .projet-ecrans.telephones { grid-template-columns: repeat(2, 1fr); }
+  .projet-parcours { grid-template-columns: repeat(2, 1fr); }
   .faire { grid-template-columns: 1fr; gap: 16px; }
   .trousseau-de-cote .trousseau-scene { transform: none; }
   /* trousseau : le sommaire passe sous la légende */

@@ -68,6 +68,10 @@ en touches (corail `#ff4a3d`), rien de trop sombre, du simple.
   propos / Contact), plus de lien fixe « Version immersive » (reste au
   pied de page). Le sommaire des projets sous le trousseau est caché, il
   n'apparaît qu'en ouvrant le dossier (ou « Projets » du menu).
+  Un projet s'ouvre dans un volet de côté (`#projet`, novembre 2026,
+  remplace la fiche en fenêtre au centre qu'elle n'aimait pas) : le dossier
+  reste accroché, les autres tombent ; en haut les projets numérotés, grand
+  titre, rôle/outils/apports en pointillés, « Maquettes », « Projet suivant ».
 - Novembre 2026 : porte-clés refaits en style art toy MAT (vinyle, vrais
   tissus, d'après ses références Pinterest), elle avec son grain de beauté
   (signe distinctif, à garder) et la tenue jupe. Trousseau = elle (→ À propos,
@@ -113,10 +117,10 @@ en touches (corail `#ff4a3d`), rien de trop sombre, du simple.
   attrape à la souris, soulève et lance (un glisser n'ouvre pas le lien ;
   au doigt, pas de prise pour laisser défiler) ; l'anneau tourne autour du
   crochet, retenu par le poids des porte-clés. La souris qui passe les
-  pousse, le défilement les secoue. Le porte-clé
+  pousse, le défilement les secoue, et au téléphone on les secoue en secouant le téléphone (`js/express-secousse.js`, accéléromètre ; permission demandée au 1er toucher sur iPhone). Le porte-clé
   d'un projet se déclare dans `js/projets-classique.js` (`porteCle`) ;
-  manquent ceux de ft_transcendence (manette) et Michael Jackson (gant à
-  paillettes). L'anneau et le crochet dorés sont aussi des images détourées
+  manquent ceux de ft_transcendence (manette) et Spotflow (novembre 2026,
+  a remplacé Michael Jackson, jugé trop maigre : une seule page). L'anneau et le crochet dorés sont aussi des images détourées
   (`anneau.webp`, `crochet.webp`). 2D voulue (pas de .glb) : plus léger, le
   brillant reste.
 - Avant : une GALERIE DANS LE NOIR, en 3D (`js/express-galerie.js`, plus

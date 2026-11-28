@@ -155,6 +155,16 @@
       <div id="cv-contenu"></div>
     </section>
 
+    <!-- ===================== UN PROJET =====================
+         Ouvert depuis le sommaire (dossier ou menu « Projets »), de côté
+         comme GitHub et le CV : le dossier reste accroché, les autres
+         porte-clés se décrochent. En haut, les autres projets. -->
+    <section class="projet volet volet-cote" id="projet" aria-labelledby="projet-titre" inert>
+      <button type="button" class="volet-fermer" data-fermer aria-label="Fermer">✕</button>
+      <nav class="projet-nav" aria-label="Projets"><ol id="projet-nav"></ol></nav>
+      <div id="projet-contenu"></div>
+    </section>
+
     <!-- ===================== CONTACT ===================== -->
     <section class="contact volet" id="contact" aria-labelledby="titre-contact" inert>
       <button type="button" class="volet-fermer" data-fermer aria-label="Fermer">✕</button>
@@ -174,10 +184,5 @@
     </section>
   </main>
 
-  <!-- Fiche d'un projet -->
-  <dialog class="fiche" id="fiche" aria-labelledby="fiche-titre">
-    <button type="button" class="fiche-fermer" id="fiche-fermer" aria-label="Fermer">✕</button>
-    <div id="fiche-contenu"></div>
-  </dialog>
 </body>
 </html>
