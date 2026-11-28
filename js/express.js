@@ -348,6 +348,50 @@ function rangerFiches(anime = true, raccrocher = true) {
   const tout = [...glisser(true), grandir(vers, true)];
   Promise.all(tout.map((a) => a.finished)).then(fin, () => {});
 }
+// Tirer une fiche hors du dossier : elle suit le pointeur vers le haut ;
+// sortie au-delà d'un tiers de sa hauteur, elle s'envole et ouvre le projet,
+// sinon elle redescend. Un simple clic la fait juste remonter un peu.
+const aide = document.getElementById("dossier-aide");
+function tirerFiche(li, b, ouvrir) {
+  let depart = null, dy = 0;
+  b.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || !fichesOuvertes) return;
+    e.preventDefault();
+    li.getAnimations().forEach((a) => a.cancel()); // l'arrivée est finie : même position
+    depart = e.clientY; dy = 0;
+    b.setPointerCapture(e.pointerId);
+    li.classList.add("tiree");
+  });
+  b.addEventListener("pointermove", (e) => {
+    if (depart === null) return;
+    dy = Math.min(0, e.clientY - depart);
+    li.style.transform = `translateY(${dy}px)`;
+  });
+  const lacher = () => {
+    if (depart === null) return;
+    depart = null;
+    li.style.transform = "";
+    if (-dy > li.offsetHeight / 3) {
+      // sortie : elle s'envole, puis le projet s'ouvre
+      li.animate([{ transform: `translateY(${dy}px)` }, { transform: `translateY(${dy - innerHeight * 0.7}px)`, opacity: 0 }],
+        { duration: reduit ? 0 : 380, easing: "cubic-bezier(0.4, 0, 0.9, 0.5)", fill: "forwards" })
+        .finished.then(() => { li.classList.remove("tiree"); ouvrir(); }, () => {});
+      return;
+    }
+    li.classList.remove("tiree");
+    if (dy > -6) {
+      // un clic : elle remonte un peu et retombe, et la consigne s'allume
+      li.animate([{ transform: "none" }, { transform: "translateY(-14%)", offset: 0.35 }, { transform: "none" }],
+        { duration: reduit ? 0 : 650, easing: "cubic-bezier(0.3, 0.7, 0.4, 1)" });
+      aide.classList.remove("appel"); void aide.offsetWidth; aide.classList.add("appel");
+      return;
+    }
+    li.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }],
+      { duration: reduit ? 0 : 420, easing: "cubic-bezier(0.25, 1.3, 0.45, 1)" });
+  };
+  b.addEventListener("pointerup", lacher);
+  b.addEventListener("pointercancel", lacher);
+}
 // un clic à côté des fiches (pas sur le trousseau ni sur « Projets ») les range
 document.addEventListener("click", (e) => {
   if (!fichesOuvertes || e.target.closest("#projets, .breloque, a[href='#projets']")) return;
@@ -397,7 +441,10 @@ P.liste.forEach((p) => {
   const b = el("button");
   b.type = "button";
   b.append(el("span", "sommaire-nom", p.titre.replaceAll("_", "_\u200b"))); // coupable après « _ »
-  b.addEventListener("click", () => ouvrirProjet(P.liste.indexOf(p)));
+  // au clavier (Entrée, Espace) : le projet s'ouvre tout de suite ; à la
+  // souris et au doigt, il faut tirer la fiche (tirerFiche)
+  b.addEventListener("click", (e) => { if (e.detail === 0) ouvrirProjet(P.liste.indexOf(p)); });
+  tirerFiche(li, b, () => ouvrirProjet(P.liste.indexOf(p)));
   li.append(b);
   document.getElementById("sommaire").append(li);
 });

@@ -245,45 +245,47 @@ a { color: inherit; }
   font-size: calc(var(--hd) * 0.062); letter-spacing: 0.02em; line-height: 1;
   color: rgba(120, 88, 34, 0.5); text-shadow: 0 1px 0 rgba(255, 246, 220, 0.5), 0 -1px 0 rgba(90, 62, 20, 0.25);
 }
-/* les fiches : tout ce qui dépasse sous le dossier est coupé */
+/* les fiches : des intercalaires rangés dans le dossier, dont seuls les
+   onglets (avec le nom du projet) dépassent, côte à côte. On attrape un
+   onglet et on tire la fiche vers le haut (js/express.js, tirerFiche). */
 .grand-dossier ol {
   position: absolute; inset: 0; z-index: 2; list-style: none; margin: 0; padding: 0;
   /* rien ne dépasse sur les côtés ni sous le dossier */
-  clip-path: inset(-100% 7.6% 4% 4%);
+  clip-path: inset(-300% 7.6% 4% 4%);
 }
-.grand-dossier li {
-  position: absolute; bottom: 31%; left: 9%; width: 38%; height: 86%;
-  pointer-events: auto; will-change: transform;
-}
-.grand-dossier li:nth-child(2) { left: 29.5%; bottom: 41%; } /* plus haute : son nom passe au-dessus des autres */
-.grand-dossier li:nth-child(3) { left: 50%; bottom: 29%; } /* bord droit à 88 % : rien ne dépasse du dossier */
-.grand-dossier li:nth-child(4) { left: 40%; bottom: 35%; }
-.grand-dossier li:hover, .grand-dossier li:focus-within { z-index: 5; }
+.grand-dossier li { position: absolute; left: 6.5%; width: 84.5%; top: 27%; height: 66%; pointer-events: none; will-change: transform; }
+.grand-dossier li.tiree { z-index: 5; }
 .grand-dossier button {
-  --r: -2deg;
-  display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--hd) * 0.008);
-  width: 100%; height: 100%; padding: 10% 9% 0; border: 0; border-radius: 3px; cursor: pointer;
-  background: var(--blanc); color: var(--noir); font: inherit; text-align: left;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 6px 16px rgba(40, 36, 30, 0.16);
-  transform-origin: 50% 100%; transform: rotate(var(--r));
-  transition: transform 0.45s var(--courbe), box-shadow 0.45s var(--courbe);
-  -webkit-tap-highlight-color: transparent;
+  --x: 0%;
+  position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0 3px 3px 3px;
+  background: var(--blanc); color: var(--noir); font: inherit; text-align: left; cursor: grab; pointer-events: auto;
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.05), 0 -3px 10px rgba(40, 36, 30, 0.1);
+  touch-action: none; -webkit-tap-highlight-color: transparent;
+  transition: transform 0.35s var(--courbe);
 }
-.grand-dossier li:nth-child(2) button { --r: 0deg; }
-.grand-dossier li:nth-child(3) button { --r: 2deg; }
-.grand-dossier li:nth-child(4) button { --r: 3deg; }
-/* au survol, la fiche sort un peu plus du dossier et se redresse */
-.grand-dossier button:hover, .grand-dossier button:focus-visible {
-  transform: translateY(-13%) rotate(calc(var(--r) * 0.4));
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 16px 30px rgba(40, 36, 30, 0.24);
-}
-.grand-dossier button:focus { outline: none; }
-.grand-dossier button:focus-visible { outline: 2px dashed var(--accent); outline-offset: 4px; }
+.grand-dossier li:nth-child(2) button { --x: 34%; border-radius: 3px; }
+.grand-dossier li:nth-child(3) button { --x: 68%; border-radius: 3px 0 3px 3px; }
+.grand-dossier li.tiree button { cursor: grabbing; }
+/* l'onglet, qui dépasse en haut de la fiche */
 .sommaire-nom {
-  max-width: 100%; font-family: var(--large); font-weight: 800; text-transform: uppercase;
-  font-size: calc(var(--hd) * 0.033); line-height: 1.1; transition: color 0.3s;
+  position: absolute; bottom: calc(100% - 1px); left: var(--x); width: 32%; height: calc(var(--hd) * 0.13);
+  padding: calc(var(--hd) * 0.022) calc(var(--hd) * 0.02) 0; border-radius: calc(var(--hd) * 0.016) calc(var(--hd) * 0.016) 0 0;
+  background: var(--blanc); box-shadow: 0 -3px 8px rgba(40, 36, 30, 0.1);
+  font-family: var(--large); font-weight: 800; text-transform: uppercase;
+  font-size: calc(var(--hd) * 0.024); line-height: 1.15; transition: color 0.3s;
 }
-.grand-dossier button:hover .sommaire-nom { color: var(--accent); }
+/* au survol, la fiche remonte un peu : elle invite à la tirer */
+.grand-dossier li:not(.tiree) button:hover, .grand-dossier button:focus-visible { transform: translateY(-4%); }
+.grand-dossier button:hover .sommaire-nom, .grand-dossier li.tiree .sommaire-nom { color: var(--accent); }
+.grand-dossier button:focus { outline: none; }
+.grand-dossier button:focus-visible .sommaire-nom { outline: 2px dashed var(--accent); outline-offset: 3px; }
+/* la consigne, sous le dossier */
+.dossier-aide {
+  position: absolute; left: 0; right: 0; top: calc(100% + 14px); text-align: center; pointer-events: none;
+  font-size: 0.72rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gris);
+}
+.dossier-aide.appel { animation: aide 0.9s var(--courbe); }
+@keyframes aide { 30% { color: var(--accent); transform: translateY(-3px); } }
 /* les autres porte-clés sont tombés ; le petit dossier, devenu grand, est caché */
 .breloque.en-grand { visibility: hidden; }
 /* et le crochet, l'anneau et les chaînes s'effacent : il ne reste que le dossier */

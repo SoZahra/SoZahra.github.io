@@ -65,6 +65,9 @@
   (modèles IS-Net et BiRefNet). Réduites pour le web. L'anneau et le
   crochet (`anneau.webp`, `crochet.webp`) : images générées par IA, fournies
   par elle, détourées avec ImageMagick (fond gris retiré par la saturation).
+  `dossier-dos.webp` : copie de `dossier.webp` dont l'intérieur (feuilles et
+  onglet rouge) est repeint en dégradé avec ImageMagick, pour le dos du grand
+  dossier des projets.
 
 - `images/objets/` — ses objets du volet À propos (café, caméra, console, carnet à dessin) :
   images générées par IA (Gemini / Nano Banana) dans le style des
