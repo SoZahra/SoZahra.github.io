@@ -67,7 +67,7 @@ en touches (corail `#ff4a3d`), rien de trop sombre, du simple.
   fixés). Colonne réduite à nom + métier (le reste est dans À
   propos / Contact), plus de lien fixe « Version immersive » (reste au
   pied de page). Le sommaire des projets sous le trousseau est caché, il
-  n'apparaît qu'en ouvrant le dossier (ou « Projets » du menu).
+  n'apparaît qu'en ouvrant le dossier (ou « Projets » du menu). Refait fin novembre 2026 (elle n'aimait pas la simple ligne de liens) : index numéroté, noms en grand (Archivo large), type · année, pointillés ; aperçu du 1er écran au survol (souris) ; au téléphone, en lignes au-dessus du menu.
   Un projet s'ouvre dans un volet de côté (`#projet`, novembre 2026,
   remplace la fiche en fenêtre au centre qu'elle n'aimait pas) : le dossier
   reste accroché, les autres tombent ; en haut les projets numérotés, grand

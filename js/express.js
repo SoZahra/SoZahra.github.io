@@ -285,8 +285,12 @@ function montrerSommaire() {
   sommaire.classList.remove("appel");
   void sommaire.offsetWidth; // relance l'animation
   sommaire.classList.add("appel");
-  sommaire.querySelector("button")?.focus({ preventScroll: true });
+  // au clavier seulement : à la souris, le cadre du focus gênerait
+  if (auClavier) sommaire.querySelector("button")?.focus({ preventScroll: true });
 }
+let auClavier = false;
+addEventListener("keydown", () => { auClavier = true; }, true);
+addEventListener("pointerdown", () => { auClavier = false; }, true);
 
 // au survol d'un porte-clé : la légende et la colonne disent où il mène
 const legendeSur = document.getElementById("legende-sur");
@@ -321,10 +325,24 @@ try {
 if (intro) jouerIntro({ quandOuvert: () => trousseau && trousseau.lacher() });
 
 // le sommaire : tous les projets, même ceux qui n'ont pas de porte-clé
-P.liste.forEach((p) => {
+// Chaque projet : son numéro, son nom en grand, ce que c'est et l'année ;
+// au survol, un aperçu de son premier écran sort au-dessus.
+P.liste.forEach((p, i) => {
   const li = el("li");
-  const b = el("button", "", p.titre);
+  const b = el("button");
   b.type = "button";
+  const ecran = (p.parcours || p.ecrans || [])[0];
+  if (ecran) {
+    const img = el("img", "sommaire-apercu");
+    img.src = ecran.src; img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+    if (ecran.h > ecran.l) img.classList.add("portrait");
+    b.append(img);
+  }
+  b.append(
+    el("span", "sommaire-num", String(i + 1).padStart(2, "0")),
+    el("span", "sommaire-nom", p.titre),
+    el("span", "sommaire-info", [p.type, p.annee].filter(Boolean).join(" · ")),
+  );
   b.addEventListener("click", () => ouvrirProjet(P.liste.indexOf(p)));
   li.append(b);
   document.getElementById("sommaire").append(li);

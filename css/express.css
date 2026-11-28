@@ -219,32 +219,63 @@ a { color: inherit; }
 .legende-titre:not(:empty) { animation: legende 0.45s var(--courbe); }
 @keyframes legende { from { opacity: 0; transform: translateY(0.25em); } }
 
-/* le sommaire des projets, en bas à gauche */
+/* le sommaire des projets, sous le trousseau : un index (numéro corail,
+   nom en grand dans l'Archivo large, ce que c'est et l'année), séparé par
+   des pointillés ; au survol, un aperçu du projet sort au-dessus */
 .trousseau-sommaire {
-  position: absolute; left: 50%; bottom: 22px; display: flex; align-items: center; gap: 22px;
-  transform: translate(-50%, 8px); opacity: 0; visibility: hidden;
+  position: absolute; left: 50%; bottom: 20px; width: min(92vw, 980px);
+  transform: translate(-50%, 10px); opacity: 0; visibility: hidden;
   transition: opacity 0.4s, transform 0.4s var(--courbe), visibility 0s 0.4s;
 }
 /* caché tant que le dossier n'a pas été ouvert (js/express.js) */
-.trousseau-sommaire.ouvert { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity 0.4s, transform 0.4s var(--courbe); }
-.trousseau-sommaire-titre { margin: 0; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gris); }
-.trousseau-sommaire ol { display: flex; flex-wrap: wrap; gap: 0 22px; list-style: none; margin: 0; padding: 0; }
-.trousseau-sommaire button {
-  min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
-  font: inherit; font-size: 0.9rem; color: var(--noir);
-  background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat;
-  background-position: left 70%; background-size: 0 2px; transition: background-size 0.3s;
+.trousseau-sommaire.ouvert { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity 0.4s, transform 0.5s var(--courbe); }
+/* la légende des porte-clés laisse la place */
+.trousseau:has(.trousseau-sommaire.ouvert) .trousseau-legende { opacity: 0; }
+.trousseau-legende { transition: opacity 0.3s; }
+.trousseau-sommaire-titre { margin: 0 0 10px; text-align: center; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gris); }
+.trousseau-sommaire ol {
+  display: flex; justify-content: center;
+  list-style: none; margin: 0; padding: 0; border-top: 1px dashed var(--trait);
 }
-.trousseau-sommaire button:hover, .trousseau-sommaire button:focus-visible { background-size: 100% 2px; }
-/* appelé par le porte-clé dossier : les noms se soulignent l'un après l'autre */
-.trousseau-sommaire.appel li button { animation: appel 1.6s var(--courbe) both; }
-.trousseau-sommaire.appel li:nth-child(2) button { animation-delay: 0.12s; }
-.trousseau-sommaire.appel li:nth-child(3) button { animation-delay: 0.24s; }
-.trousseau-sommaire.appel li:nth-child(4) button { animation-delay: 0.36s; }
+.trousseau-sommaire li + li { border-left: 1px dashed var(--trait); }
+.trousseau-sommaire button {
+  position: relative; display: grid; justify-items: center; gap: 4px; width: 100%;
+  padding: 14px clamp(16px, 2.4vw, 36px) 4px; border: 0; background: none; cursor: pointer;
+  font: inherit; color: var(--noir); text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.sommaire-num { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.16em; color: var(--accent-texte); }
+.sommaire-nom {
+  font-family: var(--large); font-weight: 800; font-stretch: 125%; text-transform: uppercase;
+  font-size: clamp(1.1rem, 2.1vw, 1.9rem); line-height: 1; white-space: nowrap; letter-spacing: 0.01em;
+  transition: color 0.3s, transform 0.4s var(--courbe);
+}
+.sommaire-info { white-space: nowrap; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gris); }
+.trousseau-sommaire button:hover .sommaire-nom { color: var(--accent); transform: translateY(-2px); }
+.trousseau-sommaire button:focus { outline: none; }
+.trousseau-sommaire button:focus-visible .sommaire-nom { color: var(--accent); text-decoration: underline 2px; text-underline-offset: 6px; }
+/* l'aperçu : son premier écran, qui monte au survol (souris seulement) */
+.sommaire-apercu {
+  position: absolute; left: 50%; bottom: calc(100% + 16px); z-index: 45;
+  width: auto; height: clamp(110px, 18vh, 170px); max-width: 92%; object-fit: cover; object-position: top;
+  border-radius: 6px; box-shadow: 0 14px 30px rgba(40, 36, 30, 0.28);
+  opacity: 0; transform: translate(-50%, 12px) scale(0.96); transform-origin: 50% 100%;
+  transition: opacity 0.3s, transform 0.45s var(--courbe); pointer-events: none;
+}
+.sommaire-apercu.portrait { height: clamp(150px, 26vh, 240px); border-radius: 14px; }
+@media (hover: hover) {
+  .trousseau-sommaire button:hover .sommaire-apercu { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@media (hover: none) { .sommaire-apercu { display: none; } }
+/* appelé par le porte-clé dossier : les noms s'allument l'un après l'autre */
+.trousseau-sommaire.appel li .sommaire-nom { animation: appel 1.4s var(--courbe) backwards; }
+.trousseau-sommaire.appel li:nth-child(2) .sommaire-nom { animation-delay: 0.12s; }
+.trousseau-sommaire.appel li:nth-child(3) .sommaire-nom { animation-delay: 0.24s; }
+.trousseau-sommaire.appel li:nth-child(4) .sommaire-nom { animation-delay: 0.36s; }
 @keyframes appel {
-  0% { background-size: 0 2px; }
-  35%, 70% { background-size: 100% 2px; color: var(--accent); }
-  100% { background-size: 0 2px; }
+  0% { opacity: 0; transform: translateY(0.4em); }
+  40%, 70% { opacity: 1; transform: none; color: var(--accent); }
+  100% { color: var(--noir); }
 }
 
 /* ---------- Les volets (À propos, Contact) ----------
@@ -506,8 +537,20 @@ a { color: inherit; }
   /* trousseau : le sommaire passe sous la légende */
   .trousseau-scene { bottom: 22%; }
   .trousseau-legende { bottom: 13%; }
-  .trousseau-sommaire { left: calc(var(--marge) + 44px); right: var(--marge); bottom: 12px; flex-wrap: wrap; gap: 0 16px; transform: translateY(8px); }
+  /* au téléphone, l'index se range en lignes : numéro, nom, puis le reste à droite */
+  /* au-dessus du menu, qui reste sur l'accueil (100svh - 150px) */
+  .trousseau-sommaire { left: var(--marge); right: var(--marge); width: auto; bottom: 162px; transform: translateY(8px); }
   .trousseau-sommaire.ouvert { transform: none; }
+  .trousseau-sommaire-titre { text-align: left; margin-bottom: 6px; }
+  .trousseau-sommaire ol { display: block; }
+  .trousseau-sommaire li + li { border-left: 0; }
+  .trousseau-sommaire li { border-bottom: 1px dashed var(--trait); }
+  .trousseau-sommaire button {
+    grid-template-columns: 2.2em 1fr; align-items: baseline; justify-items: start;
+    gap: 2px 8px; min-height: 44px; padding: 8px 0 7px; text-align: left;
+  }
+  .sommaire-nom { font-size: 1.1rem; }
+  .sommaire-info { grid-column: 2; font-size: 0.6rem; letter-spacing: 0.12em; }
 }
 
 
