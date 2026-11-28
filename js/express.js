@@ -251,7 +251,7 @@ const CV = window.CV || null;
 const PAGES = [
   { src: "images/porte-cles/dossier.webp", ratio: 842 / 900, hauteur: 21, chaine: 4, anneau: [0.481, 0.024], penche: 0.5,
     etiquette: "Projets", section: "accueil", sur: `${P.liste.length} projets`, titre: "Projets", volet: "projet",
-    clic: () => (voletOuvert === "projet" ? fermerVolet() : montrerSommaire()) },
+    clic: () => (voletOuvert === "projet" ? fermerVolet() : fichesOuvertes ? rangerFiches() : sortirFiches()) },
   { src: "images/porte-cles/enveloppe.webp", ratio: 810 / 900, hauteur: 19, chaine: 4, anneau: [0.499, 0.024], penche: 0.5,
     etiquette: "Contact", section: "contact", sur: "Écris-moi", titre: "Contact", lien: "#contact" },
 ];
@@ -275,19 +275,64 @@ const breloques = [
   ...PAGES,
 ];
 
-// le dossier (et le menu « Projets ») : le sommaire, sous le trousseau,
-// s'allume nom après nom, et le premier projet prend le focus
-// Le sommaire est caché tant qu'on n'a pas ouvert le dossier.
-function montrerSommaire() {
-  fermerVolet();
-  const sommaire = document.getElementById("projets");
-  sommaire.classList.add("ouvert");
-  sommaire.classList.remove("appel");
-  void sommaire.offsetWidth; // relance l'animation
-  sommaire.classList.add("appel");
-  // au clavier seulement : à la souris, le cadre du focus gênerait
-  if (auClavier) sommaire.querySelector("button")?.focus({ preventScroll: true });
+/* ---------- Les fiches des projets ----------
+   Le dossier (et « Projets » du menu) : une fiche papier par projet sort du
+   porte-clé dossier et vole se poser, un peu de travers (sur ordinateur, le
+   trousseau se pousse à gauche pour leur laisser la place). Une fiche ouvre
+   son projet ; Échap, un clic à côté ou le dossier les font rentrer. */
+const fiches = document.getElementById("projets");
+let fichesOuvertes = false;
+const DECALAGE_FICHES = 0.22; // le trousseau glisse de 22vw (css : .fiches-ouvertes)
+// le centre du porte-clé dossier à l'écran, là où le trousseau va (dx : son
+// déplacement à venir) ; à défaut, le bas du milieu de l'écran
+function centreDossier(dx) {
+  const i = breloques.findIndex((b) => b.volet === "projet");
+  const b = trousseau?.boite(i);
+  return b ? { x: b.x + dx, y: b.y } : { x: innerWidth / 2, y: innerHeight * 0.8 };
 }
+const decalage = () => (matchMedia("(min-width: 761px)").matches ? innerWidth * DECALAGE_FICHES : 0);
+function voler(depuis, vers, k) {
+  // une fiche, du dossier à sa place (vers = false) ou l'inverse
+  const li = fiches.querySelectorAll("li")[k];
+  const r = li.getBoundingClientRect();
+  const dx = depuis.x - (r.left + r.width / 2), dy = depuis.y - (r.top + r.height / 2);
+  const loin = { transform: `translate(${dx}px, ${dy}px) scale(0.12) rotate(${(k - 1) * 18}deg)`, opacity: 0 };
+  const images = [loin, { opacity: 1, offset: 0.2 }, { transform: "none", opacity: 1 }];
+  return li.animate(vers ? images.reverse() : images, {
+    duration: reduit ? 0 : vers ? 420 : 760, delay: (vers ? 2 - k : k) * 80,
+    easing: vers ? "cubic-bezier(0.5, 0, 0.8, 0.4)" : "cubic-bezier(0.2, 0.9, 0.25, 1.05)", fill: "both",
+  });
+}
+function sortirFiches() {
+  if (fichesOuvertes) return;
+  fermerVolet();
+  fichesOuvertes = true;
+  const depuis = centreDossier(-decalage());
+  document.documentElement.classList.add("fiches-ouvertes");
+  fiches.classList.add("ouvert");
+  fiches.querySelectorAll("li").forEach((li, k) => {
+    li.getAnimations().forEach((a) => a.cancel());
+    voler(depuis, false, k);
+  });
+  // au clavier seulement : à la souris, le cadre du focus gênerait
+  if (auClavier) fiches.querySelector("button")?.focus({ preventScroll: true });
+}
+function rangerFiches(anime = true) {
+  if (!fichesOuvertes) return;
+  fichesOuvertes = false;
+  const vers = centreDossier(decalage());
+  document.documentElement.classList.remove("fiches-ouvertes");
+  const fin = () => { if (!fichesOuvertes) { fiches.classList.remove("ouvert"); fiches.querySelectorAll("li").forEach((li) => li.getAnimations().forEach((a) => a.cancel())); } };
+  if (!anime || reduit) { fin(); return; }
+  const vols = [...fiches.querySelectorAll("li")].map((li, k) => voler(vers, true, k));
+  Promise.all(vols.map((a) => a.finished)).then(fin, () => {});
+}
+// un clic à côté des fiches (pas sur le trousseau ni sur « Projets ») les range
+document.addEventListener("click", (e) => {
+  if (!fichesOuvertes || e.target.closest("#projets, .breloque, a[href='#projets']")) return;
+  rangerFiches();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && fichesOuvertes) rangerFiches(); });
 let auClavier = false;
 addEventListener("keydown", () => { auClavier = true; }, true);
 addEventListener("pointerdown", () => { auClavier = false; }, true);
@@ -325,32 +370,32 @@ try {
 if (intro) jouerIntro({ quandOuvert: () => trousseau && trousseau.lacher() });
 
 // le sommaire : tous les projets, même ceux qui n'ont pas de porte-clé
-// Chaque projet : son numéro, son nom en grand, ce que c'est et l'année ;
-// au survol, un aperçu de son premier écran sort au-dessus.
+// Chaque fiche : le premier écran du projet, son numéro, son nom, ce que
+// c'est et l'année.
 P.liste.forEach((p, i) => {
   const li = el("li");
   const b = el("button");
   b.type = "button";
   const ecran = (p.parcours || p.ecrans || [])[0];
   if (ecran) {
-    const img = el("img", "sommaire-apercu");
+    const img = el("img", "fiche-image");
     img.src = ecran.src; img.alt = ""; img.loading = "lazy"; img.decoding = "async";
     if (ecran.h > ecran.l) img.classList.add("portrait");
     b.append(img);
   }
   b.append(
     el("span", "sommaire-num", String(i + 1).padStart(2, "0")),
-    el("span", "sommaire-nom", p.titre),
+    el("span", "sommaire-nom", p.titre.replaceAll("_", "_\u200b")), // coupable après « _ »
     el("span", "sommaire-info", [p.type, p.annee].filter(Boolean).join(" · ")),
   );
-  b.addEventListener("click", () => ouvrirProjet(P.liste.indexOf(p)));
+  b.addEventListener("click", () => { rangerFiches(false); ouvrirProjet(P.liste.indexOf(p)); });
   li.append(b);
   document.getElementById("sommaire").append(li);
 });
 // les liens « Projets » du menu mènent au sommaire, sous le trousseau
 document.querySelectorAll('a[href="#projets"]').forEach((a) => a.addEventListener("click", (e) => {
   e.preventDefault();
-  montrerSommaire();
+  if (fichesOuvertes) rangerFiches(); else sortirFiches();
 }));
 
 /* ---------- Son petit logo, en haut à gauche ---------- */
@@ -398,6 +443,7 @@ const objets = creerObjets({
 if (!reduit) ecouterSecousses((ax, ay) => { trousseau?.secouer(ax, ay); objets.secouer(ax, ay); });
 function ouvrirVolet(id) {
   if (!volets[id] || voletOuvert === id) return;
+  rangerFiches(false);
   if (voletOuvert) fermerVolet(true);
   else avantVolet = document.activeElement;
   voletOuvert = id;
