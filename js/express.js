@@ -16,6 +16,15 @@ import { creerObjets } from "./express-objets.js";
 import { ecouterSecousses } from "./express-secousse.js";
 
 const P = window.PROJETS_CLASSIQUE || { liste: [] };
+// pour essayer la mise en page avec plus de projets : index.html?factices=6
+// ajoute des projets fictifs (copies du premier, avec un autre nom)
+{
+  const n = Number(new URLSearchParams(location.search).get("factices")) || 0;
+  const noms = ["Portfolio", "Bibliothèque", "Météo", "Agenda", "Recettes", "Musée", "Carnet", "Galerie", "Studio"];
+  for (let k = 0; P.liste.length && P.liste.length < Math.min(n, 12); k++) {
+    P.liste.push({ ...P.liste[0], titre: noms[k % noms.length], porteCle: null });
+  }
+}
 const W = window.WHOAMI || {};
 const C = window.CONTACT || {};
 const GH = window.GITHUB || {};
