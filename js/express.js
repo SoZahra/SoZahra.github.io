@@ -283,15 +283,15 @@ const breloques = [
 const fiches = document.getElementById("projets");
 let fichesOuvertes = false;
 const grandDossier = fiches.querySelector(".grand-dossier");
-const DECALAGE_FICHES = 0.22; // le trousseau glisse de 22vw (css : .fiches-ouvertes)
-// le porte-clé dossier à l'écran (centre, taille, angle), là où le trousseau
-// va (dx : son déplacement à venir) ; à défaut, le bas du milieu de l'écran
-function boiteDossier(dx) {
-  const i = breloques.findIndex((b) => b.volet === "projet");
-  const b = trousseau?.boite(i);
-  return b ? { x: b.x + dx, y: b.y, h: b.h, angle: b.angle } : { x: innerWidth / 2, y: innerHeight * 0.8, h: 60, angle: 0 };
+// le porte-clé dossier : son numéro sur le trousseau, et où il est à
+// l'écran (centre, taille, angle) ; à défaut, le milieu de l'écran
+const iDossier = () => breloques.findIndex((b) => b.volet === "projet");
+function boiteDossier() {
+  const b = trousseau?.boite(iDossier());
+  return b ? b : { x: innerWidth / 2, y: innerHeight * 0.4, h: 60, angle: 0 };
 }
-const decalage = () => (matchMedia("(min-width: 761px)").matches ? innerWidth * DECALAGE_FICHES : 0);
+// pendant que le grand dossier est là, le petit (dont il sort) est caché
+const porteCleDossier = (cache) => document.querySelectorAll(".breloque")[iDossier()]?.classList.toggle("en-grand", cache);
 const COURBE = "cubic-bezier(0.2, 0.8, 0.2, 1)";
 // le grand dossier, depuis le porte-clé (ou vers lui si retour)
 function grandir(porteCle, retour) {
@@ -323,7 +323,10 @@ function sortirFiches() {
   if (fichesOuvertes) return;
   fermerVolet();
   fichesOuvertes = true;
-  const depuis = boiteDossier(-decalage());
+  const depuis = boiteDossier();
+  // les autres porte-clés se décrochent et tombent ; le dossier grandit au milieu
+  trousseau?.decrocher(iDossier());
+  porteCleDossier(true);
   document.documentElement.classList.add("fiches-ouvertes");
   fiches.classList.add("ouvert");
   arreterAnimations();
@@ -332,12 +335,15 @@ function sortirFiches() {
   // au clavier seulement : à la souris, le cadre du focus gênerait
   if (auClavier) fiches.querySelector("button")?.focus({ preventScroll: true });
 }
-function rangerFiches(anime = true) {
+// raccrocher : les porte-clés tombés reviennent (sauf si on ouvre un projet :
+// le volet garde le dossier seul, comme maintenant)
+function rangerFiches(anime = true, raccrocher = true) {
   if (!fichesOuvertes) return;
   fichesOuvertes = false;
-  const vers = boiteDossier(decalage());
+  const vers = boiteDossier();
   document.documentElement.classList.remove("fiches-ouvertes");
-  const fin = () => { if (!fichesOuvertes) { fiches.classList.remove("ouvert"); arreterAnimations(); } };
+  if (raccrocher) trousseau?.raccrocher();
+  const fin = () => { if (!fichesOuvertes) { fiches.classList.remove("ouvert"); arreterAnimations(); porteCleDossier(false); } };
   if (!anime || reduit) { fin(); return; }
   const tout = [...glisser(true), grandir(vers, true)];
   Promise.all(tout.map((a) => a.finished)).then(fin, () => {});
@@ -403,7 +409,7 @@ P.liste.forEach((p, i) => {
     el("span", "sommaire-nom", p.titre.replaceAll("_", "_\u200b")), // coupable après « _ »
     el("span", "sommaire-info", [p.type, p.annee].filter(Boolean).join(" · ")),
   );
-  b.addEventListener("click", () => { rangerFiches(false); ouvrirProjet(P.liste.indexOf(p)); });
+  b.addEventListener("click", () => ouvrirProjet(P.liste.indexOf(p)));
   li.append(b);
   document.getElementById("sommaire").append(li);
 });
@@ -458,7 +464,7 @@ const objets = creerObjets({
 if (!reduit) ecouterSecousses((ax, ay) => { trousseau?.secouer(ax, ay); objets.secouer(ax, ay); });
 function ouvrirVolet(id) {
   if (!volets[id] || voletOuvert === id) return;
-  rangerFiches(false);
+  rangerFiches(false, id !== "projet"); // vers un projet : le dossier reste seul
   if (voletOuvert) fermerVolet(true);
   else avantVolet = document.activeElement;
   voletOuvert = id;

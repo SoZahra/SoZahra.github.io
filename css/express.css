@@ -227,8 +227,8 @@ a { color: inherit; }
 .trousseau-sommaire.ouvert { visibility: visible; }
 .trousseau-sommaire-titre { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .grand-dossier {
-  --hd: min(58vh, 540px);
-  position: absolute; right: 7vw; top: calc(50% - var(--hd) * 0.4);
+  --hd: min(54vh, 520px);
+  position: absolute; left: calc(50% - var(--hd) * 0.468); top: calc(50% - var(--hd) * 0.22);
   height: var(--hd); aspect-ratio: 842 / 900; will-change: transform;
 }
 .dossier-dos, .dossier-devant, .dossier-devant img { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
@@ -289,9 +289,8 @@ a { color: inherit; }
   object-fit: cover; object-position: top; border-radius: 2px; background: var(--panneau);
 }
 .grand-dossier .sommaire-info { order: 4; }
-/* le trousseau se pousse à gauche pour laisser la place au dossier */
-.trousseau-scene { transition: transform 0.9s var(--courbe), opacity 0.5s; }
-.fiches-ouvertes .trousseau-scene { transform: translateX(-22vw); }
+/* les autres porte-clés sont tombés ; le petit dossier, devenu grand, est caché */
+.breloque.en-grand { visibility: hidden; }
 .fiches-ouvertes .trousseau-legende { opacity: 0; }
 .trousseau-legende { transition: opacity 0.3s; }
 
@@ -554,10 +553,9 @@ a { color: inherit; }
   /* trousseau : le sommaire passe sous la légende */
   .trousseau-scene { bottom: 22%; }
   .trousseau-legende { bottom: 13%; }
-  /* au téléphone : le trousseau reste en place et s'efface un peu, le grand
-     dossier se pose au milieu, au-dessus du menu (100svh - 150px) */
-  .fiches-ouvertes .trousseau-scene { transform: none; opacity: 0.25; }
-  .grand-dossier { --hd: min(40svh, 78vw); right: auto; top: auto; left: calc(50% - var(--hd) * 0.468); bottom: 165px; }
+  /* au téléphone : le grand dossier se pose au milieu, au-dessus du menu
+     (100svh - 150px) */
+  .grand-dossier { --hd: min(44svh, 82vw); right: auto; top: auto; left: calc(50% - var(--hd) * 0.468); bottom: 165px; }
   .sommaire-info { display: none; }
 }
 
