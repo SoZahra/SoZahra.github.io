@@ -117,7 +117,7 @@ en touches (corail `#ff4a3d`), rien de trop sombre, du simple.
   attrape à la souris, soulève et lance (un glisser n'ouvre pas le lien ;
   au doigt, pas de prise pour laisser défiler) ; l'anneau tourne autour du
   crochet, retenu par le poids des porte-clés. La souris qui passe les
-  pousse, le défilement les secoue, et au téléphone on les secoue en secouant le téléphone (`js/express-secousse.js`, accéléromètre ; permission demandée au 1er toucher sur iPhone). Le porte-clé
+  pousse, le défilement les secoue, et au téléphone on les secoue en secouant le téléphone (`js/express-secousse.js`, accéléromètre ; sur iPhone, bouton « Secoue ton téléphone » qui demande la permission, seul geste que Safari accepte). Le porte-clé
   d'un projet se déclare dans `js/projets-classique.js` (`porteCle`) ;
   manquent ceux de ft_transcendence (manette) et Spotflow (novembre 2026,
   a remplacé Michael Jackson, jugé trop maigre : une seule page). L'anneau et le crochet dorés sont aussi des images détourées

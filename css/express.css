@@ -511,3 +511,15 @@ a { color: inherit; }
 }
 
 
+
+/* iPhone : le bouton qui demande l'accès aux mouvements (js/express-secousse.js) */
+.secousse-bouton {
+  position: fixed; z-index: 20;
+  right: var(--marge); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding: 9px 14px; border: 1px solid var(--trait); border-radius: 999px;
+  background: var(--blanc); color: var(--noir);
+  font: 500 0.72rem/1 var(--police); letter-spacing: 0.14em; text-transform: uppercase;
+  cursor: pointer; transition: opacity 0.4s;
+}
+.secousse-bouton span { color: var(--accent); margin-left: 4px; }
+.volet-ouvert .secousse-bouton { opacity: 0; pointer-events: none; }

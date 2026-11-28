@@ -44,23 +44,27 @@ export function ecouterSecousses(rappel) {
 
   const ecouter = () => addEventListener("devicemotion", mouvement);
   if (typeof DeviceMotionEvent.requestPermission === "function") {
-    // iPhone / iPad : permission au premier vrai toucher (un tap, pas un
-    // défilement : Safari refuse alors sans rien afficher). Tant qu'elle
-    // n'a pas répondu, on redemande au toucher suivant.
+    // iPhone / iPad : Safari ne demande la permission qu'au clic sur un
+    // vrai bouton (un toucher n'importe où sur la page ne compte pas).
+    // Un petit bouton, en bas à droite, la demande ; il disparaît ensuite.
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = "secousse-bouton";
+    bouton.innerHTML = 'Secoue ton téléphone <span aria-hidden="true">↯</span>';
+    document.body.append(bouton);
     let enCours = false;
-    const fini = () => {
-      removeEventListener("click", demander, true);
-      removeEventListener("touchend", demander, true);
-    };
-    function demander() {
+    bouton.addEventListener("click", () => {
       if (enCours) return;
       enCours = true;
       DeviceMotionEvent.requestPermission()
-        .then((r) => { fini(); if (r === "granted") ecouter(); })
-        .catch(() => { enCours = false; }); // pas pris pour un geste : on réessaiera
-    }
-    addEventListener("click", demander, true);
-    addEventListener("touchend", demander, true);
+        .then((r) => {
+          bouton.remove();
+          if (r !== "granted") return;
+          ecouter();
+          rappel(14, -6); // une petite secousse pour montrer que ça marche
+        })
+        .catch(() => { enCours = false; });
+    });
   } else {
     ecouter();
   }
