@@ -391,24 +391,12 @@ try {
 if (intro) jouerIntro({ quandOuvert: () => trousseau && trousseau.lacher() });
 
 // le sommaire : tous les projets, même ceux qui n'ont pas de porte-clé
-// Chaque fiche : le premier écran du projet, son numéro, son nom, ce que
-// c'est et l'année.
-P.liste.forEach((p, i) => {
+// Chaque fiche : juste le nom du projet (son choix : pas d'image)
+P.liste.forEach((p) => {
   const li = el("li");
   const b = el("button");
   b.type = "button";
-  const ecran = (p.parcours || p.ecrans || [])[0];
-  if (ecran) {
-    const img = el("img", "fiche-image");
-    img.src = ecran.src; img.alt = ""; img.loading = "lazy"; img.decoding = "async";
-    if (ecran.h > ecran.l) img.classList.add("portrait");
-    b.append(img);
-  }
-  b.append(
-    el("span", "sommaire-num", String(i + 1).padStart(2, "0")),
-    el("span", "sommaire-nom", p.titre.replaceAll("_", "_\u200b")), // coupable après « _ »
-    el("span", "sommaire-info", [p.type, p.annee].filter(Boolean).join(" · ")),
-  );
+  b.append(el("span", "sommaire-nom", p.titre.replaceAll("_", "_\u200b"))); // coupable après « _ »
   b.addEventListener("click", () => ouvrirProjet(P.liste.indexOf(p)));
   li.append(b);
   document.getElementById("sommaire").append(li);

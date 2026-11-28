@@ -250,17 +250,17 @@ a { color: inherit; }
   clip-path: polygon(-100% -100%, 200% -100%, 200% 34%, 93% 34%, 93% 95%, 3% 95%, 3% 34%, -100% 34%);
 }
 .grand-dossier li {
-  position: absolute; bottom: 31%; left: 8%; width: 39%; height: 86%;
+  position: absolute; bottom: 31%; left: 6%; width: 42%; height: 86%;
   pointer-events: auto; will-change: transform;
 }
-.grand-dossier li:nth-child(2) { left: 29%; bottom: 33%; }
-.grand-dossier li:nth-child(3) { left: 50%; }
+.grand-dossier li:nth-child(2) { left: 28%; bottom: 41%; } /* plus haute : son nom passe au-dessus des autres */
+.grand-dossier li:nth-child(3) { left: 50%; bottom: 29%; }
 .grand-dossier li:nth-child(4) { left: 40%; bottom: 35%; }
 .grand-dossier li:hover, .grand-dossier li:focus-within { z-index: 5; }
 .grand-dossier button {
   --r: -7deg;
   display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--hd) * 0.008);
-  width: 100%; height: 100%; padding: 7% 7% 0; border: 0; border-radius: 3px; cursor: pointer;
+  width: 100%; height: 100%; padding: 10% 9% 0; border: 0; border-radius: 3px; cursor: pointer;
   background: var(--blanc); color: var(--noir); font: inherit; text-align: left;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 6px 16px rgba(40, 36, 30, 0.16);
   transform-origin: 50% 100%; transform: rotate(var(--r));
@@ -277,18 +277,11 @@ a { color: inherit; }
 }
 .grand-dossier button:focus { outline: none; }
 .grand-dossier button:focus-visible { outline: 2px dashed var(--accent); outline-offset: 4px; }
-.sommaire-num { font-size: calc(var(--hd) * 0.024); font-weight: 500; letter-spacing: 0.16em; color: var(--accent-texte); }
 .sommaire-nom {
   max-width: 100%; font-family: var(--large); font-weight: 800; text-transform: uppercase;
-  font-size: calc(var(--hd) * 0.032); line-height: 1.05; transition: color 0.3s;
+  font-size: calc(var(--hd) * 0.036); line-height: 1.1; transition: color 0.3s;
 }
 .grand-dossier button:hover .sommaire-nom { color: var(--accent); }
-.sommaire-info { font-size: calc(var(--hd) * 0.019); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gris); }
-.fiche-image {
-  order: 3; display: block; width: 100%; aspect-ratio: 4 / 3; margin-top: 4%;
-  object-fit: cover; object-position: top; border-radius: 2px; background: var(--panneau);
-}
-.grand-dossier .sommaire-info { order: 4; }
 /* les autres porte-clés sont tombés ; le petit dossier, devenu grand, est caché */
 .breloque.en-grand { visibility: hidden; }
 /* et le crochet, l'anneau et les chaînes s'effacent : il ne reste que le dossier */
@@ -558,7 +551,6 @@ a { color: inherit; }
   /* au téléphone : le grand dossier se pose au milieu, au-dessus du menu
      (100svh - 150px) */
   .grand-dossier { --hd: min(44svh, 82vw); right: auto; top: auto; left: calc(50% - var(--hd) * 0.468); bottom: 165px; }
-  .sommaire-info { display: none; }
 }
 
 
