@@ -282,50 +282,65 @@ const breloques = [
    son projet ; Échap, un clic à côté ou le dossier les font rentrer. */
 const fiches = document.getElementById("projets");
 let fichesOuvertes = false;
+const grandDossier = fiches.querySelector(".grand-dossier");
 const DECALAGE_FICHES = 0.22; // le trousseau glisse de 22vw (css : .fiches-ouvertes)
-// le centre du porte-clé dossier à l'écran, là où le trousseau va (dx : son
-// déplacement à venir) ; à défaut, le bas du milieu de l'écran
-function centreDossier(dx) {
+// le porte-clé dossier à l'écran (centre, taille, angle), là où le trousseau
+// va (dx : son déplacement à venir) ; à défaut, le bas du milieu de l'écran
+function boiteDossier(dx) {
   const i = breloques.findIndex((b) => b.volet === "projet");
   const b = trousseau?.boite(i);
-  return b ? { x: b.x + dx, y: b.y } : { x: innerWidth / 2, y: innerHeight * 0.8 };
+  return b ? { x: b.x + dx, y: b.y, h: b.h, angle: b.angle } : { x: innerWidth / 2, y: innerHeight * 0.8, h: 60, angle: 0 };
 }
 const decalage = () => (matchMedia("(min-width: 761px)").matches ? innerWidth * DECALAGE_FICHES : 0);
-function voler(depuis, vers, k) {
-  // une fiche, du dossier à sa place (vers = false) ou l'inverse
-  const li = fiches.querySelectorAll("li")[k];
-  const r = li.getBoundingClientRect();
-  const dx = depuis.x - (r.left + r.width / 2), dy = depuis.y - (r.top + r.height / 2);
-  const loin = { transform: `translate(${dx}px, ${dy}px) scale(0.12) rotate(${(k - 1) * 18}deg)`, opacity: 0 };
-  const images = [loin, { opacity: 1, offset: 0.2 }, { transform: "none", opacity: 1 }];
-  return li.animate(vers ? images.reverse() : images, {
-    duration: reduit ? 0 : vers ? 420 : 760, delay: (vers ? 2 - k : k) * 80,
-    easing: vers ? "cubic-bezier(0.5, 0, 0.8, 0.4)" : "cubic-bezier(0.2, 0.9, 0.25, 1.05)", fill: "both",
+const COURBE = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+// le grand dossier, depuis le porte-clé (ou vers lui si retour)
+function grandir(porteCle, retour) {
+  const r = grandDossier.getBoundingClientRect();
+  const s = porteCle.h / r.height;
+  const loin = {
+    transform: `translate(${porteCle.x - (r.left + r.width / 2)}px, ${porteCle.y - (r.top + r.height / 2)}px) rotate(${porteCle.angle}rad) scale(${s})`,
+    opacity: 0,
+  };
+  const images = [loin, { opacity: 1, offset: 0.15 }, { transform: "none", opacity: 1 }];
+  return grandDossier.animate(retour ? images.reverse() : images, {
+    duration: reduit ? 0 : retour ? 480 : 700, delay: retour ? 260 : 0,
+    easing: retour ? "cubic-bezier(0.5, 0, 0.75, 0)" : COURBE, fill: "both",
   });
+}
+// les fiches remontent de l'intérieur du dossier (ou y redescendent)
+function glisser(retour) {
+  return [...fiches.querySelectorAll("li")].map((li, k, tout) => li.animate(
+    [{ transform: "translateY(75%)" }, { transform: "none" }][retour ? "reverse" : "slice"](),
+    {
+      duration: reduit ? 0 : retour ? 260 : 620, delay: reduit ? 0 : retour ? (tout.length - 1 - k) * 40 : 420 + k * 110,
+      easing: retour ? "ease-in" : "cubic-bezier(0.25, 1.2, 0.4, 1)", fill: "both",
+    }));
+}
+function arreterAnimations() {
+  [grandDossier, ...fiches.querySelectorAll("li")].forEach((e) => e.getAnimations().forEach((a) => a.cancel()));
 }
 function sortirFiches() {
   if (fichesOuvertes) return;
   fermerVolet();
   fichesOuvertes = true;
-  const depuis = centreDossier(-decalage());
+  const depuis = boiteDossier(-decalage());
   document.documentElement.classList.add("fiches-ouvertes");
   fiches.classList.add("ouvert");
-  fiches.querySelectorAll("li").forEach((li, k) => {
-    li.getAnimations().forEach((a) => a.cancel());
-    voler(depuis, false, k);
-  });
+  arreterAnimations();
+  grandir(depuis, false);
+  glisser(false);
   // au clavier seulement : à la souris, le cadre du focus gênerait
   if (auClavier) fiches.querySelector("button")?.focus({ preventScroll: true });
 }
 function rangerFiches(anime = true) {
   if (!fichesOuvertes) return;
   fichesOuvertes = false;
-  const vers = centreDossier(decalage());
+  const vers = boiteDossier(decalage());
   document.documentElement.classList.remove("fiches-ouvertes");
-  const fin = () => { if (!fichesOuvertes) { fiches.classList.remove("ouvert"); fiches.querySelectorAll("li").forEach((li) => li.getAnimations().forEach((a) => a.cancel())); } };
+  const fin = () => { if (!fichesOuvertes) { fiches.classList.remove("ouvert"); arreterAnimations(); } };
   if (!anime || reduit) { fin(); return; }
-  const vols = [...fiches.querySelectorAll("li")].map((li, k) => voler(vers, true, k));
-  Promise.all(vols.map((a) => a.finished)).then(fin, () => {});
+  const tout = [...glisser(true), grandir(vers, true)];
+  Promise.all(tout.map((a) => a.finished)).then(fin, () => {});
 }
 // un clic à côté des fiches (pas sur le trousseau ni sur « Projets ») les range
 document.addEventListener("click", (e) => {

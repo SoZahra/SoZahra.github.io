@@ -108,7 +108,14 @@
       </p>
       <nav class="trousseau-sommaire" id="projets" aria-labelledby="titre-projets">
         <h2 class="trousseau-sommaire-titre" id="titre-projets">Projets</h2>
-        <ol id="sommaire"></ol>
+        <!-- le porte-clé dossier en grand : son dos, les fiches glissées
+             dedans, puis son rabat avant (même image, découpée) par-dessus -->
+        <div class="grand-dossier">
+          <img class="dossier-dos" src="images/porte-cles/dossier.webp" alt="" draggable="false">
+          <ol id="sommaire"></ol>
+          <div class="dossier-devant"><img src="images/porte-cles/dossier.webp" alt="" draggable="false"></div>
+          <span class="dossier-etiquette" aria-hidden="true">Projets</span>
+        </div>
       </nav>
     </section>
 

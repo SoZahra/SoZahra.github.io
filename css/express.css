@@ -219,55 +219,78 @@ a { color: inherit; }
 .legende-titre:not(:empty) { animation: legende 0.45s var(--courbe); }
 @keyframes legende { from { opacity: 0; transform: translateY(0.25em); } }
 
-/* les fiches des projets : elles sortent du porte-clé dossier (js/express.js,
-   sortirFiches) et se posent de travers, comme des feuilles sur une table ;
-   au survol, une fiche se redresse et se soulève */
-.trousseau-sommaire {
-  position: absolute; inset: 0; z-index: 45; pointer-events: none; visibility: hidden;
-}
+/* les projets : le porte-clé dossier grandit (js/express.js, sortirFiches)
+   et ses fiches en remontent, en éventail. Le dossier est fait de deux
+   calques de la même image : son dos, puis son rabat avant (découpé) ; les
+   fiches sont glissées entre les deux. --hd : hauteur du grand dossier. */
+.trousseau-sommaire { position: absolute; inset: 0; z-index: 45; pointer-events: none; visibility: hidden; }
 .trousseau-sommaire.ouvert { visibility: visible; }
 .trousseau-sommaire-titre { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.trousseau-sommaire ol {
-  position: absolute; right: 6vw; top: 50%; transform: translateY(-54%);
-  display: flex; align-items: center; list-style: none; margin: 0; padding: 0;
+.grand-dossier {
+  --hd: min(58vh, 540px);
+  position: absolute; right: 7vw; top: calc(50% - var(--hd) * 0.4);
+  height: var(--hd); aspect-ratio: 842 / 900; will-change: transform;
 }
-.trousseau-sommaire li { pointer-events: auto; will-change: transform; }
-.trousseau-sommaire li + li { margin-left: 18px; }
-.trousseau-sommaire button {
-  --r: -5deg; --y: 8px;
-  display: grid; justify-items: start; gap: 3px; width: clamp(170px, 15.5vw, 260px);
-  padding: 9px 9px 14px; border: 0; border-radius: 3px; cursor: pointer;
+.dossier-dos, .dossier-devant, .dossier-devant img { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+.dossier-dos { filter: drop-shadow(0 calc(var(--hd) * 0.03) calc(var(--hd) * 0.035) rgba(40, 36, 30, 0.28)); }
+.dossier-devant { z-index: 3; pointer-events: none; filter: drop-shadow(0 calc(var(--hd) * -0.006) calc(var(--hd) * 0.012) rgba(40, 36, 30, 0.3)); }
+/* le rabat avant, détouré dans l'image (images/porte-cles/dossier.webp) */
+.dossier-devant img { clip-path: polygon(4.5% 34.5%, 6.5% 32.2%, 42% 32.2%, 45.5% 28%, 49% 25.3%, 89% 24.6%, 91.3% 26.5%, 91.8% 95%, 89% 96.6%, 7% 96.6%, 4.6% 95%); }
+/* son nom, comme gaufré sur le rabat */
+.dossier-etiquette {
+  position: absolute; z-index: 4; left: 12%; bottom: 13%; pointer-events: none;
+  font-family: var(--large); font-weight: 800; font-stretch: 125%; text-transform: uppercase;
+  font-size: calc(var(--hd) * 0.062); letter-spacing: 0.02em; line-height: 1;
+  color: rgba(120, 88, 34, 0.5); text-shadow: 0 1px 0 rgba(255, 246, 220, 0.5), 0 -1px 0 rgba(90, 62, 20, 0.25);
+}
+/* les fiches : tout ce qui dépasse sous le dossier est coupé */
+.grand-dossier ol {
+  position: absolute; inset: 0; z-index: 2; list-style: none; margin: 0; padding: 0;
+  /* au-dessus du rabat, rien n'est coupé ; plus bas, seulement l'intérieur du dossier */
+  clip-path: polygon(-100% -100%, 200% -100%, 200% 34%, 93% 34%, 93% 95%, 3% 95%, 3% 34%, -100% 34%);
+}
+.grand-dossier li {
+  position: absolute; bottom: 31%; left: 8%; width: 39%; height: 86%;
+  pointer-events: auto; will-change: transform;
+}
+.grand-dossier li:nth-child(2) { left: 29%; bottom: 33%; }
+.grand-dossier li:nth-child(3) { left: 50%; }
+.grand-dossier li:nth-child(4) { left: 40%; bottom: 35%; }
+.grand-dossier li:hover, .grand-dossier li:focus-within { z-index: 5; }
+.grand-dossier button {
+  --r: -7deg;
+  display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--hd) * 0.008);
+  width: 100%; height: 100%; padding: 7% 7% 0; border: 0; border-radius: 3px; cursor: pointer;
   background: var(--blanc); color: var(--noir); font: inherit; text-align: left;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06), 0 10px 22px rgba(40, 36, 30, 0.2);
-  transform: translateY(var(--y)) rotate(var(--r));
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 6px 16px rgba(40, 36, 30, 0.16);
+  transform-origin: 50% 100%; transform: rotate(var(--r));
   transition: transform 0.45s var(--courbe), box-shadow 0.45s var(--courbe);
   -webkit-tap-highlight-color: transparent;
 }
-.trousseau-sommaire li:nth-child(2) button { --r: 3deg; --y: -14px; }
-.trousseau-sommaire li:nth-child(3) button { --r: -2deg; --y: 16px; }
-.trousseau-sommaire li:nth-child(4) button { --r: 4deg; --y: -6px; }
-.trousseau-sommaire li:hover, .trousseau-sommaire li:focus-within { position: relative; z-index: 2; }
-.trousseau-sommaire button:hover, .trousseau-sommaire button:focus-visible {
-  transform: translateY(calc(var(--y) - 12px)) rotate(0deg);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06), 0 22px 36px rgba(40, 36, 30, 0.26);
+.grand-dossier li:nth-child(2) button { --r: -1deg; }
+.grand-dossier li:nth-child(3) button { --r: 7deg; }
+.grand-dossier li:nth-child(4) button { --r: 3deg; }
+/* au survol, la fiche sort un peu plus du dossier et se redresse */
+.grand-dossier button:hover, .grand-dossier button:focus-visible {
+  transform: translateY(-13%) rotate(calc(var(--r) * 0.4));
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 16px 30px rgba(40, 36, 30, 0.24);
 }
-.trousseau-sommaire button:focus { outline: none; }
-.trousseau-sommaire button:focus-visible { outline: 2px dashed var(--accent); outline-offset: 4px; }
+.grand-dossier button:focus { outline: none; }
+.grand-dossier button:focus-visible { outline: 2px dashed var(--accent); outline-offset: 4px; }
+.sommaire-num { font-size: calc(var(--hd) * 0.024); font-weight: 500; letter-spacing: 0.16em; color: var(--accent-texte); }
+.sommaire-nom {
+  max-width: 100%; font-family: var(--large); font-weight: 800; text-transform: uppercase;
+  font-size: calc(var(--hd) * 0.032); line-height: 1.05; transition: color 0.3s;
+}
+.grand-dossier button:hover .sommaire-nom { color: var(--accent); }
+.sommaire-info { font-size: calc(var(--hd) * 0.019); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gris); }
 .fiche-image {
-  display: block; width: 100%; aspect-ratio: 4 / 3; margin-bottom: 8px;
+  order: 3; display: block; width: 100%; aspect-ratio: 4 / 3; margin-top: 4%;
   object-fit: cover; object-position: top; border-radius: 2px; background: var(--panneau);
 }
-.sommaire-num { font-size: 0.66rem; font-weight: 500; letter-spacing: 0.16em; color: var(--accent-texte); }
-.sommaire-nom {
-  max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-  font-family: var(--large); font-weight: 800; font-stretch: 100%; text-transform: uppercase;
-  font-size: clamp(0.78rem, 0.95vw, 1rem); line-height: 1.05; white-space: nowrap;
-  transition: color 0.3s;
-}
-.trousseau-sommaire button:hover .sommaire-nom { color: var(--accent); }
-.sommaire-info { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gris); white-space: nowrap; }
-/* le trousseau se pousse à gauche pour laisser la place aux fiches */
-.trousseau-scene { transition: transform 0.9s var(--courbe); }
+.grand-dossier .sommaire-info { order: 4; }
+/* le trousseau se pousse à gauche pour laisser la place au dossier */
+.trousseau-scene { transition: transform 0.9s var(--courbe), opacity 0.5s; }
 .fiches-ouvertes .trousseau-scene { transform: translateX(-22vw); }
 .fiches-ouvertes .trousseau-legende { opacity: 0; }
 .trousseau-legende { transition: opacity 0.3s; }
@@ -531,14 +554,10 @@ a { color: inherit; }
   /* trousseau : le sommaire passe sous la légende */
   .trousseau-scene { bottom: 22%; }
   .trousseau-legende { bottom: 13%; }
-  /* au téléphone, le trousseau reste en place : les fiches se posent
-     dessous, au-dessus du menu (qui reste sur l'accueil, 100svh - 150px) */
-  .fiches-ouvertes .trousseau-scene { transform: none; }
-  .trousseau-sommaire ol { left: 0; right: 0; top: auto; bottom: 168px; transform: none; justify-content: center; }
-  .trousseau-sommaire li + li { margin-left: 2.5vw; }
-  .trousseau-sommaire button { width: 28.5vw; padding: 6px 6px 10px; }
-  .fiche-image { aspect-ratio: 1; margin-bottom: 5px; }
-  .sommaire-nom { font-size: 0.66rem; white-space: normal; overflow: visible; }
+  /* au téléphone : le trousseau reste en place et s'efface un peu, le grand
+     dossier se pose au milieu, au-dessus du menu (100svh - 150px) */
+  .fiches-ouvertes .trousseau-scene { transform: none; opacity: 0.25; }
+  .grand-dossier { --hd: min(40svh, 78vw); right: auto; top: auto; left: calc(50% - var(--hd) * 0.468); bottom: 165px; }
   .sommaire-info { display: none; }
 }
 
