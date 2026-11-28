@@ -231,8 +231,10 @@ a { color: inherit; }
   position: absolute; left: calc(50% - var(--hd) * 0.468); top: calc(50% - var(--hd) * 0.22);
   height: var(--hd); aspect-ratio: 842 / 900; will-change: transform;
 }
-.dossier-dos, .dossier-devant, .dossier-devant img { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+.dossier-dos, .dossier-dos img, .dossier-devant, .dossier-devant img { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
 .dossier-dos { filter: drop-shadow(0 calc(var(--hd) * 0.03) calc(var(--hd) * 0.035) rgba(40, 36, 30, 0.28)); }
+/* sans les feuilles dessinées qui dépassent sur les côtés et en bas de l'image */
+.dossier-dos img { clip-path: inset(0 7.6% 2.8% 3.9% round 0 0 4% 4%); }
 .dossier-devant { z-index: 3; pointer-events: none; filter: drop-shadow(0 calc(var(--hd) * -0.006) calc(var(--hd) * 0.012) rgba(40, 36, 30, 0.3)); }
 /* le rabat avant, détouré dans l'image (images/porte-cles/dossier.webp) */
 .dossier-devant img { clip-path: polygon(4.5% 34.5%, 6.5% 32.2%, 42% 32.2%, 45.5% 28%, 49% 25.3%, 89% 24.6%, 91.3% 26.5%, 91.8% 95%, 89% 96.6%, 7% 96.6%, 4.6% 95%); }
@@ -246,19 +248,19 @@ a { color: inherit; }
 /* les fiches : tout ce qui dépasse sous le dossier est coupé */
 .grand-dossier ol {
   position: absolute; inset: 0; z-index: 2; list-style: none; margin: 0; padding: 0;
-  /* au-dessus du rabat, rien n'est coupé ; plus bas, seulement l'intérieur du dossier */
-  clip-path: polygon(-100% -100%, 200% -100%, 200% 34%, 93% 34%, 93% 95%, 3% 95%, 3% 34%, -100% 34%);
+  /* rien ne dépasse sur les côtés ni sous le dossier */
+  clip-path: inset(-100% 7.6% 4% 4%);
 }
 .grand-dossier li {
-  position: absolute; bottom: 31%; left: 6%; width: 42%; height: 86%;
+  position: absolute; bottom: 31%; left: 9%; width: 38%; height: 86%;
   pointer-events: auto; will-change: transform;
 }
-.grand-dossier li:nth-child(2) { left: 28%; bottom: 41%; } /* plus haute : son nom passe au-dessus des autres */
-.grand-dossier li:nth-child(3) { left: 50%; bottom: 29%; }
+.grand-dossier li:nth-child(2) { left: 29.5%; bottom: 41%; } /* plus haute : son nom passe au-dessus des autres */
+.grand-dossier li:nth-child(3) { left: 50%; bottom: 29%; } /* bord droit à 88 % : rien ne dépasse du dossier */
 .grand-dossier li:nth-child(4) { left: 40%; bottom: 35%; }
 .grand-dossier li:hover, .grand-dossier li:focus-within { z-index: 5; }
 .grand-dossier button {
-  --r: -7deg;
+  --r: -2deg;
   display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--hd) * 0.008);
   width: 100%; height: 100%; padding: 10% 9% 0; border: 0; border-radius: 3px; cursor: pointer;
   background: var(--blanc); color: var(--noir); font: inherit; text-align: left;
@@ -267,8 +269,8 @@ a { color: inherit; }
   transition: transform 0.45s var(--courbe), box-shadow 0.45s var(--courbe);
   -webkit-tap-highlight-color: transparent;
 }
-.grand-dossier li:nth-child(2) button { --r: -1deg; }
-.grand-dossier li:nth-child(3) button { --r: 7deg; }
+.grand-dossier li:nth-child(2) button { --r: 0deg; }
+.grand-dossier li:nth-child(3) button { --r: 2deg; }
 .grand-dossier li:nth-child(4) button { --r: 3deg; }
 /* au survol, la fiche sort un peu plus du dossier et se redresse */
 .grand-dossier button:hover, .grand-dossier button:focus-visible {
@@ -279,7 +281,7 @@ a { color: inherit; }
 .grand-dossier button:focus-visible { outline: 2px dashed var(--accent); outline-offset: 4px; }
 .sommaire-nom {
   max-width: 100%; font-family: var(--large); font-weight: 800; text-transform: uppercase;
-  font-size: calc(var(--hd) * 0.036); line-height: 1.1; transition: color 0.3s;
+  font-size: calc(var(--hd) * 0.033); line-height: 1.1; transition: color 0.3s;
 }
 .grand-dossier button:hover .sommaire-nom { color: var(--accent); }
 /* les autres porte-clés sont tombés ; le petit dossier, devenu grand, est caché */
