@@ -435,9 +435,14 @@ try {
 if (intro) jouerIntro({ quandOuvert: () => trousseau && trousseau.lacher() });
 
 // le sommaire : tous les projets, même ceux qui n'ont pas de porte-clé
-// Chaque fiche : juste le nom du projet (son choix : pas d'image)
-P.liste.forEach((p) => {
+// Chaque fiche : juste le nom du projet (son choix : pas d'image).
+// Les onglets vont par 3, côte à côte ; au-delà, en rangées comme dans un
+// classeur : chaque rangée de derrière dépasse un peu plus haut.
+const RANGEES = Math.ceil(P.liste.length / 3);
+P.liste.forEach((p, k) => {
   const li = el("li");
+  li.style.setProperty("--x", `${(k % 3) * 34}%`);
+  li.style.top = `${27 - (RANGEES - 1 - Math.floor(k / 3)) * 8.5}%`;
   const b = el("button");
   b.type = "button";
   b.append(el("span", "sommaire-nom", p.titre.replaceAll("_", "_\u200b"))); // coupable après « _ »

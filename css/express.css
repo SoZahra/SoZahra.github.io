@@ -253,18 +253,16 @@ a { color: inherit; }
   /* rien ne dépasse sur les côtés ni sous le dossier */
   clip-path: inset(-300% 7.6% 4% 4%);
 }
-.grand-dossier li { position: absolute; left: 6.5%; width: 84.5%; top: 27%; height: 66%; pointer-events: none; will-change: transform; }
+/* --x (place de l'onglet) et top (sa rangée) : posés par js/express.js */
+.grand-dossier li { --x: 0%; position: absolute; left: 6.5%; width: 84.5%; top: 27%; height: 66%; pointer-events: none; will-change: transform; }
 .grand-dossier li.tiree { z-index: 5; }
 .grand-dossier button {
-  --x: 0%;
-  position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0 3px 3px 3px;
+  position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 3px;
   background: var(--blanc); color: var(--noir); font: inherit; text-align: left; cursor: grab; pointer-events: auto;
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.05), 0 -3px 10px rgba(40, 36, 30, 0.1);
   touch-action: none; -webkit-tap-highlight-color: transparent;
   transition: transform 0.35s var(--courbe);
 }
-.grand-dossier li:nth-child(2) button { --x: 34%; border-radius: 3px; }
-.grand-dossier li:nth-child(3) button { --x: 68%; border-radius: 3px 0 3px 3px; }
 .grand-dossier li.tiree button { cursor: grabbing; }
 /* l'onglet, qui dépasse en haut de la fiche */
 .sommaire-nom {
